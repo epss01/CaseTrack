@@ -18,9 +18,13 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'name',
-        'email',
+        'username',
         'password',
+        'first_name',
+        'last_name',
+        'office_region',
+        'is_staff',
+        'role_id',
     ];
 
     /**
@@ -41,8 +45,23 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
+            'is_staff' => 'boolean',
             'password' => 'hashed',
         ];
+    }
+
+    public function role()
+    {
+        return $this->belongsTo(Role::class);
+    }
+
+    public function cases()
+    {
+        return $this->hasMany(CaseModel::class, 'investigator_id');
+    }
+
+    public function auditLogs()
+    {
+        return $this->hasMany(AuditLog::class);
     }
 }
