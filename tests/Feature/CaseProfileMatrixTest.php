@@ -27,6 +27,7 @@ class CaseProfileMatrixTest extends TestCase
             'status' => 'Under investigation',
         ]);
 
+        $case->complainants()->create(['name' => 'Josefa Ramos']);
         $case->victims()->create(['name' => 'Maria Santos', 'age' => 34, 'status' => 'Injured', 'sector' => 'Farmer']);
         $case->respondents()->create(['name' => 'PO1 Cruz', 'age' => 29, 'status' => 'Active duty', 'sector' => 'PNP']);
 
@@ -48,6 +49,8 @@ class CaseProfileMatrixTest extends TestCase
             ->assertSee('CHR Region VIII')
             ->assertSee('Walk-in')
             ->assertSee('Complainant reports a warrantless arrest.')
+            // Complainant profile
+            ->assertSee('Josefa Ramos')
             // Victim profile
             ->assertSee('Maria Santos')
             ->assertSee('Injured')
@@ -72,8 +75,9 @@ class CaseProfileMatrixTest extends TestCase
             ->get(route('cases.show', $case))
             ->assertOk()
             ->assertSee('No timeline has been recorded for this case yet.')
-            ->assertSee('Date of Docket')
-            ->assertSee('No respondents recorded.');
+            ->assertDontSee('Date of Docket')
+            ->assertSee('No respondents recorded.')
+            ->assertSee('No complainants recorded.');
     }
 
     public function test_a_case_is_visible_on_its_profile_matrix_immediately_after_intake(): void
@@ -85,6 +89,8 @@ class CaseProfileMatrixTest extends TestCase
             'case_title' => 'Complaint re: detention conditions',
             'incident_details' => 'Reported overcrowding.',
             'source_info' => 'Referral',
+            'date_of_docket' => '2026-06-12',
+            'complainants' => [['name' => 'Josefa Ramos']],
             'victims' => [['name' => 'Ana Lim', 'age' => '41', 'status' => 'Detained', 'sector' => 'Urban poor']],
             'respondents' => [['name' => 'Jail Warden', 'age' => '', 'status' => '', 'sector' => '']],
         ]);
@@ -95,9 +101,13 @@ class CaseProfileMatrixTest extends TestCase
             ->get(route('cases.show', $case))
             ->assertOk()
             ->assertSee('Case docketed.')
+            ->assertSee('Josefa Ramos')
             ->assertSee('Ana Lim')
             ->assertSee('Urban poor')
-            ->assertSee('Jail Warden');
+            ->assertSee('Jail Warden')
+            // The timeline section is populated from intake, not left blank.
+            ->assertSee('Date of Docket')
+            ->assertSee('12 Jun 2026');
     }
 
     public function test_the_profile_matrix_is_still_closed_to_other_investigators(): void

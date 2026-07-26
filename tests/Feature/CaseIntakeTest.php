@@ -22,6 +22,10 @@ class CaseIntakeTest extends TestCase
             'case_title' => 'Alleged unlawful arrest in Tacloban',
             'incident_details' => 'Complainant reports a warrantless arrest on 12 June.',
             'source_info' => 'Walk-in',
+            'date_of_docket' => '2026-06-12',
+            'complainants' => [
+                ['name' => 'Josefa Ramos'],
+            ],
             'victims' => [
                 ['name' => 'Maria Santos', 'age' => '34', 'status' => 'Injured', 'sector' => 'Farmer'],
                 ['name' => 'Pedro Reyes', 'age' => '', 'status' => 'Detained', 'sector' => 'Urban poor'],
@@ -64,9 +68,92 @@ class CaseIntakeTest extends TestCase
             ->get(route('cases.create'))
             ->assertOk()
             ->assertSee('Case Intake')
+            ->assertSee('Date of Docket')
+            ->assertSee('Add Complainant')
             ->assertSee('Add Victim')
             ->assertSee('Add Respondent')
             ->assertSee('This case will be assigned to you.');
+    }
+
+    public function test_intake_opens_the_case_timeline(): void
+    {
+        $investigator = User::factory()->investigator()->create();
+
+        $this->actingAs($investigator)
+            ->post(route('cases.store'), $this->intakePayload())
+            ->assertSessionHasNoErrors();
+
+        $case = CaseModel::where('docket_no', 'CHR-VIII-2026-0100')->firstOrFail();
+
+        $this->assertNotNull($case->timeline);
+        $this->assertSame('2026-06-12', $case->timeline->date_of_docket->toDateString());
+
+        // The milestones are not known at intake.
+        $this->assertNull($case->timeline->submission_60th_day);
+        $this->assertNull($case->timeline->date_submitted_to);
+    }
+
+    public function test_complainants_are_recorded_at_intake(): void
+    {
+        $investigator = User::factory()->investigator()->create();
+
+        $this->actingAs($investigator)
+            ->post(route('cases.store'), $this->intakePayload([
+                'complainants' => [
+                    ['name' => 'Josefa Ramos'],
+                    ['name' => 'Elena Bautista'],
+                ],
+            ]))
+            ->assertSessionHasNoErrors();
+
+        $case = CaseModel::where('docket_no', 'CHR-VIII-2026-0100')->firstOrFail();
+
+        $this->assertCount(2, $case->complainants);
+        $this->assertSame('Josefa Ramos', $case->complainants[0]->name);
+        $this->assertSame('Elena Bautista', $case->complainants[1]->name);
+    }
+
+    public function test_a_case_can_be_docketed_with_no_complainant(): void
+    {
+        $investigator = User::factory()->investigator()->create();
+
+        $this->actingAs($investigator)
+            ->post(route('cases.store'), $this->intakePayload(['complainants' => []]))
+            ->assertSessionHasNoErrors();
+
+        $case = CaseModel::where('docket_no', 'CHR-VIII-2026-0100')->firstOrFail();
+
+        $this->assertCount(0, $case->complainants);
+    }
+
+    public function test_blank_complainant_rows_are_ignored(): void
+    {
+        $investigator = User::factory()->investigator()->create();
+
+        $this->actingAs($investigator)
+            ->post(route('cases.store'), $this->intakePayload([
+                'complainants' => [
+                    ['name' => 'Josefa Ramos'],
+                    ['name' => ''],
+                ],
+            ]))
+            ->assertSessionHasNoErrors();
+
+        $case = CaseModel::where('docket_no', 'CHR-VIII-2026-0100')->firstOrFail();
+
+        $this->assertCount(1, $case->complainants);
+    }
+
+    public function test_the_date_of_docket_is_required_at_intake(): void
+    {
+        $investigator = User::factory()->investigator()->create();
+
+        $this->actingAs($investigator)
+            ->post(route('cases.store'), $this->intakePayload(['date_of_docket' => '']))
+            ->assertSessionHasErrors('date_of_docket');
+
+        $this->assertDatabaseCount('cases', 0);
+        $this->assertDatabaseCount('case_timelines', 0);
     }
 
     public function test_an_investigator_cannot_file_a_case_under_another_investigator(): void

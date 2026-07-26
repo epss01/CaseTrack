@@ -12,6 +12,18 @@ it's read-only from this repo. If you notice the wiki is missing or
 out of date on something you just built, tell me instead of updating
 it yourself — I'll hand that off to Cowork.
 
+## Session logging
+When asked to "log this session," write the session note directly to
+raw/sessions/YYYY-MM-DD.md in the vault (create the file if it doesn't
+exist yet today, append if a note for today already exists from an
+earlier session). Follow the format already established in prior
+session notes there. This is the one write exception to the read-only
+vault rule — raw/ is a capture zone, not curated knowledge, so it's
+fine for Claude Code to own it directly. Still don't write to wiki/
+directly: keep proposing the wiki/log.md append line and any
+sprint-checklist.md changes at the bottom of the session note, for
+Cowork to apply — exactly as before.
+
 ### Note for teammates
 `.claude/settings.json` is committed and team-shared, but the vault path in it is
 machine-specific. It currently points at this machine's location:

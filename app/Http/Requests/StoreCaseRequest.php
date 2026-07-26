@@ -4,7 +4,6 @@ namespace App\Http\Requests;
 
 use App\Models\Role;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class StoreCaseRequest extends FormRequest
 {
@@ -23,6 +22,7 @@ class StoreCaseRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->merge([
+            'complainants' => $this->withoutBlankRows($this->input('complainants')),
             'victims' => $this->withoutBlankRows($this->input('victims')),
             'respondents' => $this->withoutBlankRows($this->input('respondents')),
         ]);
@@ -45,15 +45,17 @@ class StoreCaseRequest extends FormRequest
             'incident_details' => ['required', 'string'],
             'source_info' => ['nullable', 'string', 'max:255'],
 
+            // Opens the case timeline. The remaining milestone dates are not
+            // known at intake and are filled in later via the timeline form.
+            'date_of_docket' => ['required', 'date'],
+
             // Must be a user who actually holds the Investigator role.
-            'investigator_id' => [
-                'required',
-                'integer',
-                Rule::exists('users', 'id')->where(fn ($query) => $query->whereIn(
-                    'role_id',
-                    Role::query()->where('role_name', Role::INVESTIGATOR)->select('id')
-                )),
-            ],
+            'investigator_id' => ['required', 'integer', Role::assignableInvestigatorRule()],
+
+            // Optional: a case opened from a media report or on the
+            // Commission's own initiative has no complainant to name.
+            'complainants' => ['nullable', 'array'],
+            'complainants.*.name' => ['required', 'string', 'max:255'],
 
             'victims' => ['required', 'array', 'min:1'],
             'victims.*.name' => ['required', 'string', 'max:255'],
@@ -94,6 +96,8 @@ class StoreCaseRequest extends FormRequest
             'case_title' => __('case title'),
             'incident_details' => __('incident details'),
             'source_info' => __('source of information'),
+            'date_of_docket' => __('date of docket'),
+            'complainants.*.name' => __('complainant name'),
             'victims.*.name' => __('victim name'),
             'victims.*.age' => __('victim age'),
             'victims.*.status' => __('victim status'),

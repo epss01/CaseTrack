@@ -2,8 +2,10 @@
 
 @php
     $blankRow = ['name' => '', 'age' => '', 'status' => '', 'sector' => ''];
+    $blankComplainant = ['name' => ''];
     $victimRows = old('victims') ?: [$blankRow];
     $respondentRows = old('respondents') ?: [$blankRow];
+    $complainantRows = old('complainants') ?: [$blankComplainant];
 @endphp
 
 @section('content')
@@ -24,7 +26,7 @@
 
                     <div class="card-body">
                         <div class="row g-3">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label for="docket_no" class="form-label">{{ __('Docket No.') }}</label>
                                 <input id="docket_no" type="text" class="form-control @error('docket_no') is-invalid @enderror" name="docket_no" value="{{ old('docket_no') }}" required autofocus>
                                 @error('docket_no')
@@ -32,7 +34,15 @@
                                 @enderror
                             </div>
 
-                            <div class="col-md-6">
+                            <div class="col-md-4">
+                                <label for="date_of_docket" class="form-label">{{ __('Date of Docket') }}</label>
+                                <input id="date_of_docket" type="date" class="form-control @error('date_of_docket') is-invalid @enderror" name="date_of_docket" value="{{ old('date_of_docket', now()->toDateString()) }}" required>
+                                @error('date_of_docket')
+                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-4">
                                 <label for="source_info" class="form-label">
                                     {{ __('Source of Information') }} <span class="text-muted small">({{ __('optional') }})</span>
                                 </label>
@@ -83,6 +93,33 @@
                                     @enderror
                                 </div>
                             @endif
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span>
+                            {{ __('Complainants') }}
+                            <span class="text-muted small">({{ __('optional') }})</span>
+                        </span>
+                        <button type="button" class="btn btn-sm btn-outline-primary add-row" data-group="complainants">
+                            {{ __('Add Complainant') }}
+                        </button>
+                    </div>
+
+                    <div class="card-body">
+                        @error('complainants')
+                            <div class="alert alert-danger" role="alert">{{ $message }}</div>
+                        @enderror
+
+                        <div data-rows="complainants">
+                            @foreach ($complainantRows as $index => $row)
+                                @include('cases.partials.complainant-row', [
+                                    'index' => $index,
+                                    'row' => $row,
+                                ])
+                            @endforeach
                         </div>
                     </div>
                 </div>
@@ -147,6 +184,13 @@
         </div>
     </div>
 </div>
+
+<template id="complainants-template">
+    @include('cases.partials.complainant-row', [
+        'index' => '__INDEX__',
+        'row' => $blankComplainant,
+    ])
+</template>
 
 <template id="victims-template">
     @include('cases.partials.party-row', [

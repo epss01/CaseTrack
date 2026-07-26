@@ -9,10 +9,9 @@ use App\Models\User;
 /**
  * Authorization for case records.
  *
- * Supervisors have office-wide oversight: they may see and edit every case.
- * Investigators are confined to the cases assigned to them.
- *
- * Abilities that are not defined here (delete) are denied by default.
+ * Supervisors have office-wide oversight: they may see and edit every case,
+ * and they alone may delete or reassign one. Investigators are confined to the
+ * cases assigned to them.
  */
 class CaseModelPolicy
 {
@@ -55,6 +54,29 @@ class CaseModelPolicy
     public function update(User $user, CaseModel $case): bool
     {
         return $user->isSupervisor() || $this->isAssignedTo($user, $case);
+    }
+
+    /**
+     * Determine whether the user may delete a case.
+     *
+     * Supervisor-only, including for an investigator's own case: removing a
+     * docketed case is an office decision, not part of casework.
+     */
+    public function delete(User $user, CaseModel $case): bool
+    {
+        return $user->isSupervisor();
+    }
+
+    /**
+     * Determine whether the user may reassign a case to another investigator
+     * or correct its docket number.
+     *
+     * Supervisor-only for the same reason, and it is why investigator_id and
+     * docket_no stay out of the ordinary edit form.
+     */
+    public function reassign(User $user, CaseModel $case): bool
+    {
+        return $user->isSupervisor();
     }
 
     /**

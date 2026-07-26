@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ReassignCaseRequest;
 use App\Http\Requests\StoreCaseRequest;
+use App\Models\AuditLog;
 use App\Models\CaseModel;
 use App\Models\Role;
 use App\Models\User;
@@ -15,11 +17,14 @@ class CaseController extends Controller
     /**
      * Create a new controller instance.
      *
-     * authorizeResource() wires CaseModelPolicy into every action:
+     * authorizeResource() wires CaseModelPolicy into every resource action:
      * index => viewAny, create/store => create, show => view,
-     * edit/update => update. A failed check aborts with 403 before the action
-     * runs, which is what stops an investigator from opening another
-     * investigator's case by URL.
+     * edit/update => update, destroy => delete. A failed check aborts with 403
+     * before the action runs, which is what stops an investigator from opening
+     * another investigator's case by URL.
+     *
+     * It does not cover the custom actions (confirmDelete, reassignForm,
+     * reassign) — those authorize explicitly.
      */
     public function __construct()
     {
@@ -51,7 +56,7 @@ class CaseController extends Controller
     }
 
     /**
-     * Docket a new case together with its victims and respondents.
+     * Docket a new case together with its parties and its opening timeline.
      */
     public function store(StoreCaseRequest $request)
     {
@@ -65,8 +70,15 @@ class CaseController extends Controller
                 'status' => CaseModel::STATUS_DOCKETED,
             ]);
 
+            $case->complainants()->createMany($request->validated('complainants') ?? []);
             $case->victims()->createMany($request->validated('victims'));
             $case->respondents()->createMany($request->validated('respondents'));
+
+            // Opening the timeline is what makes the Case Profile Matrix's
+            // timeline section real; the milestone dates are set later.
+            $case->timeline()->create([
+                'date_of_docket' => $request->validated('date_of_docket'),
+            ]);
 
             return $case;
         });
@@ -81,7 +93,7 @@ class CaseController extends Controller
      */
     public function show(CaseModel $case)
     {
-        $case->load(['investigator', 'victims', 'respondents', 'timeline']);
+        $case->load(['investigator', 'complainants', 'victims', 'respondents', 'timeline']);
 
         return view('cases.show', ['case' => $case]);
     }
@@ -98,7 +110,8 @@ class CaseController extends Controller
      * Persist an edit.
      *
      * docket_no and investigator_id are deliberately not editable here:
-     * reassigning a case is a supervisory action, not part of casework.
+     * reassigning a case is a supervisory action, not part of casework, and
+     * lives in reassign() below.
      */
     public function update(Request $request, CaseModel $case)
     {
@@ -115,6 +128,69 @@ class CaseController extends Controller
         return redirect()
             ->route('cases.show', $case)
             ->with('status', __('Case updated.'));
+    }
+
+    /**
+     * Ask a supervisor to confirm before a case is deleted.
+     *
+     * A custom action, so authorizeResource() does not cover it.
+     */
+    public function confirmDelete(CaseModel $case)
+    {
+        $this->authorize('delete', $case);
+
+        return view('cases.confirm-delete', ['case' => $case]);
+    }
+
+    /**
+     * Delete a case.
+     *
+     * The case is soft-deleted, so the audit entry written here keeps a
+     * case_id that still resolves.
+     */
+    public function destroy(Request $request, CaseModel $case)
+    {
+        DB::transaction(function () use ($request, $case) {
+            AuditLog::record($request->user(), $case, AuditLog::ACTION_DELETE);
+
+            $case->delete();
+        });
+
+        return redirect()
+            ->route('cases.index')
+            ->with('status', __('Case :docket deleted.', ['docket' => $case->docket_no]));
+    }
+
+    /**
+     * Show the reassignment form.
+     */
+    public function reassignForm(Request $request, CaseModel $case)
+    {
+        $this->authorize('reassign', $case);
+
+        return view('cases.reassign', [
+            'case' => $case,
+            'investigators' => $this->assignableInvestigators($request->user()),
+        ]);
+    }
+
+    /**
+     * Move a case to another investigator, correcting the docket number if it
+     * was mis-entered.
+     */
+    public function reassign(ReassignCaseRequest $request, CaseModel $case)
+    {
+        $this->authorize('reassign', $case);
+
+        DB::transaction(function () use ($request, $case) {
+            $case->update($request->validated());
+
+            AuditLog::record($request->user(), $case, AuditLog::ACTION_UPDATE);
+        });
+
+        return redirect()
+            ->route('cases.show', $case)
+            ->with('status', __('Case reassigned.'));
     }
 
     /**

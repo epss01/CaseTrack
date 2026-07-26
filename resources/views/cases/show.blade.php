@@ -32,9 +32,20 @@
                     <span class="text-muted">{{ $case->docket_no }}</span>
                 </div>
 
-                @can('update', $case)
-                    <a href="{{ route('cases.edit', $case) }}" class="btn btn-primary">{{ __('Edit') }}</a>
-                @endcan
+                <div class="d-flex gap-2">
+                    @can('update', $case)
+                        <a href="{{ route('cases.edit', $case) }}" class="btn btn-primary">{{ __('Edit') }}</a>
+                    @endcan
+
+                    {{-- Supervisor-only; investigators never see these. --}}
+                    @can('reassign', $case)
+                        <a href="{{ route('cases.reassign.edit', $case) }}" class="btn btn-outline-secondary">{{ __('Reassign') }}</a>
+                    @endcan
+
+                    @can('delete', $case)
+                        <a href="{{ route('cases.confirm-delete', $case) }}" class="btn btn-outline-danger">{{ __('Delete') }}</a>
+                    @endcan
+                </div>
             </div>
 
             <div class="card mb-4">
@@ -70,6 +81,33 @@
                         <dt class="col-sm-3">{{ __('Incident Details') }}</dt>
                         <dd class="col-sm-9 mb-0">{{ $case->incident_details }}</dd>
                     </dl>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">{{ __('Complainants') }} <span class="text-muted">({{ $case->complainants->count() }})</span></div>
+
+                <div class="card-body">
+                    @if ($case->complainants->isEmpty())
+                        <p class="text-muted mb-0">{{ __('No complainants recorded.') }}</p>
+                    @else
+                        <div class="table-responsive">
+                            <table class="table table-sm table-striped mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>{{ __('Name') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($case->complainants as $complainant)
+                                        <tr>
+                                            <td>{{ $complainant->name }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
                 </div>
             </div>
 
@@ -140,25 +178,35 @@
             </div>
 
             <div class="card mb-4">
-                <div class="card-header">{{ __('Timeline') }}</div>
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>{{ __('Timeline') }}</span>
+
+                    @can('update', $case)
+                        <a href="{{ route('cases.timeline.edit', $case) }}" class="btn btn-sm btn-outline-primary">
+                            {{ __('Set Timeline') }}
+                        </a>
+                    @endcan
+                </div>
 
                 <div class="card-body">
-                    @unless ($timeline)
-                        <p class="text-muted">{{ __('No timeline has been recorded for this case yet.') }}</p>
-                    @endunless
-
-                    <div class="table-responsive">
-                        <table class="table table-sm mb-0">
-                            <tbody>
-                                @foreach ($timelineFields as $label => $value)
-                                    <tr>
-                                        <th class="w-50 fw-normal text-muted">{{ $label }}</th>
-                                        <td>{{ $value ?: '—' }}</td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+                    {{-- Without a timeline row every label would render as a
+                         wall of dashes, which reads as broken rather than empty. --}}
+                    @if ($timeline)
+                        <div class="table-responsive">
+                            <table class="table table-sm mb-0">
+                                <tbody>
+                                    @foreach ($timelineFields as $label => $value)
+                                        <tr>
+                                            <th class="w-50 fw-normal text-muted">{{ $label }}</th>
+                                            <td>{{ $value ?: '—' }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <p class="text-muted mb-0">{{ __('No timeline has been recorded for this case yet.') }}</p>
+                    @endif
                 </div>
             </div>
 

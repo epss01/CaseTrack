@@ -5,10 +5,17 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CaseModel extends Model
 {
     use HasFactory;
+
+    /**
+     * Deleting a case keeps the row, so its audit_logs entries keep a valid
+     * case_id and a case removed in error can be restored.
+     */
+    use SoftDeletes;
 
     /**
      * The status a case carries the moment it is docketed at intake.
@@ -68,9 +75,13 @@ class CaseModel extends Model
         return $this->hasMany(Respondent::class, 'case_id');
     }
 
-    public function complainant()
+    /**
+     * A case may name several complainants, or none at all when it is opened
+     * from a media report or on the Commission's own initiative.
+     */
+    public function complainants()
     {
-        return $this->hasOne(Complainant::class, 'case_id');
+        return $this->hasMany(Complainant::class, 'case_id');
     }
 
     public function auditLogs()

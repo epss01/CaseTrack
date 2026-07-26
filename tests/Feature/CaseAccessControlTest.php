@@ -158,8 +158,12 @@ class CaseAccessControlTest extends TestCase
         $this->assertTrue($supervisor->can('create', CaseModel::class));
         $this->assertFalse(User::factory()->withRole('Records Clerk')->create()->can('create', CaseModel::class));
 
-        // Abilities we never granted stay denied.
-        $this->assertFalse($supervisor->can('delete', $case));
+        // Deleting and reassigning are supervisory, never casework — an
+        // investigator is denied even on the case assigned to them.
+        $this->assertTrue($supervisor->can('delete', $case));
+        $this->assertTrue($supervisor->can('reassign', $case));
+        $this->assertFalse($investigator->can('delete', $case));
+        $this->assertFalse($investigator->can('reassign', $case));
     }
 
     public function test_role_names_are_the_two_the_office_uses(): void
