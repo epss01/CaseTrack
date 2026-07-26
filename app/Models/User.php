@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -48,6 +48,32 @@ class User extends Authenticatable
             'is_staff' => 'boolean',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * The user's display name, used wherever the scaffolding showed "name".
+     */
+    protected function fullName(): Attribute
+    {
+        return Attribute::get(fn () => trim("{$this->first_name} {$this->last_name}"));
+    }
+
+    /**
+     * Determine whether the user holds any of the given roles.
+     */
+    public function hasRole(string ...$roleNames): bool
+    {
+        return in_array($this->role?->role_name, $roleNames, true);
+    }
+
+    public function isSupervisor(): bool
+    {
+        return $this->hasRole(Role::SUPERVISOR);
+    }
+
+    public function isInvestigator(): bool
+    {
+        return $this->hasRole(Role::INVESTIGATOR);
     }
 
     public function role()

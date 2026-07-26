@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Role;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -24,21 +25,42 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
+            'username' => fake()->unique()->userName(),
             'password' => static::$password ??= Hash::make('password'),
+            'first_name' => fake()->firstName(),
+            'last_name' => fake()->lastName(),
+            'office_region' => 'CHR Region VIII',
+            'is_staff' => false,
+            'role_id' => fn () => Role::default()->id,
             'remember_token' => Str::random(10),
         ];
     }
 
     /**
-     * Indicate that the model's email address should be unverified.
+     * Indicate that the user carries their own caseload.
      */
-    public function unverified(): static
+    public function investigator(): static
+    {
+        return $this->withRole(Role::INVESTIGATOR);
+    }
+
+    /**
+     * Indicate that the user oversees the whole office's caseload.
+     */
+    public function supervisor(): static
+    {
+        return $this->withRole(Role::SUPERVISOR)->state(fn (array $attributes) => [
+            'is_staff' => true,
+        ]);
+    }
+
+    /**
+     * Indicate that the user holds the named role.
+     */
+    public function withRole(string $roleName): static
     {
         return $this->state(fn (array $attributes) => [
-            'email_verified_at' => null,
+            'role_id' => Role::firstOrCreate(['role_name' => $roleName])->id,
         ]);
     }
 }

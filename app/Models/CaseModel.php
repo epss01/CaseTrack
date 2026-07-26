@@ -2,12 +2,18 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class CaseModel extends Model
 {
     use HasFactory;
+
+    /**
+     * The status a case carries the moment it is docketed at intake.
+     */
+    public const STATUS_DOCKETED = 'Docketed';
 
     protected $table = 'cases';
 
@@ -20,6 +26,27 @@ class CaseModel extends Model
         'status',
         'complexity_weight',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'investigator_id' => 'integer',
+            'complexity_weight' => 'integer',
+        ];
+    }
+
+    /**
+     * Limit the query to the cases the given user is allowed to see.
+     *
+     * Supervisors see the whole office; investigators see their own caseload.
+     * This mirrors CaseModelPolicy::view() for list queries.
+     */
+    public function scopeVisibleTo(Builder $query, User $user): Builder
+    {
+        return $user->isSupervisor()
+            ? $query
+            : $query->where('investigator_id', $user->id);
+    }
 
     public function investigator()
     {

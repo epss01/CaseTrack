@@ -3,21 +3,22 @@
 @section('content')
 <div class="container">
     <div class="row justify-content-center">
-        <div class="col-md-8">
+        <div class="col-md-10">
             <div class="card">
-                <div class="card-header">{{ __('Register') }}</div>
+                <div class="card-header">{{ __('Edit Case') }} &mdash; {{ $case->docket_no }}</div>
 
                 <div class="card-body">
-                    <form method="POST" action="{{ route('register') }}">
+                    <form method="POST" action="{{ route('cases.update', $case) }}">
                         @csrf
+                        @method('PUT')
 
                         <div class="row mb-3">
-                            <label for="first_name" class="col-md-4 col-form-label text-md-end">{{ __('First Name') }}</label>
+                            <label for="case_title" class="col-md-4 col-form-label text-md-end">{{ __('Case Title') }}</label>
 
                             <div class="col-md-6">
-                                <input id="first_name" type="text" class="form-control @error('first_name') is-invalid @enderror" name="first_name" value="{{ old('first_name') }}" required autocomplete="given-name" autofocus>
+                                <input id="case_title" type="text" class="form-control @error('case_title') is-invalid @enderror" name="case_title" value="{{ old('case_title', $case->case_title) }}" required autofocus>
 
-                                @error('first_name')
+                                @error('case_title')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
                                     </span>
@@ -26,12 +27,12 @@
                         </div>
 
                         <div class="row mb-3">
-                            <label for="last_name" class="col-md-4 col-form-label text-md-end">{{ __('Last Name') }}</label>
+                            <label for="status" class="col-md-4 col-form-label text-md-end">{{ __('Status') }}</label>
 
                             <div class="col-md-6">
-                                <input id="last_name" type="text" class="form-control @error('last_name') is-invalid @enderror" name="last_name" value="{{ old('last_name') }}" required autocomplete="family-name">
+                                <input id="status" type="text" class="form-control @error('status') is-invalid @enderror" name="status" value="{{ old('status', $case->status) }}" required>
 
-                                @error('last_name')
+                                @error('status')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
                                     </span>
@@ -40,12 +41,12 @@
                         </div>
 
                         <div class="row mb-3">
-                            <label for="username" class="col-md-4 col-form-label text-md-end">{{ __('Username') }}</label>
+                            <label for="source_info" class="col-md-4 col-form-label text-md-end">{{ __('Source of Information') }}</label>
 
                             <div class="col-md-6">
-                                <input id="username" type="text" class="form-control @error('username') is-invalid @enderror" name="username" value="{{ old('username') }}" required autocomplete="username">
+                                <input id="source_info" type="text" class="form-control @error('source_info') is-invalid @enderror" name="source_info" value="{{ old('source_info', $case->source_info) }}">
 
-                                @error('username')
+                                @error('source_info')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
                                     </span>
@@ -54,12 +55,12 @@
                         </div>
 
                         <div class="row mb-3">
-                            <label for="office_region" class="col-md-4 col-form-label text-md-end">{{ __('Office Region') }}</label>
+                            <label for="complexity_weight" class="col-md-4 col-form-label text-md-end">{{ __('Complexity Weight') }}</label>
 
                             <div class="col-md-6">
-                                <input id="office_region" type="text" class="form-control @error('office_region') is-invalid @enderror" name="office_region" value="{{ old('office_region', 'CHR Region VIII') }}" required>
+                                <input id="complexity_weight" type="number" min="0" class="form-control @error('complexity_weight') is-invalid @enderror" name="complexity_weight" value="{{ old('complexity_weight', $case->complexity_weight) }}" required>
 
-                                @error('office_region')
+                                @error('complexity_weight')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
                                     </span>
@@ -68,32 +69,28 @@
                         </div>
 
                         <div class="row mb-3">
-                            <label for="password" class="col-md-4 col-form-label text-md-end">{{ __('Password') }}</label>
+                            <label for="incident_details" class="col-md-4 col-form-label text-md-end">{{ __('Incident Details') }}</label>
 
                             <div class="col-md-6">
-                                <input id="password" type="password" class="form-control @error('password') is-invalid @enderror" name="password" required autocomplete="new-password">
+                                <textarea id="incident_details" rows="6" class="form-control @error('incident_details') is-invalid @enderror" name="incident_details" required>{{ old('incident_details', $case->incident_details) }}</textarea>
 
-                                @error('password')
+                                @error('incident_details')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
                                     </span>
                                 @enderror
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <label for="password-confirm" class="col-md-4 col-form-label text-md-end">{{ __('Confirm Password') }}</label>
-
-                            <div class="col-md-6">
-                                <input id="password-confirm" type="password" class="form-control" name="password_confirmation" required autocomplete="new-password">
                             </div>
                         </div>
 
                         <div class="row mb-0">
                             <div class="col-md-6 offset-md-4">
                                 <button type="submit" class="btn btn-primary">
-                                    {{ __('Register') }}
+                                    {{ __('Save Changes') }}
                                 </button>
+
+                                <a href="{{ route('cases.show', $case) }}" class="btn btn-link">
+                                    {{ __('Cancel') }}
+                                </a>
                             </div>
                         </div>
                     </form>
