@@ -9,6 +9,7 @@ use App\Models\Respondent;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Victim;
+use App\Services\CaseDeadlineService;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
 
@@ -224,36 +225,29 @@ class DemoDataSeeder extends Seeder
     /**
      * Classify a timeline into one of the four demo buckets.
      *
-     * This is a placeholder for the real alert logic, not the alert logic
-     * itself — it exists so the seeder, its summary table and its tests all
-     * agree on what "overdue" means.
+     * This was a placeholder for the real alert logic; that logic now exists,
+     * so this is a label for it rather than a second copy of it. The rule it
+     * used to state — a deadline binds only while its submission is
+     * outstanding, and the 60th day is excluded for want of a case-type field —
+     * moved wholesale into CaseDeadlineService and is documented there.
      *
-     * A deadline is only counted while its submission is outstanding: the
-     * 30-day mark binds until the ROP is filed, the 120-day mark until the
-     * FIR is. The 60th day is excluded — see the class docblock.
+     * Keeping the method means the seeder, its summary table and its tests
+     * still agree on what "overdue" means, and that DemoDataSeederTest doubles
+     * as a check that the service agrees with the seeded spread.
      */
     public static function bucketFor(CaseTimeline $timeline, ?CarbonImmutable $today = null): string
     {
-        if ($timeline->date_fir_submitted !== null) {
-            return 'CLOSED';
-        }
+        $status = (new CaseDeadlineService)->caseStatusFor($timeline, $today);
 
-        $today ??= CarbonImmutable::today();
-
-        $outstanding = collect([
-            $timeline->date_submission_rop === null ? $timeline->extension_30_days : null,
-            $timeline->submission_120th_day,
-        ])->filter()->map(fn ($deadline) => CarbonImmutable::parse($deadline));
-
-        if ($outstanding->contains(fn (CarbonImmutable $d) => $d->isBefore($today))) {
-            return 'OVERDUE';
-        }
-
-        if ($outstanding->contains(fn (CarbonImmutable $d) => $d->lessThanOrEqualTo($today->addDays(14)))) {
-            return 'DUE SOON';
-        }
-
-        return 'ON TRACK';
+        return match ($status) {
+            CaseDeadlineService::STATUS_OVERDUE => 'OVERDUE',
+            CaseDeadlineService::STATUS_DUE_SOON => 'DUE SOON',
+            CaseDeadlineService::STATUS_ON_TRACK => 'ON TRACK',
+            // STATUS_SUBMITTED, or null for a timeline with no date of docket —
+            // neither of which the seeder can produce, both of which mean there
+            // is no outstanding deadline to report.
+            default => 'CLOSED',
+        };
     }
 
     public function run(): void

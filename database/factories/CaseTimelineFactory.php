@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\CaseModel;
+use App\Services\CaseDeadlineService;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -16,20 +17,24 @@ class CaseTimelineFactory extends Factory
      *
      * The 30/60/120-day columns are deadlines, not records of when a
      * submission happened — date_submission_rop and date_fir_submitted are
-     * the actuals. Keeping the offsets here means the seeder and any future
-     * alert logic derive them from one place.
+     * the actuals.
+     *
+     * These now live on CaseDeadlineService, which owns every date calculation
+     * in the application; a factory is a development artifact and the alert
+     * logic must not read its constants. Kept here as aliases so existing
+     * references resolve to the same one source.
      */
-    public const EXTENSION_DAYS = 30;
+    public const EXTENSION_DAYS = CaseDeadlineService::EXTENSION_DAYS;
 
-    public const SIXTIETH_DAY = 60;
+    public const SIXTIETH_DAY = CaseDeadlineService::SIXTIETH_DAY;
 
-    public const HUNDRED_TWENTIETH_DAY = 120;
+    public const HUNDRED_TWENTIETH_DAY = CaseDeadlineService::HUNDRED_TWENTIETH_DAY;
 
     /**
      * The office's own target for the FIR, set ahead of the 120-day deadline
      * so a case can be behind target while still inside the deadline.
      */
-    public const FIR_TARGET_DAYS = 100;
+    public const FIR_TARGET_DAYS = CaseDeadlineService::FIR_TARGET_DAYS;
 
     /**
      * Who a finished FIR gets submitted to.
@@ -61,20 +66,15 @@ class CaseTimelineFactory extends Factory
     /**
      * The date of docket plus every deadline that hangs off it.
      *
-     * Public so DemoDataSeeder — and later the alert logic — can apply the
-     * same rule without restating the offsets.
+     * Delegates to CaseDeadlineService, which is where the offsets and the
+     * arithmetic live. Kept as a method here because the seeder and its tests
+     * call it, and because a factory reading the service is the right way round.
      *
      * @return array<string, \Carbon\CarbonImmutable>
      */
     public static function deadlinesFor(CarbonImmutable $docketedOn): array
     {
-        return [
-            'date_of_docket' => $docketedOn,
-            'extension_30_days' => $docketedOn->addDays(self::EXTENSION_DAYS),
-            'submission_60th_day' => $docketedOn->addDays(self::SIXTIETH_DAY),
-            'submission_120th_day' => $docketedOn->addDays(self::HUNDRED_TWENTIETH_DAY),
-            'target_date_fir' => $docketedOn->addDays(self::FIR_TARGET_DAYS),
-        ];
+        return CaseDeadlineService::deadlinesFor($docketedOn);
     }
 
     /**

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AlertController;
 use App\Http\Controllers\CaseController;
 use App\Http\Controllers\CaseTimelineController;
 use App\Http\Controllers\WorkloadController;
@@ -47,6 +48,11 @@ Route::middleware(['auth', 'role:Investigator,Supervisor'])->group(function () {
         ->name('cases.timeline.edit');
     Route::put('cases/{case}/timeline', [CaseTimelineController::class, 'update'])
         ->name('cases.timeline.update');
+
+    // The statutory deadline countdowns. Scoped by CaseModel::scopeVisibleTo()
+    // exactly as /cases is, and like /workload it is a list page with no
+    // per-case decision to make, so the middleware carries it alone.
+    Route::get('alerts', [AlertController::class, 'index'])->name('alerts.index');
 });
 
 // The workload picture, and where performance ratings are set. Supervisor-only

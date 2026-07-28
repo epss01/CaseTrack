@@ -43,3 +43,12 @@ $casetrack-slate: #475569;
 $casetrack-slate-bg: #e9eef5;
 $casetrack-blue-text: #1e40af;
 $casetrack-blue-bg: #dbeafe;
+
+// Overdue, on the deadline alerts page only. Amber already means "waiting on
+// someone else" and is doing that job for Due soon, so a triage page whose one
+// purpose is separating late from nearly-late needs a colour of its own —
+// rendering both in amber would defeat the page. Chosen to sit a step past
+// amber in urgency without shouting; measured 6.8:1 on the tint below, which
+// puts it between slate and blue rather than at either extreme.
+$casetrack-red: #991b1b;
+$casetrack-red-bg: #fee2e2;

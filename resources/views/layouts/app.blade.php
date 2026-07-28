@@ -55,6 +55,17 @@
                                 </li>
                             @endcan
 
+                            {{-- Same condition as the dashboard: /alerts is scoped by
+                                 the same rule, an investigator's own cases or the whole
+                                 office. --}}
+                            @if (Auth::user()->hasRole(...App\Models\Role::CASE_HANDLING))
+                                <li class="nav-item">
+                                    <a class="nav-link @if (request()->routeIs('alerts.*')) active @endif"
+                                       @if (request()->routeIs('alerts.*')) aria-current="page" @endif
+                                       href="{{ route('alerts.index') }}">{{ __('Alerts') }}</a>
+                                </li>
+                            @endif
+
                             @if (Auth::user()->isSupervisor())
                                 <li class="nav-item">
                                     <a class="nav-link @if (request()->routeIs('workload.*')) active @endif"

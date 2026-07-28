@@ -196,7 +196,7 @@
 //
 // Soft tints rather than Bootstrap's solid text-bg-* badges, which shout next to
 // the navy bar. Measured against their own backgrounds: blue 7.15:1,
-// slate 6.5:1, amber 6.4:1 (see the note on $casetrack-amber).
+// slate 6.5:1, amber 6.4:1 (see the note on $casetrack-amber), red 6.8:1.
 
 .badge-soft-blue {
     color: $casetrack-blue-text;
@@ -211,6 +211,11 @@
 .badge-soft-slate {
     color: $casetrack-slate;
     background-color: $casetrack-slate-bg;
+}
+
+.badge-soft-red {
+    color: $casetrack-red;
+    background-color: $casetrack-red-bg;
 }
 
 // The stat tile promises that N cases await approval; without this the table
