@@ -22,6 +22,7 @@ class CaseIntakeTest extends TestCase
             'case_title' => 'Alleged unlawful arrest in Tacloban',
             'incident_details' => 'Complainant reports a warrantless arrest on 12 June.',
             'source_info' => 'Walk-in',
+            'complexity_weight' => 3,
             'date_of_docket' => '2026-06-12',
             'complainants' => [
                 ['name' => 'Josefa Ramos'],
@@ -50,6 +51,7 @@ class CaseIntakeTest extends TestCase
         $this->assertSame('Alleged unlawful arrest in Tacloban', $case->case_title);
         $this->assertSame('Walk-in', $case->source_info);
         $this->assertSame(CaseModel::STATUS_DOCKETED, $case->status);
+        $this->assertSame(3, $case->complexity_weight);
         $this->assertSame($investigator->id, $case->investigator_id);
 
         $this->assertCount(2, $case->victims);
@@ -154,6 +156,47 @@ class CaseIntakeTest extends TestCase
 
         $this->assertDatabaseCount('cases', 0);
         $this->assertDatabaseCount('case_timelines', 0);
+    }
+
+    public function test_the_complexity_weight_is_required_and_bounded(): void
+    {
+        // C_j feeds the Workload Capacity Score, so a case docketed without a
+        // weight would sit in a caseload without adding to it.
+        $investigator = User::factory()->investigator()->create();
+
+        foreach (['', 0, 6] as $invalid) {
+            $this->actingAs($investigator)
+                ->post(route('cases.store'), $this->intakePayload(['complexity_weight' => $invalid]))
+                ->assertSessionHasErrors('complexity_weight');
+        }
+
+        $this->assertDatabaseCount('cases', 0);
+    }
+
+    public function test_a_supervisor_sees_the_picker_ordered_by_workload_with_the_lowest_suggested(): void
+    {
+        $supervisor = User::factory()->supervisor()->create();
+
+        $heavier = User::factory()->investigator()->create(['first_name' => 'Dina', 'last_name' => 'Abad']);
+        $lighter = User::factory()->investigator()->create(['first_name' => 'Noel', 'last_name' => 'Zamora']);
+
+        CaseModel::factory()->assignedTo($heavier)->create([
+            'status' => CaseModel::STATUS_DOCKETED,
+            'complexity_weight' => 5,
+        ]);
+
+        $content = $this->actingAs($supervisor)
+            ->get(route('cases.create'))
+            ->assertOk()
+            ->assertSee('WCS')
+            ->assertSee('(suggested)')
+            ->getContent();
+
+        // Zamora holds nothing, so he outranks Abad despite the name order.
+        $this->assertLessThan(
+            strpos($content, 'Dina Abad'),
+            strpos($content, 'Noel Zamora'),
+        );
     }
 
     public function test_an_investigator_cannot_file_a_case_under_another_investigator(): void

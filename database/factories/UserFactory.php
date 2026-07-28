@@ -31,6 +31,8 @@ class UserFactory extends Factory
             'last_name' => fake()->lastName(),
             'office_region' => 'CHR Region VIII',
             'is_staff' => false,
+            // Unrated: (2 - 1.0) = 1.0, so WCS is the plain sum of weights.
+            'performance_rating' => 1.0,
             'role_id' => fn () => Role::default()->id,
             'remember_token' => Str::random(10),
         ];

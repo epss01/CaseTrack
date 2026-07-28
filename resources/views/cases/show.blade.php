@@ -3,6 +3,9 @@
 @php
     $timeline = $case->timeline;
 
+    $closurePending = $case->status === \App\Models\CaseModel::STATUS_PENDING_CLOSURE;
+    $closureProposable = ! $closurePending && $case->status !== \App\Models\CaseModel::STATUS_CLOSED;
+
     $timelineFields = [
         __('Date of Docket') => $timeline?->date_of_docket?->format('d M Y'),
         __('Date of Submission (ROP)') => $timeline?->date_submission_rop?->format('d M Y'),
@@ -35,6 +38,25 @@
                 <div class="d-flex gap-2">
                     @can('update', $case)
                         <a href="{{ route('cases.edit', $case) }}" class="btn btn-primary">{{ __('Edit') }}</a>
+                    @endcan
+
+                    {{-- Maker: asks for the case to be closed, and nothing more. --}}
+                    @can('proposeClosure', $case)
+                        @if ($closureProposable)
+                            <form method="POST" action="{{ route('cases.closure.propose', $case) }}">
+                                @csrf
+                                @method('PUT')
+
+                                <button type="submit" class="btn btn-outline-success">{{ __('Propose Closure') }}</button>
+                            </form>
+                        @endif
+                    @endcan
+
+                    {{-- Checker: only a supervisor, and only once one is pending. --}}
+                    @can('resolveClosure', $case)
+                        @if ($closurePending)
+                            <a href="{{ route('cases.closure.review', $case) }}" class="btn btn-warning">{{ __('Review Closure') }}</a>
+                        @endif
                     @endcan
 
                     {{-- Supervisor-only; investigators never see these. --}}

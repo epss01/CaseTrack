@@ -24,8 +24,15 @@ class User extends Authenticatable
         'last_name',
         'office_region',
         'is_staff',
+        'performance_rating',
         'role_id',
     ];
+
+    /**
+     * Cached Workload Capacity Score, so sorting a picker by it does not
+     * re-run the aggregate once per comparison.
+     */
+    private ?float $workloadCapacityScore = null;
 
     /**
      * The attributes that should be hidden for serialization.
@@ -46,8 +53,32 @@ class User extends Authenticatable
     {
         return [
             'is_staff' => 'boolean',
+            'performance_rating' => 'float',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * The investigator's Workload Capacity Score.
+     *
+     *     WCS_i = sum over active cases j of C_j x (2 - P_i)
+     *
+     * C_j is the case's complexity weight, P_i this user's performance rating.
+     * Since P_i is constant across the sum it factors out, so this is the sum
+     * of the active caseload's weights scaled by (2 - P_i): a lower-rated
+     * investigator is treated as more loaded by the same set of cases.
+     *
+     * Lower relative scores are the ones suggested for a new assignment.
+     * Source: raw/wcs/Workload-Capacity-Score.docx in the project vault.
+     *
+     * ponytail: one aggregate query per investigator, so a picker of five
+     * costs five SUMs. Move to withSum() on the picker query if the office
+     * ever holds more than a couple of dozen investigators.
+     */
+    public function workloadCapacityScore(): float
+    {
+        return $this->workloadCapacityScore ??=
+            $this->cases()->active()->sum('complexity_weight') * (2 - $this->performance_rating);
     }
 
     /**

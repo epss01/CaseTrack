@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\CaseModel;
 use App\Models\Role;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -44,6 +45,10 @@ class StoreCaseRequest extends FormRequest
             'case_title' => ['required', 'string', 'max:255'],
             'incident_details' => ['required', 'string'],
             'source_info' => ['nullable', 'string', 'max:255'],
+
+            // C_j in the Workload Capacity Score — captured here because the
+            // score is meaningless if every case is docketed weightless.
+            'complexity_weight' => CaseModel::complexityWeightRules(),
 
             // Opens the case timeline. The remaining milestone dates are not
             // known at intake and are filled in later via the timeline form.
@@ -96,6 +101,7 @@ class StoreCaseRequest extends FormRequest
             'case_title' => __('case title'),
             'incident_details' => __('incident details'),
             'source_info' => __('source of information'),
+            'complexity_weight' => __('complexity weight'),
             'date_of_docket' => __('date of docket'),
             'complainants.*.name' => __('complainant name'),
             'victims.*.name' => __('victim name'),

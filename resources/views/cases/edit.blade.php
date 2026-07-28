@@ -58,7 +58,9 @@
                             <label for="complexity_weight" class="col-md-4 col-form-label text-md-end">{{ __('Complexity Weight') }}</label>
 
                             <div class="col-md-6">
-                                <input id="complexity_weight" type="number" min="0" class="form-control @error('complexity_weight') is-invalid @enderror" name="complexity_weight" value="{{ old('complexity_weight', $case->complexity_weight) }}" required>
+                                <select id="complexity_weight" class="form-select @error('complexity_weight') is-invalid @enderror" name="complexity_weight" required>
+                                    @include('cases.partials.complexity-options', ['selected' => old('complexity_weight', $case->complexity_weight)])
+                                </select>
 
                                 @error('complexity_weight')
                                     <span class="invalid-feedback" role="alert">

@@ -36,6 +36,12 @@
                                     <a class="nav-link" href="{{ route('cases.index') }}">{{ __('Cases') }}</a>
                                 </li>
                             @endcan
+
+                            @if (Auth::user()->isSupervisor())
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{{ route('workload.index') }}">{{ __('Workload') }}</a>
+                                </li>
+                            @endif
                         @endauth
                     </ul>
 

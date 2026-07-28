@@ -131,7 +131,11 @@ class CaseSupervisorActionsTest extends TestCase
             ->get(route('cases.reassign.edit', $case))
             ->assertOk()
             ->assertSee('Reassign Case')
-            ->assertSee($replacement->full_name);
+            ->assertSee($replacement->full_name)
+            // Reassignment is where the Workload Capacity Score is meant to
+            // guide the choice, so the picker has to show it.
+            ->assertSee('WCS')
+            ->assertSee('(suggested)');
 
         $this->actingAs($supervisor)
             ->put(route('cases.reassign.update', $case), [

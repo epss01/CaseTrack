@@ -17,13 +17,10 @@
 
                             <div class="col-md-6">
                                 <select id="investigator_id" class="form-select @error('investigator_id') is-invalid @enderror" name="investigator_id" required autofocus>
-                                    <option value="">{{ __('Select an investigator') }}</option>
-                                    @foreach ($investigators as $investigator)
-                                        <option value="{{ $investigator->id }}" @selected(old('investigator_id', $case->investigator_id) == $investigator->id)>
-                                            {{ $investigator->full_name }}
-                                        </option>
-                                    @endforeach
+                                    @include('cases.partials.investigator-options', ['selected' => old('investigator_id', $case->investigator_id)])
                                 </select>
+
+                                <span class="form-text">{{ __('Ordered by Workload Capacity Score — least loaded first.') }}</span>
 
                                 @error('investigator_id')
                                     <span class="invalid-feedback" role="alert">

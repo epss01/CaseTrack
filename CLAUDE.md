@@ -6,12 +6,19 @@ Capstone project (CHR Region VIII use case). Standalone internal web app — NOT
 NOT an AI/chatbot system. Deterministic, rule-based deadline tracking only.
 
 ## Stack
-- Backend: PHP 8.2, Laravel 11
+- Backend: PHP, Laravel 11. `composer.json` declares `"php": "^8.2"`, but **the lock file
+  resolved against PHP 8.4** — `vendor/composer/platform_check.php` hard-fails anything
+  below 8.4.0. **XAMPP's bundled PHP (8.2.12, at `C:\xampp\php\php.exe`) cannot run
+  `artisan` at all.** The working binary is Herd Lite:
+  `C:\Users\admin\.config\herd-lite\bin\php.exe`. It is normally on PATH; if a shell
+  reports `php: command not found`, call that absolute path rather than falling back to
+  the XAMPP one.
 - Database: MySQL (XAMPP, port 3307 — a separate standalone MySQL 8 runs on 3306; `.env`
   points at the XAMPP instance, database `casetrack`). Tests run on SQLite in-memory
-  via `phpunit.xml`.
+  via `phpunit.xml` — only the test suite uses SQLite, so anything driven through a
+  browser is hitting the real MySQL database.
 - Frontend: HTML5, CSS3, JavaScript, Bootstrap 5 (`laravel/ui` preset, not Breeze/Tailwind)
-- Local dev: XAMPP
+- Local dev: XAMPP for MySQL, Herd Lite for PHP
 
 ## Project knowledge base
 This repo has a companion Obsidian vault at the path configured in
@@ -64,7 +71,12 @@ in the vault for the full as-designed vs. as-built comparison.
   `protected $table = 'cases'`. Fields: `docket_no` (unique), `case_title`,
   `incident_details`, `source_info` (nullable), `investigator_id` FK → `users.id`,
   `status` (NOT NULL, set server-side to `CaseModel::STATUS_DOCKETED` at intake),
-  `complexity_weight` (int), `deleted_at` (soft deletes).
+  `status_before_closure` (nullable — see Maker-checker below), `complexity_weight` (int),
+  `deleted_at` (soft deletes).
+  `status` is free text with three named constants (`STATUS_DOCKETED`,
+  `STATUS_PENDING_CLOSURE`, `STATUS_CLOSED`); `'Under investigation'` and `'For review'`
+  are also in circulation via the factory and `DemoDataSeeder` but are **not** constants.
+  There is no ratified status vocabulary yet — flag it rather than inventing one.
 - `victims`, `respondents` — `case_id` FK (cascade on delete), `name`, `age` (nullable),
   `status`, `sector`.
 - `complainants` — `case_id` FK (cascade on delete), `name`.
@@ -96,6 +108,36 @@ so a hard delete would blank the very DELETE entry that makes deletion traceable
 Lower relative WCS = suggested for a new assignment. **WCS suggests; it never assigns** —
 the supervisor still chooses. Both `C_j` and `P_i` are human-entered judgment calls, not
 derived from history; that's a build decision, not something the source doc specifies.
+
+## Maker-checker on case closure (built)
+Investigator = Maker, Supervisor = Checker. Closure is the only action behind it — the one
+high-risk action the manuscript names (Use Case Fig. 3-3, Activity Fig. 3-4).
+
+```
+Docketed / Under investigation / For review
+        │ (Maker: PUT cases/{case}/closure)
+        ▼
+  Pending Closure ──(Checker confirms)──▶ Closed
+        │
+        └────────(Checker rejects)──────▶ back to status_before_closure
+```
+
+- No approvals table and no state-machine library: the pending state is a value in
+  `cases.status`, because that column was already unconstrained.
+- `status_before_closure` holds where the case sat when closure was proposed, so a
+  rejection reverts exactly rather than flattening every case to `Docketed`. Set on
+  propose, cleared on either resolution, null at all other times.
+- `CaseModelPolicy::proposeClosure()` (assigned investigator or supervisor) and
+  `resolveClosure()` (supervisor only). Confirm and reject share one policy method —
+  same decision, same role, opposite conclusions.
+- `CaseModel::statusRulesFor($case)` keeps the ordinary edit form out of the closure
+  states, so status can't be typed straight to `Closed`. It still lets a case resubmit
+  its *own* current status, or an already-closed case could never be edited again.
+- **`scopeActive()` excludes only `STATUS_CLOSED`, so a Pending Closure case still counts
+  toward its investigator's WCS.** Deliberate: it isn't closed until the Checker says so.
+- **Open for CHR:** a Supervisor passes `proposeClosure()` too, so nothing stops one
+  proposing and then confirming their own closure. Rejections also carry no reason field.
+  Both are process questions, not code gaps — don't "fix" either without asking.
 
 ## Roles / access rules
 - **Investigator** — sees and manages only their own assigned cases.
@@ -140,8 +182,11 @@ column for this reason. Flag this rather than inventing a workaround.
 - Every new feature that touches case data needs a role/policy check.
 - Every state-changing action on case data should write an audit entry via
   `AuditLog::record($user, $case, $action)` (`$case` may be null for actions not scoped to
-  one case, like a rating change). Today only delete, reassign, and performance-rating
-  changes do this — intake and edit do not yet.
+  one case, like a rating change), called **inside** the action's `DB::transaction()`.
+  Today: delete, reassign, performance-rating changes, and all three closure steps
+  (`ACTION_CLOSURE_PROPOSED` / `_CONFIRMED` / `_REJECTED`) do this — **intake and edit
+  still do not.** Closure uses a distinct constant per step on purpose: a trail that can't
+  tell a request from an approval can't say who asked for a case to be closed.
 - Share validation rules rather than duplicating them across requests — see
   `Role::assignableInvestigatorRule()` and `CaseModel::complexityWeightRules()`.
 

@@ -56,6 +56,8 @@ class DemoDataSeeder extends Seeder
     /**
      * The office the demo data belongs to.
      *
+     * Supervisors hold no caseload, so they keep the default rating.
+     *
      * @var list<array{username: string, first: string, last: string}>
      */
     private const SUPERVISORS = [
@@ -64,14 +66,19 @@ class DemoDataSeeder extends Seeder
     ];
 
     /**
-     * @var list<array{username: string, first: string, last: string}>
+     * Ratings are spread so that ranking by Workload Capacity Score is
+     * visibly not the same as ranking by caseload: with these values the
+     * heaviest-loaded investigator is not the highest-scoring one, and the
+     * (2 - P_i) factor is what makes the difference.
+     *
+     * @var list<array{username: string, first: string, last: string, rating: float}>
      */
     private const INVESTIGATORS = [
-        ['username' => 'abautista', 'first' => 'Ana Marie', 'last' => 'Bautista'],
-        ['username' => 'rtan', 'first' => 'Rogelio', 'last' => 'Tan'],
-        ['username' => 'clim', 'first' => 'Cristina', 'last' => 'Lim'],
-        ['username' => 'focampo', 'first' => 'Ferdinand', 'last' => 'Ocampo'],
-        ['username' => 'mserrano', 'first' => 'Maribel', 'last' => 'Serrano'],
+        ['username' => 'abautista', 'first' => 'Ana Marie', 'last' => 'Bautista', 'rating' => 1.0],
+        ['username' => 'rtan', 'first' => 'Rogelio', 'last' => 'Tan', 'rating' => 0.5],
+        ['username' => 'clim', 'first' => 'Cristina', 'last' => 'Lim', 'rating' => 0.9],
+        ['username' => 'focampo', 'first' => 'Ferdinand', 'last' => 'Ocampo', 'rating' => 0.4],
+        ['username' => 'mserrano', 'first' => 'Maribel', 'last' => 'Serrano', 'rating' => 0.7],
     ];
 
     /**
@@ -279,7 +286,7 @@ class DemoDataSeeder extends Seeder
     /**
      * Create the demo staff, reusing any account that already exists.
      *
-     * @param  list<array{username: string, first: string, last: string}>  $people
+     * @param  list<array{username: string, first: string, last: string, rating?: float}>  $people
      * @return list<User>
      */
     private function staff(array $people, string $roleName): array
@@ -288,6 +295,11 @@ class DemoDataSeeder extends Seeder
             $existing = User::where('username', $person['username'])->first();
 
             if ($existing) {
+                // Re-apply the rating: an account seeded before ratings
+                // existed would otherwise keep the column default and the
+                // documented WCS spread would not show up.
+                $existing->update(['performance_rating' => $person['rating'] ?? 1.0]);
+
                 return $existing;
             }
 
@@ -296,6 +308,7 @@ class DemoDataSeeder extends Seeder
                 'first_name' => $person['first'],
                 'last_name' => $person['last'],
                 'is_staff' => $roleName === Role::SUPERVISOR,
+                'performance_rating' => $person['rating'] ?? 1.0,
             ]);
         }, $people);
     }
@@ -403,6 +416,41 @@ class DemoDataSeeder extends Seeder
         $this->command->line('  Deadline columns show days from today: -n = passed, +n = upcoming.');
         $this->command->line('  The 60th day is shown but not classified — it binds torture cases only,');
         $this->command->line('  and no case-type field exists yet to identify them.');
+
+        $this->summariseWorkload();
+    }
+
+    /**
+     * Print the Workload Capacity Score for each investigator.
+     *
+     * Ordered by score, which is deliberately not the same order as either
+     * case count or complexity sum — that difference is the (2 - P_i) factor
+     * doing its job.
+     */
+    private function summariseWorkload(): void
+    {
+        $rows = User::query()
+            ->whereRelation('role', 'role_name', Role::INVESTIGATOR)
+            ->withCount(['cases as active_cases_count' => fn ($query) => $query->active()])
+            ->withSum(['cases as active_complexity_sum' => fn ($query) => $query->active()], 'complexity_weight')
+            ->get()
+            ->sortBy(fn (User $investigator) => $investigator->workloadCapacityScore())
+            ->map(fn (User $investigator) => [
+                $investigator->full_name,
+                $investigator->active_cases_count,
+                $investigator->active_complexity_sum ?? 0,
+                number_format($investigator->performance_rating, 1),
+                number_format($investigator->workloadCapacityScore(), 1),
+            ])
+            ->values()
+            ->all();
+
+        $this->command->newLine();
+        $this->command->table(
+            ['Investigator', 'Active cases', 'Complexity (sum C)', 'Rating (P)', 'WCS'],
+            $rows
+        );
+        $this->command->line('  WCS = sum(C_j) x (2 - P_i) over active cases. Lowest is suggested next.');
     }
 
     private function relativeDays(mixed $deadline, CarbonImmutable $today): string

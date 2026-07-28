@@ -89,6 +89,7 @@ class CaseProfileMatrixTest extends TestCase
             'case_title' => 'Complaint re: detention conditions',
             'incident_details' => 'Reported overcrowding.',
             'source_info' => 'Referral',
+            'complexity_weight' => 2,
             'date_of_docket' => '2026-06-12',
             'complainants' => [['name' => 'Josefa Ramos']],
             'victims' => [['name' => 'Ana Lim', 'age' => '41', 'status' => 'Detained', 'sector' => 'Urban poor']],

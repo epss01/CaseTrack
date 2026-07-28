@@ -68,17 +68,24 @@
                                 @enderror
                             </div>
 
+                            <div class="col-md-6">
+                                <label for="complexity_weight" class="form-label">{{ __('Complexity Weight') }}</label>
+                                <select id="complexity_weight" class="form-select @error('complexity_weight') is-invalid @enderror" name="complexity_weight" required>
+                                    @include('cases.partials.complexity-options', ['selected' => old('complexity_weight')])
+                                </select>
+                                <span class="form-text">{{ __('Drives the Workload Capacity Score used to balance assignments.') }}</span>
+                                @error('complexity_weight')
+                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                @enderror
+                            </div>
+
                             @if ($investigators->isNotEmpty())
                                 <div class="col-md-6">
                                     <label for="investigator_id" class="form-label">{{ __('Assign To') }}</label>
                                     <select id="investigator_id" class="form-select @error('investigator_id') is-invalid @enderror" name="investigator_id" required>
-                                        <option value="">{{ __('Select an investigator') }}</option>
-                                        @foreach ($investigators as $investigator)
-                                            <option value="{{ $investigator->id }}" @selected(old('investigator_id') == $investigator->id)>
-                                                {{ $investigator->full_name }}
-                                            </option>
-                                        @endforeach
+                                        @include('cases.partials.investigator-options', ['selected' => old('investigator_id')])
                                     </select>
+                                    <span class="form-text">{{ __('Ordered by Workload Capacity Score — least loaded first.') }}</span>
                                     @error('investigator_id')
                                         <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                                     @enderror
