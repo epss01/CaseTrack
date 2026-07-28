@@ -36,16 +36,34 @@
     // one solid blue bar, which defeats the only thing the bar is for.
     $ramp = ['#1d4ed8', '#3b82f6', '#93c5fd', '#1e3a8a'];
 
+    // Listed in the order a case moves through them, because this array doubles
+    // as the legend's sort order below. Each status keeps the colour it had when
+    // the map was keyed differently — the whole point is that a colour does not
+    // move, so reordering the array must not repaint anything.
     $fixed = [
-        CaseModel::STATUS_PENDING_CLOSURE => '#b45309',
-        CaseModel::STATUS_CLOSED => '#94a3b8',
         CaseModel::STATUS_DOCKETED => '#1d4ed8',
         'Under investigation' => '#3b82f6',
         'For review' => '#93c5fd',
+        CaseModel::STATUS_PENDING_CLOSURE => '#b45309',
+        CaseModel::STATUS_CLOSED => '#94a3b8',
     ];
 
     $colourFor = fn (string $status) => $fixed[$status]
         ?? $ramp[crc32($status) % count($ramp)];
+
+    /*
+     * The counts arrive from a GROUP BY, whose result order is unspecified —
+     * MySQL happened to return them alphabetically and SQLite need not agree, so
+     * the legend read as an arbitrary list rather than a lifecycle.
+     *
+     * Sorting by position in $fixed does not ratify a status vocabulary: it
+     * orders the five values already circulating and sends anything else to the
+     * end, exactly as $colourFor already handles an unlisted status. A new
+     * status still renders, still gets a stable colour, and simply sorts last.
+     */
+    $order = array_flip(array_keys($fixed));
+
+    $counts = $counts->sortBy(fn ($count, $status) => $order[$status] ?? PHP_INT_MAX);
 @endphp
 
 <div class="progress-stacked mb-3" style="height: .5rem;" aria-hidden="true">

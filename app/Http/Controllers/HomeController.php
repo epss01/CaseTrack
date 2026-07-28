@@ -117,6 +117,11 @@ class HomeController extends Controller
         // The queue this page is for. Unpaginated: it is bounded by how many
         // closures the office has open at once, not by the size of the archive,
         // and a decision queue that hides its tail is worse than a long one.
+        //
+        // ponytail: nothing enforces that bound — a docket-heavy month puts an
+        // arbitrarily long table on the page a supervisor is meant to clear
+        // quickly. Paginate at 15 to match CaseController::index() if it ever
+        // stops fitting a screen.
         $pendingCases = CaseModel::query()
             ->where('status', CaseModel::STATUS_PENDING_CLOSURE)
             ->with('investigator')

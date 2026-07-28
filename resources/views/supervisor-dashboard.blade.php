@@ -107,23 +107,15 @@
                 </div>
             </div>
 
-            {{-- The mix across every investigator's active caseload. --}}
-            @if ($activeByStatus->isNotEmpty())
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <h2 class="h6 mb-3">{{ __('Office caseload by status') }}</h2>
-
-                        @include('partials.status-distribution', [
-                            'counts' => $activeByStatus,
-                            'total' => $activeCount,
-                        ])
-                    </div>
-                </div>
-            @endif
-
             {{-- Every proposed closure in the office, whoever holds the case: a
-                 supervisor decides on any of them, not only their own. --}}
-            <div class="card">
+                 supervisor decides on any of them, not only their own.
+
+                 Above the status bar, unlike the investigator dashboard, which
+                 leads with its bar. The order differs because the content does:
+                 an investigator's table is their caseload, to read; this one is
+                 a work queue, to clear. Putting a chart nobody can act on ahead
+                 of the only actionable card on the page reads backwards. --}}
+            <div class="card mb-3">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h2 class="h6 mb-0">{{ __('Awaiting Your Decision') }}</h2>
                     <span class="badge badge-soft-amber">{{ $pendingClosureCount }}</span>
@@ -179,6 +171,20 @@
                     </p>
                 </div>
             </div>
+
+            {{-- The mix across every investigator's active caseload. --}}
+            @if ($activeByStatus->isNotEmpty())
+                <div class="card">
+                    <div class="card-body">
+                        <h2 class="h6 mb-3">{{ __('Office caseload by status') }}</h2>
+
+                        @include('partials.status-distribution', [
+                            'counts' => $activeByStatus,
+                            'total' => $activeCount,
+                        ])
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
 </div>
