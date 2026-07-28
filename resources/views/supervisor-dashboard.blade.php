@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', __('My Caseload'))
+@section('title', __('Office Caseload'))
 
 @php
     use App\Models\CaseModel;
@@ -20,19 +20,18 @@
                 </div>
             @endif
 
-            {{-- The investigator, and their caseload in four figures. --}}
+            {{-- The supervisor, and the whole office's caseload in four figures. --}}
             <div class="identity-bar mb-3">
                 <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
                     <div class="d-flex align-items-center gap-3">
                         <span class="avatar-initials" aria-hidden="true">{{ mb_strtoupper($initials) }}</span>
 
                         <div>
-                            {{-- The heading leads with what the page is, then who it
-                                 belongs to: a proper name alone told a screen-reader
-                                 user jumping by heading nothing about where they had
-                                 landed. The name stays the visual anchor. --}}
+                            {{-- Same shape as the investigator dashboard's heading: what
+                                 the page is, then whose it is, so jumping by heading
+                                 lands somewhere that says where you are. --}}
                             <h1 class="identity-bar__title">
-                                <span class="identity-bar__eyebrow">{{ __('My Caseload') }}</span>
+                                <span class="identity-bar__eyebrow">{{ __('Office Caseload') }}</span>
                                 <span class="identity-bar__name">
                                     {{ $user->full_name }}
                                     <span class="role-pill">{{ $user->role?->role_name }}</span>
@@ -45,12 +44,17 @@
                         </div>
                     </div>
 
-                    <div class="d-flex gap-2">
+                    <div class="d-flex flex-wrap gap-2">
                         @can('create', CaseModel::class)
                             <a href="{{ route('cases.create') }}" class="btn btn-sm btn-light">{{ __('New Case') }}</a>
                         @endcan
 
-                        <a href="{{ route('cases.index') }}" class="btn btn-sm btn-outline-light">{{ __('My cases') }}</a>
+                        <a href="{{ route('cases.index') }}" class="btn btn-sm btn-outline-light">{{ __('All cases') }}</a>
+
+                        {{-- Workload scores and performance ratings live on their own
+                             page and are not restated here: /workload is where P_i is
+                             set, so it is the one place those figures are authoritative. --}}
+                        <a href="{{ route('workload.index') }}" class="btn btn-sm btn-outline-light">{{ __('Workload') }}</a>
                     </div>
                 </div>
 
@@ -73,7 +77,7 @@
                             <span>
                                 <span class="stat-tile__label">{{ __('Awaiting approval') }}</span>
                                 <span class="stat-tile__value">{{ $pendingClosureCount }}</span>
-                                <span class="stat-tile__note">{{ __('of your active cases') }}</span>
+                                <span class="stat-tile__note">{{ __("of the office's active cases") }}</span>
                             </span>
                         </div>
                     </div>
@@ -89,10 +93,13 @@
                     </div>
 
                     <div class="col">
+                        {{-- "Total cases", not "Total assigned": office-wide every case
+                             is assigned to someone, so "assigned" would distinguish
+                             nothing. --}}
                         <div class="stat-tile">
                             <span class="stat-tile__icon">@include('partials.icon', ['name' => 'layers'])</span>
                             <span>
-                                <span class="stat-tile__label">{{ __('Total assigned') }}</span>
+                                <span class="stat-tile__label">{{ __('Total cases') }}</span>
                                 <span class="stat-tile__value">{{ $totalCount }}</span>
                             </span>
                         </div>
@@ -100,11 +107,11 @@
                 </div>
             </div>
 
-            {{-- The mix within the active caseload. --}}
+            {{-- The mix across every investigator's active caseload. --}}
             @if ($activeByStatus->isNotEmpty())
                 <div class="card mb-3">
                     <div class="card-body">
-                        <h2 class="h6 mb-3">{{ __('Active caseload by status') }}</h2>
+                        <h2 class="h6 mb-3">{{ __('Office caseload by status') }}</h2>
 
                         @include('partials.status-distribution', [
                             'counts' => $activeByStatus,
@@ -114,57 +121,48 @@
                 </div>
             @endif
 
+            {{-- Every proposed closure in the office, whoever holds the case: a
+                 supervisor decides on any of them, not only their own. --}}
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h2 class="h6 mb-0">{{ __('Active Cases') }}</h2>
-                    <span class="badge badge-soft-blue">{{ $activeCount }}</span>
+                    <h2 class="h6 mb-0">{{ __('Awaiting Your Decision') }}</h2>
+                    <span class="badge badge-soft-amber">{{ $pendingClosureCount }}</span>
                 </div>
 
                 <div class="card-body">
-                    @if ($cases->isEmpty())
-                        <p>{{ __('No active cases are assigned to you.') }}</p>
+                    @if ($pendingCases->isEmpty())
+                        <p class="mb-0">{{ __('No closures are waiting on a decision.') }}</p>
                     @else
                         <div class="table-responsive">
                             <table class="table table-striped align-middle">
                                 <caption class="visually-hidden">
-                                    {{ __('Your active cases, with docket number, status, complexity and timeline dates.') }}
+                                    {{ __('Cases proposed for closure, with docket number, assigned investigator and the status a rejection would restore.') }}
                                 </caption>
                                 <thead>
                                     <tr>
                                         <th scope="col">{{ __('Docket No.') }}</th>
                                         <th scope="col">{{ __('Title') }}</th>
-                                        <th scope="col">{{ __('Status') }}</th>
-                                        <th scope="col">{{ __('Complexity') }}</th>
-                                        <th scope="col">{{ __('Date of Docket') }}</th>
-                                        <th scope="col">{{ __('Submission (120th Day)') }}</th>
+                                        {{-- Who the case is assigned to. On a closure a
+                                             supervisor proposed themselves that is not
+                                             the proposer, so this does not claim to be
+                                             one — the audit trail holds that. --}}
+                                        <th scope="col">{{ __('Investigator') }}</th>
+                                        <th scope="col">{{ __('Reverts To') }}</th>
                                         <th scope="col"><span class="visually-hidden">{{ __('Actions') }}</span></th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach ($cases as $case)
-                                        <tr @class([
-                                            'row-pending table-warning' => $case->status === CaseModel::STATUS_PENDING_CLOSURE,
-                                        ])>
-                                            {{-- nowrap: the wrapper already scrolls, so letting a
-                                                 docket number break across four lines on a phone
-                                                 costs legibility and buys nothing. --}}
+                                    @foreach ($pendingCases as $case)
+                                        {{-- No .row-pending tint: every row here is
+                                             pending, so marking them all marks nothing. --}}
+                                        <tr>
                                             <td class="text-nowrap">{{ $case->docket_no }}</td>
                                             <td>{{ $case->case_title }}</td>
-                                            <td>@include('cases.partials.status-badge', ['status' => $case->status])</td>
-                                            <td>
-                                                <span class="weight-meter" aria-hidden="true">
-                                                    @for ($i = 1; $i <= 5; $i++)
-                                                        <span @class(['weight-meter__seg', 'is-filled' => $i <= $case->complexity_weight])></span>
-                                                    @endfor
-                                                </span>
-                                                <span class="text-muted small ms-1" aria-hidden="true">{{ $case->complexity_weight }}</span>
-                                                <span class="visually-hidden">{{ __('Complexity :n of 5', ['n' => $case->complexity_weight]) }}</span>
-                                            </td>
-                                            <td class="text-nowrap">{{ $case->timeline?->date_of_docket?->format('d M Y') ?? '—' }}</td>
-                                            <td class="text-nowrap">{{ $case->timeline?->submission_120th_day?->format('d M Y') ?? '—' }}</td>
+                                            <td>{{ $case->investigator?->full_name ?? '—' }}</td>
+                                            <td>{{ $case->status_before_closure ?? '—' }}</td>
                                             <td class="text-end">
-                                                <a href="{{ route('cases.show', $case) }}" class="btn btn-sm btn-outline-primary">
-                                                    {{ __('View') }}<span class="visually-hidden"> {{ __('case') }} {{ $case->docket_no }}</span>
+                                                <a href="{{ route('cases.closure.review', $case) }}" class="btn btn-sm btn-outline-primary">
+                                                    {{ __('Review') }}<span class="visually-hidden"> {{ __('closure for case') }} {{ $case->docket_no }}</span>
                                                 </a>
                                             </td>
                                         </tr>
@@ -174,9 +172,10 @@
                         </div>
                     @endif
 
-                    {{-- Outside the branch above: an investigator whose cases are all closed still needs the way out. --}}
+                    {{-- Outside the branch: the way through to the full office list is
+                         needed whether or not anything is pending. --}}
                     <p class="mb-0 mt-3">
-                        <a href="{{ route('cases.index') }}">{{ __('View all my cases') }}</a>
+                        <a href="{{ route('cases.index') }}">{{ __('View all cases in the office') }}</a>
                     </p>
                 </div>
             </div>

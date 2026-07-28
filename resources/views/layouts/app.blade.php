@@ -35,7 +35,11 @@
                     <!-- Left Side Of Navbar -->
                     <ul class="navbar-nav me-auto">
                         @auth
-                            @if (Auth::user()->isInvestigator())
+                            {{-- Both case-handling roles get a dashboard at /home now:
+                                 the investigator's own caseload, or the office-wide one.
+                                 Anyone else lands on the plain page and has no use for
+                                 the link. --}}
+                            @if (Auth::user()->hasRole(...App\Models\Role::CASE_HANDLING))
                                 <li class="nav-item">
                                     <a class="nav-link @if (request()->routeIs('home')) active @endif"
                                        @if (request()->routeIs('home')) aria-current="page" @endif

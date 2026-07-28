@@ -131,13 +131,19 @@ class InvestigatorDashboardTest extends TestCase
             ->assertSee($case->docket_no);
     }
 
-    public function test_a_supervisor_is_redirected_to_the_case_list(): void
+    public function test_a_supervisor_gets_their_own_dashboard_instead_of_this_one(): void
     {
         $supervisor = User::factory()->supervisor()->create();
 
+        // /home used to redirect supervisors to the case list; it now serves the
+        // office-wide dashboard. What matters here is only that they do not land
+        // on the investigator page — SupervisorDashboardTest covers what they do
+        // get instead.
         $this->actingAs($supervisor)
             ->get('/home')
-            ->assertRedirect(route('cases.index'));
+            ->assertOk()
+            ->assertDontSee('No active cases are assigned to you.')
+            ->assertDontSee('View all my cases');
     }
 
     public function test_a_user_without_a_case_handling_role_still_sees_the_plain_home_page(): void
