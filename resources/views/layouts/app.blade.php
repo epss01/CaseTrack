@@ -7,7 +7,8 @@
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Laravel') }}</title>
+    {{-- Every page shared one title, so browser tabs were indistinguishable. --}}
+    <title>@hasSection('title')@yield('title') &middot; @endif{{ config('app.name', 'Laravel') }}</title>
 
     <!-- Fonts -->
     <link rel="dns-prefetch" href="//fonts.bunny.net">
@@ -18,9 +19,12 @@
 </head>
 <body>
     <div id="app">
+        <a class="skip-link" href="#content">{{ __('Skip to main content') }}</a>
+
         <nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm">
             <div class="container">
                 <a class="navbar-brand" href="{{ url('/') }}">
+                    <span class="brand-mark" aria-hidden="true">CT</span>
                     {{ config('app.name', 'Laravel') }}
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="{{ __('Toggle navigation') }}">
@@ -31,15 +35,27 @@
                     <!-- Left Side Of Navbar -->
                     <ul class="navbar-nav me-auto">
                         @auth
+                            @if (Auth::user()->isInvestigator())
+                                <li class="nav-item">
+                                    <a class="nav-link @if (request()->routeIs('home')) active @endif"
+                                       @if (request()->routeIs('home')) aria-current="page" @endif
+                                       href="{{ route('home') }}">{{ __('Dashboard') }}</a>
+                                </li>
+                            @endif
+
                             @can('viewAny', App\Models\CaseModel::class)
                                 <li class="nav-item">
-                                    <a class="nav-link" href="{{ route('cases.index') }}">{{ __('Cases') }}</a>
+                                    <a class="nav-link @if (request()->routeIs('cases.*')) active @endif"
+                                       @if (request()->routeIs('cases.*')) aria-current="page" @endif
+                                       href="{{ route('cases.index') }}">{{ __('Cases') }}</a>
                                 </li>
                             @endcan
 
                             @if (Auth::user()->isSupervisor())
                                 <li class="nav-item">
-                                    <a class="nav-link" href="{{ route('workload.index') }}">{{ __('Workload') }}</a>
+                                    <a class="nav-link @if (request()->routeIs('workload.*')) active @endif"
+                                       @if (request()->routeIs('workload.*')) aria-current="page" @endif
+                                       href="{{ route('workload.index') }}">{{ __('Workload') }}</a>
                                 </li>
                             @endif
                         @endauth
@@ -67,14 +83,13 @@
                                 </a>
 
                                 <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                                    <a class="dropdown-item" href="{{ route('logout') }}"
-                                       onclick="event.preventDefault();
-                                                     document.getElementById('logout-form').submit();">
-                                        {{ __('Logout') }}
-                                    </a>
-
-                                    <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                                    {{-- A real submit button, not an anchor pointing at a
+                                         POST-only route: if the script failed to attach, the
+                                         scaffold's version navigated to /logout and 405'd. --}}
+                                    <form action="{{ route('logout') }}" method="POST">
                                         @csrf
+
+                                        <button type="submit" class="dropdown-item">{{ __('Logout') }}</button>
                                     </form>
                                 </div>
                             </li>
@@ -84,7 +99,7 @@
             </div>
         </nav>
 
-        <main class="py-4">
+        <main class="py-4" id="content">
             @yield('content')
         </main>
     </div>

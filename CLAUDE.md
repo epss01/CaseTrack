@@ -10,9 +10,16 @@ NOT an AI/chatbot system. Deterministic, rule-based deadline tracking only.
   resolved against PHP 8.4** — `vendor/composer/platform_check.php` hard-fails anything
   below 8.4.0. **XAMPP's bundled PHP (8.2.12, at `C:\xampp\php\php.exe`) cannot run
   `artisan` at all.** The working binary is Herd Lite:
-  `C:\Users\admin\.config\herd-lite\bin\php.exe`. It is normally on PATH; if a shell
-  reports `php: command not found`, call that absolute path rather than falling back to
-  the XAMPP one.
+  `C:\Users\admin\.config\herd-lite\bin\php.exe`. **It is NOT on PATH** — verified
+  2026-07-28, `Get-Command php` in PowerShell and `php -v` in bash both come back empty.
+  Always invoke it by absolute path; never fall back to the XAMPP one. E.g.:
+
+  ```
+  "C:/Users/admin/.config/herd-lite/bin/php.exe" artisan test
+  ```
+
+  Adding `%USERPROFILE%\.config\herd-lite\bin` to PATH would remove the need for this,
+  but nothing in the repo depends on that being done.
 - Database: MySQL (XAMPP, port 3307 — a separate standalone MySQL 8 runs on 3306; `.env`
   points at the XAMPP instance, database `casetrack`). Tests run on SQLite in-memory
   via `phpunit.xml` — only the test suite uses SQLite, so anything driven through a
@@ -56,6 +63,14 @@ If your local vault lives somewhere else, update `permissions.additionalDirector
 in `.claude/settings.json` to your own absolute path to the vault's
 `CaseTrack/wiki` folder. (Avoid committing your local path change unless the whole
 team moves — or override it in `.claude/settings.local.json`, which is gitignored.)
+
+`.claude/launch.json` — the dev-server config the Browser pane uses — has the same
+problem but no portable form: `runtimeExecutable` must be an absolute path to your PHP
+binary, because the launcher spawns it directly with no shell, so `${env:USERPROFILE}`
+and `~` are passed through literally rather than expanded (tested 2026-07-28). The file
+is therefore **gitignored**, with `.claude/launch.json.example` committed in its place.
+To set up: copy the example to `.claude/launch.json` and replace `runtimeExecutable`
+with your own absolute path to `herd-lite/bin/php.exe`.
 
 ## Core entities (as built — these are the real table/model names)
 The manuscript (Chapter III, Tables 3-4–3-10) uses `auth_user` / `casetrack_*` names.

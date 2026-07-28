@@ -6,3 +6,7 @@
 
 // Bootstrap
 @import 'bootstrap/scss/bootstrap';
+
+// CaseTrack components — after Bootstrap, so it can use its variables and
+// override its output.
+@import 'casetrack';

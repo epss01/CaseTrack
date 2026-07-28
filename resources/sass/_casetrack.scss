@@ -1,0 +1,250 @@
+// CaseTrack components
+//
+// Imported after Bootstrap, so it can lean on Bootstrap's variables and
+// override its output. Everything here is app-specific and has no Bootstrap
+// equivalent worth bending into shape.
+
+// Cards sit on a tinted body background, so a hairline border alone reads flat.
+.card {
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+// The first Tab stop was the brand link on every page, with no way past the nav.
+.skip-link {
+    position: absolute;
+    left: 0.5rem;
+    top: -3rem;
+    z-index: 1050;
+    padding: 0.5rem 0.9rem;
+    border-radius: 0 0 $border-radius-sm $border-radius-sm;
+    background-color: $primary;
+    color: #fff;
+    text-decoration: none;
+    transition: top 0.15s ease-in-out;
+
+    &:focus {
+        top: 0;
+        color: #fff;
+    }
+}
+
+// Navbar: the brand mark, and an indication of which page you are on. Stock
+// Bootstrap gives the active nav link no treatment at all.
+.navbar-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 700;
+}
+
+.brand-mark {
+    display: grid;
+    place-items: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 0.5rem;
+    background: linear-gradient(135deg, $casetrack-navy, $primary);
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.navbar-light .navbar-nav .nav-link {
+    border-radius: $border-radius-sm;
+    padding-inline: 0.75rem;
+
+    &.active {
+        color: $primary;
+        background-color: rgba($primary, 0.08);
+    }
+}
+
+// ---------------------------------------------------------------- identity bar
+
+.identity-bar {
+    background: linear-gradient(135deg, $casetrack-navy 0%, $casetrack-navy-light 100%);
+    border-radius: $border-radius-lg;
+    color: #fff;
+    padding: 1.5rem;
+}
+
+// The h1 leads with the page's purpose and follows with whose caseload it is, so
+// the heading describes where you are rather than only who you are. The eyebrow
+// is small; the name stays the visual anchor.
+.identity-bar__title {
+    margin: 0;
+}
+
+.identity-bar__eyebrow {
+    display: block;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.identity-bar__name {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+.identity-bar__meta {
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 0.8rem;
+}
+
+.identity-bar__divider {
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    margin: 1.25rem 0 1rem;
+}
+
+// A role pill, not a Bootstrap badge — those are too heavy on the dark ground.
+.role-pill {
+    display: inline-block;
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background-color: rgba(255, 255, 255, 0.12);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+// Initials rather than a photo: users has no avatar column and none is planned.
+.avatar-initials {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+
+// ------------------------------------------------------------------ stat tiles
+
+.stat-tile {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+}
+
+.stat-tile__icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: $border-radius-sm;
+    background-color: rgba(255, 255, 255, 0.12);
+
+    svg {
+        width: 1.1rem;
+        height: 1.1rem;
+        color: rgba(255, 255, 255, 0.85);
+    }
+}
+
+.stat-tile__label {
+    display: block;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.stat-tile__value {
+    display: block;
+    font-size: 1.35rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+// Awaiting approval is a subset of the active count, never an addition to it.
+//
+// .72 rather than a fainter tint: at .55 this measured 4.45:1 against the
+// gradient at the leftmost tile position — a real 1.4.3 failure at 375px, where
+// the bar is narrowest and the ground darkest. Font size carries the hierarchy
+// here instead of opacity.
+.stat-tile__note {
+    display: block;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 0.68rem;
+}
+
+// -------------------------------------------------------- status distribution
+
+.legend-dot {
+    display: inline-block;
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    margin-right: 0.35rem;
+    vertical-align: baseline;
+}
+
+// ----------------------------------------------------------------- status tags
+//
+// Soft tints rather than Bootstrap's solid text-bg-* badges, which shout next to
+// the navy bar. Measured against their own backgrounds: blue 7.15:1,
+// slate 6.5:1, amber 6.4:1 (see the note on $casetrack-amber).
+
+.badge-soft-blue {
+    color: $casetrack-blue-text;
+    background-color: $casetrack-blue-bg;
+}
+
+.badge-soft-amber {
+    color: $casetrack-amber;
+    background-color: $casetrack-amber-bg;
+}
+
+.badge-soft-slate {
+    color: $casetrack-slate;
+    background-color: $casetrack-slate-bg;
+}
+
+// The stat tile promises that N cases await approval; without this the table
+// gives those rows nothing to distinguish them and the promise goes unmet.
+//
+// The row tint itself is Bootstrap's .table-warning, applied in the markup:
+// striping sets --bs-table-bg-type through a higher-specificity selector
+// (.table-striped > tbody > tr:nth-of-type(odd) > *), so a custom box-shadow
+// here loses to it silently. Bootstrap's own row variant is designed to compose
+// with striping, so this only adds the edge accent on top of it.
+.row-pending > :first-child {
+    border-left: 3px solid $casetrack-amber;
+}
+
+// --------------------------------------------------------------- weight meter
+//
+// complexity_weight is a 1-5 judgment. A bare digit gave no sense of scale and
+// crowded the neighbouring date column when right-aligned.
+
+.weight-meter {
+    display: inline-flex;
+    gap: 2px;
+    vertical-align: middle;
+}
+
+.weight-meter__seg {
+    width: 0.3rem;
+    height: 0.85rem;
+    border-radius: 1px;
+    // Not a fainter grey: at #e5e9f0 the unfilled segments disappeared against
+    // the row, so a 2-of-5 read as two floating bars with no scale behind them.
+    background-color: #cbd5e1;
+
+    &.is-filled {
+        background-color: $primary;
+    }
+}

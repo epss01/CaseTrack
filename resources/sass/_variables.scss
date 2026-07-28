@@ -5,3 +5,41 @@ $body-bg: #f8fafc;
 $font-family-sans-serif: 'Nunito', sans-serif;
 $font-size-base: 0.9rem;
 $line-height-base: 1.6;
+
+// Brand
+//
+// A deeper blue than Bootstrap's default #0d6efd — this is a Commission
+// case-management tool, and the stock palette reads consumer-web.
+$primary: #1d4ed8;
+
+// Shape
+//
+// Bootstrap defaults to .375rem, which looks sharper than the softer cards the
+// interface is modelled on.
+$border-radius: 0.625rem;
+$border-radius-sm: 0.5rem;
+$border-radius-lg: 0.875rem;
+
+// Chrome
+$card-border-color: #e6ecf3;
+$card-cap-bg: #fff;
+$table-border-color: #eef2f7;
+
+// The identity bar on the investigator dashboard. Not a Bootstrap variable —
+// consumed by _casetrack.scss, which is imported after Bootstrap.
+$casetrack-navy: #102f4f;
+$casetrack-navy-light: #1a4470;
+
+// Status accents. Amber is reserved for Pending Closure, the one status that
+// means "waiting on someone else"; slate is Closed. Every other status draws
+// from the blue ramp in _casetrack.scss, so no free-text status value gets
+// treated as a ratified vocabulary term.
+// #b45309 measured 4.51:1 on the tint below — technically a pass, but a margin of
+// 0.01 does not survive gamma differences between monitors on small bold text.
+// This darker step gives amber the same headroom the blue and slate pairs have.
+$casetrack-amber: #92400e;
+$casetrack-amber-bg: #fef3c7;
+$casetrack-slate: #475569;
+$casetrack-slate-bg: #e9eef5;
+$casetrack-blue-text: #1e40af;
+$casetrack-blue-bg: #dbeafe;
