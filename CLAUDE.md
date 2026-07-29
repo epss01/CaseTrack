@@ -6,9 +6,10 @@ Capstone project (CHR Region VIII use case). Standalone internal web app — NOT
 NOT an AI/chatbot system. Deterministic, rule-based deadline tracking only.
 
 ## Stack
-- Backend: PHP, Laravel 11. `composer.json` declares `"php": "^8.2"`, but **the lock file
-  resolved against PHP 8.4** — `vendor/composer/platform_check.php` hard-fails anything
-  below 8.4.0. **XAMPP's bundled PHP (8.2.12, at `C:\xampp\php\php.exe`) cannot run
+- Backend: PHP, Laravel 11 (`v11.55.0` locked). **Requires PHP 8.4** — `composer.json`
+  declares `"php": "^8.4"` and `vendor/composer/platform_check.php` hard-fails anything
+  below 8.4.0. (Until 2026-07-29 the constraint said `^8.2` while the lock resolved
+  against 8.4; the two now agree.) **XAMPP's bundled PHP (8.2.12, at `C:\xampp\php\php.exe`) cannot run
   `artisan` at all.** The working binary is Herd Lite:
   `C:\Users\admin\.config\herd-lite\bin\php.exe`. **It is NOT on PATH** — verified
   2026-07-28, `Get-Command php` in PowerShell and `php -v` in bash both come back empty.
@@ -26,6 +27,31 @@ NOT an AI/chatbot system. Deterministic, rule-based deadline tracking only.
   browser is hitting the real MySQL database.
 - Frontend: HTML5, CSS3, JavaScript, Bootstrap 5 (`laravel/ui` preset, not Breeze/Tailwind)
 - Local dev: XAMPP for MySQL, Herd Lite for PHP
+- Composer lives beside the PHP binary and is likewise **not on PATH**:
+  `C:\Users\admin\.config\herd-lite\bin\composer.phar`, invoked through the same
+  absolute PHP path. (The `composer.phar` under `AppData\Roaming\Composer` is
+  Composer's own global install dir, not the launcher — don't use it.)
+
+### Dependency security — two advisories accepted, not patched (2026-07-29)
+`composer audit` reports three advisories against `laravel/framework` v11.55.0, which are
+two distinct issues (the CRLF one is listed twice, as GHSA-5vg9-5847-vvmq and again as its
+CVE-2026-48019 entry). **Decision: both accepted unpatched.** Neither is reachable here:
+
+- **CRLF injection in the default `email` validation rule** — nothing in `app/`, `routes/`
+  or `config/` uses the `email` rule. Users have no email column; `routes/web.php` disables
+  the email-based flows outright (`Auth::routes(['reset' => false, 'verify' => false])`)
+  and `RegisterController::validator()` has no email field.
+- **Temporary signed-URL path confusion** — no `signedRoute`, `temporarySignedRoute`,
+  `hasValidSignature`, or `signed` middleware anywhere in the app.
+
+Both advisories list the *entire* 11.x line as affected with fixes only at 12.60.0/12.61.1
+— there is no patched 11.x release, so remediation means a **Laravel 12 major upgrade**.
+Not worth the risk to the `laravel/ui` auth scaffolding and the test suite for issues the
+app cannot reach.
+
+**Revisit when — and only when — either vector is introduced:** an `email` validation rule
+(including re-enabling password reset or email verification), or any signed/temporary URL.
+Adding either makes the upgrade a prerequisite, not a nice-to-have.
 
 ## Project knowledge base
 This repo has a companion Obsidian vault at the path configured in
