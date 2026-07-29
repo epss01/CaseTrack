@@ -190,10 +190,15 @@ column for this reason. Flag this rather than inventing a workaround.
 ## Conventions
 - Follow existing Laravel conventions already in the repo (naming, folder structure, migrations).
 - Write migrations for any schema change; don't hand-edit the database.
-- Keep controllers thin. **Forward guidance:** when the countdown-alert feature is built,
-  put its deadline/date-math in a dedicated `App\Services\CaseDeadlineService` so it's
-  unit-testable. **That class does not exist yet** — `app/Services/` has not been created.
-  Until it does, there is no date math on timeline fields anywhere in the app code.
+- Keep controllers thin. **All deadline/date math lives in `App\Services\CaseDeadlineService`**
+  (built 2026-07-29 with the countdown alerts). It takes a `CaseTimeline` and returns values,
+  with no Eloquent queries of its own, so it is unit-testable without a database.
+  **Nothing outside that class may do date math on a `case_timelines` column** — this is
+  enforced, not just advised: `.claude/hooks/guard-writes.php` fails any file under `app/`
+  that names one of the seven timeline columns *and* calls `addDays`/`subDays`/`diffIn*`/
+  `Carbon::`/`strtotime`. Anything needing a deadline asks the service for it; formatting an
+  already-cast attribute with `->format()` is fine. Read `AlertController` or
+  `ReportController` for the shape this produces.
 - Every new feature that touches case data needs a role/policy check.
 - Every state-changing action on case data should write an audit entry via
   `AuditLog::record($user, $case, $action)` (`$case` may be null for actions not scoped to
@@ -202,6 +207,11 @@ column for this reason. Flag this rather than inventing a workaround.
   (`ACTION_CLOSURE_PROPOSED` / `_CONFIRMED` / `_REJECTED`) do this — **intake and edit
   still do not.** Closure uses a distinct constant per step on purpose: a trail that can't
   tell a request from an approval can't say who asked for a case to be closed.
+  One deliberate exception to "state-changing": `ACTION_EXPORTED` records a **read** — the
+  CSV download at `/reports/export`, which takes case data out of the system. It has a null
+  `case_id` (an export spans a filtered set) and no `DB::transaction()`, being a lone insert
+  with nothing to roll back beside it. Viewing the same listing as a page is **not** audited;
+  logging page views would bury the entries that record actual changes.
 - Share validation rules rather than duplicating them across requests — see
   `Role::assignableInvestigatorRule()` and `CaseModel::complexityWeightRules()`.
 
