@@ -3,6 +3,7 @@
 use App\Http\Controllers\AlertController;
 use App\Http\Controllers\CaseController;
 use App\Http\Controllers\CaseTimelineController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\WorkloadController;
 use Illuminate\Support\Facades\Route;
 
@@ -53,6 +54,20 @@ Route::middleware(['auth', 'role:Investigator,Supervisor'])->group(function () {
     // exactly as /cases is, and like /workload it is a list page with no
     // per-case decision to make, so the middleware carries it alone.
     Route::get('alerts', [AlertController::class, 'index'])->name('alerts.index');
+
+    // The case listing, filtered and exportable. Scoped by
+    // CaseModel::scopeVisibleTo() like /cases and /alerts, which is also what
+    // makes the investigator-level and office-wide reports one route: the
+    // audience follows from who is asking. A list page with no per-case
+    // decision, so the middleware carries it alone.
+    // export is registered first so it is matched as its own path rather than
+    // read as a report identifier.
+    Route::get('reports/export', [ReportController::class, 'export'])->name('reports.export');
+    Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+
+    // The one report that resolves a single case, so the one gated by
+    // CaseModelPolicy::view() as well as by the middleware.
+    Route::get('reports/cases/{case}', [ReportController::class, 'show'])->name('reports.show');
 });
 
 // The workload picture, and where performance ratings are set. Supervisor-only

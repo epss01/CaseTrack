@@ -11,9 +11,12 @@
 @endphp
 
 @section('content')
-<div class="container">
+{{-- Wider than the app's default shell, matching /reports: this page is a
+     table first, and .container's 1320px cap left a third of a wide screen
+     empty. --}}
+<div class="container-fluid container-wide">
     <div class="row justify-content-center">
-        <div class="col-lg-11 col-xl-10">
+        <div class="col-12">
 
             {{-- What the page covers, and the caseload in four figures. Same
                  identity bar and stat tiles as the two dashboards: this is a
@@ -97,7 +100,7 @@
                         <p class="mb-0">{{ __('No deadline needs attention.') }}</p>
                     @else
                         <div class="table-responsive">
-                            <table class="table table-striped align-middle">
+                            <table class="table table-striped align-middle table-data">
                                 <caption class="visually-hidden">
                                     {{ __('Cases with a statutory deadline that has passed or falls within the next :n days, soonest first.', ['n' => CaseDeadlineService::WARNING_WINDOW_DAYS]) }}
                                 </caption>
@@ -125,13 +128,15 @@
                                         <tr @class([
                                             'row-pending table-warning' => $milestone['status'] === CaseDeadlineService::STATUS_OVERDUE,
                                         ])>
-                                            {{-- nowrap for the same reason the dashboard uses it: the
-                                                 wrapper already scrolls, so breaking a docket number
-                                                 across four lines costs legibility and buys nothing. --}}
+                                            {{-- nowrap only where breaking the value costs more
+                                                 than the width does: a docket number is an
+                                                 identifier and reads badly split. A name is not,
+                                                 and holding it on one line cost ~90px that the
+                                                 title column was paying for. --}}
                                             <td class="text-nowrap">{{ $case->docket_no }}</td>
                                             <td>{{ $case->case_title }}</td>
                                             @if ($officeWide)
-                                                <td class="text-nowrap">{{ $case->investigator?->full_name ?? '—' }}</td>
+                                                <td>{{ $case->investigator?->full_name ?? '—' }}</td>
                                             @endif
                                             <td class="text-nowrap">{{ __($milestone['label']) }}</td>
                                             <td class="text-nowrap">{{ $milestone['deadline']->format('d M Y') }}</td>

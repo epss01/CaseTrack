@@ -27,6 +27,17 @@ class AuditLog extends Model
 
     public const ACTION_CLOSURE_REJECTED = 'CLOSURE_REJECTED';
 
+    /**
+     * A case listing downloaded as a file.
+     *
+     * The one entry here that records a read rather than a change. Case data
+     * leaving the system in a file is the access question worth being able to
+     * answer later; viewing the same listing in a page is not, or the trail
+     * would fill with page views and stop being readable. Carries a null
+     * case_id — an export spans a filtered set, not one case.
+     */
+    public const ACTION_EXPORTED = 'EXPORTED';
+
     const UPDATED_AT = null;
     const CREATED_AT = 'timestamp';
 

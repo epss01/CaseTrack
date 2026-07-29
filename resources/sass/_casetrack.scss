@@ -230,6 +230,64 @@
     border-left: 3px solid $casetrack-amber;
 }
 
+// ------------------------------------------------------------------ wide pages
+//
+// The pages built around a case table want the width. Bootstrap's .container
+// caps at 1320px and the grid column inside it gave back another 10%, so a
+// 1920px screen rendered 1043px of table and left the rest empty — the columns
+// fitted but read cramped.
+//
+// Capped rather than full-bleed, and padded rather than flush. Two separate
+// jobs: the cap stops a row getting so wide the eye loses which one it is on
+// tracking from a docket number to a deadline, while the padding keeps the
+// card off the window edge at the widths below the cap, where container-fluid
+// would otherwise leave only the 12px gutter.
+.container-wide {
+    max-width: 1400px;
+    padding-inline: 2rem;
+}
+
+// ----------------------------------------------------------------- data tables
+//
+// The case tables share one shape: a scrolling wrapper, a row per case, and a
+// trailing action button. They shared a fault too. Every data cell carried
+// .text-nowrap, so each column's minimum width was its longest string and the
+// table could not respond to its container at all — measured at a 1280px
+// viewport the reports table demanded 1281px inside an 893px wrapper, pushing
+// the View button 388px out of reach. Worse, the one column that could wrap
+// (Title) absorbed the entire squeeze and rendered at 79px.
+//
+// The fix is mostly in the markup, where .text-nowrap now marks only the values
+// that read worse broken than wrapped: docket numbers, dates and badges. What is
+// left here is what markup cannot say.
+
+.table-data {
+    // A title with no spaces in it — a docket reference, a pasted URL — would
+    // otherwise set a minimum width no container could satisfy. Breaking mid-word
+    // is ugly; a table that scrolls sideways is worse, and nothing is hidden.
+    td {
+        overflow-wrap: anywhere;
+    }
+
+    // The action column takes its content's width and no more. `width: 1%` is
+    // the auto-layout idiom for "give this column its minimum" — the browser
+    // cannot honour 1% without breaking the content, so it settles at the button.
+    // It is not a real percentage, and it is what keeps the button from ever
+    // being the column that pays for a long title.
+    :is(th, td):last-child {
+        width: 1%;
+        white-space: nowrap;
+    }
+}
+
+// A deadline and the submission that discharges it, in one cell: the pair is one
+// fact about a case, and splitting it across two columns cost 80px of width to
+// say something the reader then had to reassemble.
+.cell-sub {
+    display: block;
+    font-size: 0.78rem;
+}
+
 // --------------------------------------------------------------- weight meter
 //
 // complexity_weight is a 1-5 judgment. A bare digit gave no sense of scale and

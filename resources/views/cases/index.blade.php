@@ -32,7 +32,7 @@
                         <p class="mb-0">{{ __('No cases to show.') }}</p>
                     @else
                         <div class="table-responsive">
-                            <table class="table table-striped align-middle">
+                            <table class="table table-striped align-middle table-data">
                                 <caption class="visually-hidden">{{ __('Cases, with docket number, title and status.') }}</caption>
                                 <thead>
                                     <tr>

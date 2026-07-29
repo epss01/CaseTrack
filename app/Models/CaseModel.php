@@ -126,6 +126,47 @@ class CaseModel extends Model
             : $query->where('investigator_id', $user->id);
     }
 
+    /**
+     * Narrow the query to the report filters the user asked for.
+     *
+     * A scope rather than controller code so every report — the listing, the
+     * CSV, the per-case page — filters through one definition, the way
+     * scopeVisibleTo() gives them all one answer to who may see what. An absent
+     * or empty filter drops out via when(), so no filter means the whole
+     * visible set.
+     *
+     * The date range reads case_timelines.date_of_docket, which is the only
+     * date a case is guaranteed to have. That has a consequence worth stating:
+     * a case with no timeline row cannot satisfy a date filter and disappears
+     * from the results, so a filtered report must report that count separately
+     * rather than let the cases vanish silently — the same call /alerts makes
+     * with its untracked tile.
+     *
+     * The dates arrive as validated strings and are handed to the query as
+     * they are. Parsing them here would be date math on a case_timelines
+     * column outside CaseDeadlineService (CLAUDE.md, Conventions).
+     *
+     * whereDate() rather than a plain comparison, and it is not cosmetic: the
+     * date cast on CaseTimeline stores date_of_docket as '2026-03-31 00:00:00',
+     * which string-compares greater than '2026-03-31' and drops the last day of
+     * every range. MySQL's real DATE column hides that; the SQLite the tests
+     * run on does not. whereDate() normalizes both sides on either driver.
+     *
+     * @param  array<string, mixed>  $filters
+     */
+    public function scopeFilteredBy(Builder $query, array $filters): Builder
+    {
+        return $query
+            ->when($filters['investigator_id'] ?? null, fn (Builder $q, $id) => $q->where('investigator_id', $id))
+            ->when($filters['status'] ?? null, fn (Builder $q, $status) => $q->where('status', $status))
+            ->when($filters['from'] ?? null, fn (Builder $q, $from) => $q->whereHas(
+                'timeline', fn (Builder $timeline) => $timeline->whereDate('date_of_docket', '>=', $from)
+            ))
+            ->when($filters['to'] ?? null, fn (Builder $q, $to) => $q->whereHas(
+                'timeline', fn (Builder $timeline) => $timeline->whereDate('date_of_docket', '<=', $to)
+            ));
+    }
+
     public function investigator()
     {
         return $this->belongsTo(User::class, 'investigator_id');
