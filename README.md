@@ -7,7 +7,7 @@ CaseTrack is a Laravel 11 application scaffolded with authentication views built
 - **Framework:** Laravel 11 (PHP)
 - **Auth scaffolding:** `laravel/ui` (Blade views + Bootstrap 5)
 - **Frontend build:** Vite + Sass (compiles `resources/sass/app.scss`)
-- **Database:** SQLite by default (see [Database](#database) below to switch to MySQL/Postgres)
+- **Database:** MySQL — the test suite runs on in-memory SQLite instead (see step 6)
 
 ## Prerequisites
 
@@ -15,10 +15,17 @@ Make sure these are installed before setting up the project:
 
 | Tool | Version |
 |---|---|
-| PHP | 8.2+ |
+| PHP | **8.4+** |
 | Composer | 2.x |
 | Node.js | 18+ (LTS recommended) |
 | npm | 9+ |
+| MySQL | 8.x |
+
+**PHP 8.4 is a hard requirement, not a recommendation** — despite `composer.json` declaring
+`"php": "^8.2"`. The lock file resolved against 8.4, and `vendor/composer/platform_check.php`
+aborts with a 500 on anything below `8.4.0`. XAMPP's bundled PHP 8.2.12 therefore cannot run
+`artisan` at all, so if you use XAMPP for MySQL you still need a separate PHP. If `php -v`
+reports below 8.4, install a newer one rather than working around it.
 
 ## Setup Instructions (fresh clone)
 
@@ -55,14 +62,31 @@ Make sure these are installed before setting up the project:
 
 6. **Set up the database**
 
-   The project defaults to SQLite, which needs no server setup. Create the database file, then run migrations:
+   The app runs on **MySQL**. `.env.example` still carries Laravel's stock SQLite default, so
+   copying it in step 4 leaves you on the wrong database — set these values in your `.env`:
+
+   ```dotenv
+   DB_CONNECTION=mysql
+   DB_HOST=127.0.0.1
+   DB_PORT=3307
+   DB_DATABASE=casetrack
+   DB_USERNAME=root
+   DB_PASSWORD=
+   ```
+
+   `3307` is where XAMPP's MySQL listens on this project's setup, because a separate standalone
+   MySQL 8 already holds the default `3306`. Check which port your own MySQL uses and set that.
+
+   Create the schema (via phpMyAdmin, or `CREATE DATABASE casetrack;`), then run the migrations:
 
    ```bash
-   touch database/database.sqlite
    php artisan migrate
    ```
 
-   If you'd rather use MySQL/Postgres, update `DB_CONNECTION` and the `DB_*` values in `.env`, then run `php artisan migrate`.
+   **The test suite never touches this database.** `phpunit.xml` pins `DB_CONNECTION=sqlite` and
+   `DB_DATABASE=:memory:`, so `php artisan test` builds a fresh in-memory SQLite database on every
+   run. Only what you drive through a browser reaches the MySQL one — worth remembering when a
+   query behaves differently under test than it does in the app.
 
 7. **Build front-end assets**
 
