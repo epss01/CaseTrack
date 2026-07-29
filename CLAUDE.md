@@ -218,4 +218,10 @@ column for this reason. Flag this rather than inventing a workaround.
 ## Workflow notes
 - Work in small, single-feature increments (one controller/feature/migration at a time).
 - After generating code, run `php artisan test` before moving to the next task.
+- **Changed anything under `resources/sass/` or `resources/js/`? Run `npm run build`.**
+  `public/build` is gitignored, so compiled assets exist only where they were built, and a
+  *stale* build fails silently — the page renders with the previous build's CSS and the change
+  just doesn't appear. `tests/Feature/AssetsAreBuiltTest.php` fails when the build is missing
+  or older than its source, so the suite catches it; that test skips itself while `npm run dev`
+  is running. Blade, PHP and routes are read at request time and need no rebuild.
 - Flag any assumption you make about a field or rule instead of guessing silently.

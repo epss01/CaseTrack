@@ -110,6 +110,34 @@ reports below 8.4, install a newer one rather than working around it.
 
    Visit [http://127.0.0.1:8000](http://127.0.0.1:8000) — it redirects to `/login`. Use `/register` to create an account.
 
+## Pulling changes into an existing clone
+
+`public/build` is **not committed** (see `.gitignore`), so compiled CSS and JS exist only on
+machines that have built them. After pulling a branch, rebuild before trusting what you see:
+
+```bash
+composer install
+npm install
+php artisan migrate
+npm run build
+```
+
+For day-to-day local work `npm run dev` replaces the last step and rebuilds as you edit.
+
+**Why this matters more than it sounds.** A *missing* build fails loudly — Laravel throws
+`Vite manifest not found` on the first page load, so you cannot miss it. A *stale* build does
+not: the page renders perfectly using the previous build's CSS, so a styling change that
+landed in the branch simply does not appear, and nothing tells you why. It looks like the
+change is broken rather than unbuilt.
+
+`php artisan test` carries a guard for exactly this (`tests/Feature/AssetsAreBuiltTest.php`).
+It fails when `public/build` is missing or older than the newest file under `resources/sass`
+or `resources/js`, names the file involved, and tells you what to run. It skips itself while
+`npm run dev` is running, since the dev server serves assets from memory.
+
+Only `resources/sass/**` and `resources/js/**` are compiled. Blade templates, PHP classes and
+routes are read at request time and never need a rebuild.
+
 ## Project Structure
 
 Standard Laravel 11 layout:
@@ -127,6 +155,7 @@ Standard Laravel 11 layout:
 ```bash
 php artisan migrate:fresh   # reset the database
 php artisan route:list      # list all routes
-php artisan test            # run the test suite
-npm run build                # rebuild assets after Bootstrap/SCSS changes
+php artisan test            # run the test suite (also checks assets are built and current)
+npm run build               # rebuild assets after a change under resources/sass or resources/js
+npm run dev                 # watch and rebuild while developing
 ```
