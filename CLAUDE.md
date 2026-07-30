@@ -229,10 +229,19 @@ column for this reason. Flag this rather than inventing a workaround.
 - Every state-changing action on case data should write an audit entry via
   `AuditLog::record($user, $case, $action)` (`$case` may be null for actions not scoped to
   one case, like a rating change), called **inside** the action's `DB::transaction()`.
-  Today: delete, reassign, performance-rating changes, and all three closure steps
-  (`ACTION_CLOSURE_PROPOSED` / `_CONFIRMED` / `_REJECTED`) do this — **intake and edit
-  still do not.** Closure uses a distinct constant per step on purpose: a trail that can't
-  tell a request from an approval can't say who asked for a case to be closed.
+  **Every state-changing site now does this** (closed 2026-07-30): intake
+  (`ACTION_CREATE`), ordinary edits (`ACTION_EDIT`), Set Timeline
+  (`ACTION_TIMELINE_UPDATE`), delete, reassign, performance-rating changes, and all three
+  closure steps (`ACTION_CLOSURE_PROPOSED` / `_CONFIRMED` / `_REJECTED`).
+  **The constant carries the whole meaning** — `audit_logs` has no diff column and no
+  field list, so an act the constant doesn't name is unrecoverable from the trail. Hence a
+  distinct constant per closure step (a trail that can't tell a request from an approval
+  can't say who asked for a case to be closed), and hence `ACTION_EDIT` rather than reusing
+  `ACTION_UPDATE`. Note the historical split: **`ACTION_UPDATE` means a reassignment**
+  (and, with a null `case_id`, a rating change) — it predates `ACTION_EDIT` and was left
+  where it was rather than renamed. Don't collapse the two.
+  One site is a known wart: `WorkloadController` records its rating change **outside** any
+  transaction.
   One deliberate exception to "state-changing": `ACTION_EXPORTED` records a **read** — the
   CSV download at `/reports/export`, which takes case data out of the system. It has a null
   `case_id` (an export spans a filtered set) and no `DB::transaction()`, being a lone insert

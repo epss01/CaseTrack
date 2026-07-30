@@ -39,9 +39,9 @@ user account — that's authentication, outside the case-data trail.
 Audited: `CaseController::destroy` (DELETE), `CaseController::reassign`
 (UPDATE), `WorkloadController::update` (UPDATE, with a null case).
 
-Not audited: `CaseController::store` (intake — case, parties and timeline),
-`CaseController::update` (edit), `CaseTimelineController::update` (milestone
-dates).
+Also audited since 2026-07-30: `CaseController::store` (CREATE),
+`CaseController::update` (EDIT), `CaseTimelineController::update`
+(TIMELINE_UPDATE) — the last three gaps, now closed. No known gap remains.
 
 Treat this as a starting map, not the answer — verify it against the code as
 it is now, and say so if it has moved.
@@ -54,10 +54,10 @@ COVERED (3)
   ...
 
 GAPS (n)
-  CaseController::store            creates cases + victims + respondents + timeline
-                                   → no audit entry. Highest-value gap: intake is
-                                     the origin of every case and nothing records who
-                                     docketed it.
+  <a state-changing site with no AuditLog::record() at all, e.g.>
+  SomeController::action            what it mutates → no audit entry, and what
+                                     that means: which question about the case
+                                     the trail can no longer answer.
   ...
 
 WEAK (n)

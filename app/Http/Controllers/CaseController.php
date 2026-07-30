@@ -82,6 +82,8 @@ class CaseController extends Controller
                 'date_of_docket' => $request->validated('date_of_docket'),
             ]);
 
+            AuditLog::record($request->user(), $case, AuditLog::ACTION_CREATE);
+
             return $case;
         });
 
@@ -115,6 +117,9 @@ class CaseController extends Controller
      * reassigning a case is a supervisory action, not part of casework, and
      * lives in reassign() below. The closure states are off limits for the
      * same reason — see CaseModel::statusRulesFor().
+     *
+     * Audited as ACTION_EDIT rather than ACTION_UPDATE, which reassign() has
+     * already taken.
      */
     public function update(Request $request, CaseModel $case)
     {
@@ -126,7 +131,11 @@ class CaseController extends Controller
             'complexity_weight' => CaseModel::complexityWeightRules(),
         ]);
 
-        $case->update($validated);
+        DB::transaction(function () use ($request, $case, $validated) {
+            $case->update($validated);
+
+            AuditLog::record($request->user(), $case, AuditLog::ACTION_EDIT);
+        });
 
         return redirect()
             ->route('cases.show', $case)

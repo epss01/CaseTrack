@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\AuditLog;
 use App\Models\CaseModel;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -329,6 +330,43 @@ class CaseIntakeTest extends TestCase
         $this->assertDatabaseCount('cases', 0);
         $this->assertDatabaseCount('victims', 0);
         $this->assertDatabaseCount('respondents', 0);
+    }
+
+    // ----------------------------------------------------------------- audit
+
+    public function test_docketing_a_case_is_audited(): void
+    {
+        $investigator = User::factory()->investigator()->create();
+
+        $this->actingAs($investigator)
+            ->post(route('cases.store'), $this->intakePayload())
+            ->assertSessionHasNoErrors();
+
+        $case = CaseModel::where('docket_no', 'CHR-VIII-2026-0100')->firstOrFail();
+
+        $this->assertDatabaseHas('audit_logs', [
+            'user_id' => $investigator->id,
+            'case_id' => $case->id,
+            'action_performed' => AuditLog::ACTION_CREATE,
+        ]);
+    }
+
+    /**
+     * The entry lives in the same transaction as the case it describes, so a
+     * rejected intake leaves no trace of a case that was never docketed.
+     */
+    public function test_a_rejected_intake_writes_no_audit_entry(): void
+    {
+        $investigator = User::factory()->investigator()->create();
+
+        $this->actingAs($investigator)
+            ->post(route('cases.store'), $this->intakePayload([
+                'respondents' => [['name' => '', 'age' => 'not-a-number', 'status' => '', 'sector' => 'PNP']],
+            ]))
+            ->assertSessionHasErrors();
+
+        $this->assertDatabaseCount('cases', 0);
+        $this->assertDatabaseCount('audit_logs', 0);
     }
 
     public function test_a_user_without_a_case_handling_role_cannot_reach_intake(): void

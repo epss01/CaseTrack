@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\AuditLog;
 use App\Models\CaseModel;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -173,6 +174,43 @@ class CaseTimelineTest extends TestCase
             ->assertForbidden();
 
         $this->assertNull($case->fresh()->timeline->date_submitted_to);
+        $this->assertDatabaseCount('audit_logs', 0);
+    }
+
+    // ----------------------------------------------------------------- audit
+
+    public function test_setting_the_timeline_is_audited(): void
+    {
+        $investigator = User::factory()->investigator()->create();
+        $case = CaseModel::factory()->assignedTo($investigator)->create();
+        $case->timeline()->create(['date_of_docket' => '2026-06-12']);
+
+        $this->actingAs($investigator)
+            ->put(route('cases.timeline.update', $case), $this->timelinePayload())
+            ->assertSessionHasNoErrors();
+
+        // Against the parent case: the milestones are what the 30/60/120-day
+        // alerts read, so who moved them is a question about the case.
+        $this->assertDatabaseHas('audit_logs', [
+            'user_id' => $investigator->id,
+            'case_id' => $case->id,
+            'action_performed' => AuditLog::ACTION_TIMELINE_UPDATE,
+        ]);
+    }
+
+    public function test_a_rejected_timeline_edit_writes_no_audit_entry(): void
+    {
+        $investigator = User::factory()->investigator()->create();
+        $case = CaseModel::factory()->assignedTo($investigator)->create();
+        $case->timeline()->create(['date_of_docket' => '2026-06-12']);
+
+        $this->actingAs($investigator)
+            ->put(route('cases.timeline.update', $case), $this->timelinePayload([
+                'date_of_docket' => '',
+            ]))
+            ->assertSessionHasErrors('date_of_docket');
+
+        $this->assertDatabaseCount('audit_logs', 0);
     }
 
     public function test_guests_are_redirected_to_the_login_screen(): void

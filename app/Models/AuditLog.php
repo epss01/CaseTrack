@@ -17,6 +17,29 @@ class AuditLog extends Model
     public const ACTION_DELETE = 'DELETE';
 
     /**
+     * A case docketed at intake — the origin of every case record.
+     */
+    public const ACTION_CREATE = 'CREATE';
+
+    /**
+     * A field edit through the ordinary edit form.
+     *
+     * Kept apart from ACTION_UPDATE, which predates it and still marks a
+     * reassignment (and a performance-rating change, with a null case_id) — a
+     * trail that cannot tell "the title was corrected" from "the case changed
+     * hands" cannot say who moved a case.
+     */
+    public const ACTION_EDIT = 'EDIT';
+
+    /**
+     * A statutory milestone date set or moved via Set Timeline.
+     *
+     * Distinct from ACTION_EDIT: the 30/60/120-day deadlines are computed off
+     * these columns, so moving one moves what the system reports as overdue.
+     */
+    public const ACTION_TIMELINE_UPDATE = 'TIMELINE_UPDATE';
+
+    /**
      * The two halves of maker-checker on case closure, kept apart on purpose:
      * a trail that cannot tell a request from an approval cannot answer who
      * asked for a case to be closed, only that it was.

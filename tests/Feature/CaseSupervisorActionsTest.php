@@ -254,6 +254,70 @@ class CaseSupervisorActionsTest extends TestCase
         $this->assertSame('CHR-VIII-2026-0400', $case->docket_no);
     }
 
+    public function test_an_ordinary_edit_is_audited(): void
+    {
+        $investigator = User::factory()->investigator()->create();
+        $case = CaseModel::factory()->assignedTo($investigator)->create(['status' => 'Docketed']);
+
+        $this->actingAs($investigator)
+            ->put(route('cases.update', $case), [
+                'case_title' => 'Corrected title',
+                'incident_details' => 'Corrected details',
+                'status' => 'Under investigation',
+                'complexity_weight' => 4,
+            ])
+            ->assertRedirect(route('cases.show', $case))
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame('Corrected title', $case->fresh()->case_title);
+
+        $this->assertDatabaseHas('audit_logs', [
+            'user_id' => $investigator->id,
+            'case_id' => $case->id,
+            'action_performed' => AuditLog::ACTION_EDIT,
+        ]);
+    }
+
+    /**
+     * The two acts stay apart in the trail. Collapsing ACTION_EDIT back into
+     * ACTION_UPDATE would leave "the title was corrected" and "the case
+     * changed hands" reading identically.
+     */
+    public function test_an_edit_and_a_reassignment_are_not_the_same_entry(): void
+    {
+        $supervisor = User::factory()->supervisor()->create();
+        $replacement = User::factory()->investigator()->create();
+        $case = CaseModel::factory()->create(['docket_no' => 'CHR-VIII-2026-0400']);
+
+        $this->actingAs($supervisor)
+            ->put(route('cases.reassign.update', $case), [
+                'investigator_id' => $replacement->id,
+                'docket_no' => 'CHR-VIII-2026-0400',
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('audit_logs', ['action_performed' => AuditLog::ACTION_UPDATE]);
+        $this->assertDatabaseMissing('audit_logs', ['action_performed' => AuditLog::ACTION_EDIT]);
+    }
+
+    public function test_a_rejected_edit_writes_no_audit_entry(): void
+    {
+        $investigator = User::factory()->investigator()->create();
+        $case = CaseModel::factory()->assignedTo($investigator)->create(['case_title' => 'Original title']);
+
+        $this->actingAs($investigator)
+            ->put(route('cases.update', $case), [
+                'case_title' => '',
+                'incident_details' => 'Corrected details',
+                'status' => 'Under investigation',
+                'complexity_weight' => 4,
+            ])
+            ->assertSessionHasErrors('case_title');
+
+        $this->assertSame('Original title', $case->fresh()->case_title);
+        $this->assertDatabaseCount('audit_logs', 0);
+    }
+
     // ------------------------------------------------------------------ misc
 
     public function test_a_user_without_a_case_handling_role_is_blocked_by_middleware(): void

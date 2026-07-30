@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\UpdateCaseTimelineRequest;
+use App\Models\AuditLog;
 use App\Models\CaseModel;
+use Illuminate\Support\Facades\DB;
 
 /**
  * The timeline-tracking milestones for a case.
@@ -41,15 +43,22 @@ class CaseTimelineController extends Controller
      *
      * updateOrCreate covers cases docketed before intake started writing a
      * timeline row, which would otherwise have nothing to update.
+     *
+     * Audited against the parent case: audit_logs is keyed to cases, and the
+     * timeline is 1:1 with one anyway.
      */
     public function update(UpdateCaseTimelineRequest $request, CaseModel $case)
     {
         $this->authorize('update', $case);
 
-        $case->timeline()->updateOrCreate(
-            ['case_id' => $case->id],
-            $request->validated()
-        );
+        DB::transaction(function () use ($request, $case) {
+            $case->timeline()->updateOrCreate(
+                ['case_id' => $case->id],
+                $request->validated()
+            );
+
+            AuditLog::record($request->user(), $case, AuditLog::ACTION_TIMELINE_UPDATE);
+        });
 
         return redirect()
             ->route('cases.show', $case)
