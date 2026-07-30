@@ -2,6 +2,11 @@
 
 CaseTrack is a Laravel 11 application scaffolded with authentication views built on **Bootstrap 5** (via [laravel/ui](https://github.com/laravel/ui)) rather than Tailwind, per the project proposal.
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the branching strategy — `main` is checkpoint-only,
+`develop` is the working trunk, features branch off `develop`.
+
 ## Tech Stack
 
 - **Framework:** Laravel 11 (PHP)
