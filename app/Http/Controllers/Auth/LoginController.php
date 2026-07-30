@@ -37,4 +37,16 @@ class LoginController extends Controller
         $this->middleware('guest')->except('logout');
         $this->middleware('auth')->only('logout');
     }
+
+    /**
+     * Get the login username to be used by the controller.
+     *
+     * Users are identified by username; the schema has no email column.
+     *
+     * @return string
+     */
+    public function username()
+    {
+        return 'username';
+    }
 }

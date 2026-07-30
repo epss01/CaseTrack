@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "additionalDirectories": [
+      "C:/Users/admin/Downloads/Capstone_CaseTrack/CaseTrack_Vault/CaseTrack/wiki",
+      "C:/Users/admin/Downloads/Capstone_CaseTrack/CaseTrack_Vault/CaseTrack/raw/sessions"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "php \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-writes.php\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "php \"$CLAUDE_PROJECT_DIR/.claude/hooks/run-tests.php\"",
+            "timeout": 180
+          }
+        ]
+      }
+    ]
+  }
+}
