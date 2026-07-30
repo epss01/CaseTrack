@@ -3,7 +3,9 @@
 use App\Http\Controllers\AlertController;
 use App\Http\Controllers\CaseController;
 use App\Http\Controllers\CaseTimelineController;
+use App\Http\Controllers\RegistrationApprovalController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\UserAccountController;
 use App\Http\Controllers\WorkloadController;
 use Illuminate\Support\Facades\Route;
 
@@ -77,4 +79,18 @@ Route::middleware(['auth', 'role:Supervisor'])->group(function () {
     Route::get('workload', [WorkloadController::class, 'index'])->name('workload.index');
     Route::put('workload/{investigator}', [WorkloadController::class, 'update'])
         ->name('workload.update');
+});
+
+// Identity/access administration: registration approval and account
+// management. Admin-only, middleware alone carries it — like /workload,
+// nothing here is a per-case decision for CaseModelPolicy to make.
+Route::middleware(['auth', 'role:Admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('registrations', [RegistrationApprovalController::class, 'index'])->name('registrations.index');
+    Route::put('registrations/{user}/approve', [RegistrationApprovalController::class, 'approve'])->name('registrations.approve');
+    Route::put('registrations/{user}/reject', [RegistrationApprovalController::class, 'reject'])->name('registrations.reject');
+
+    Route::get('users', [UserAccountController::class, 'index'])->name('users.index');
+    Route::put('users/{user}/active', [UserAccountController::class, 'updateActive'])->name('users.active');
+    Route::put('users/{user}/role', [UserAccountController::class, 'updateRole'])->name('users.role');
+    Route::put('users/{user}/password', [UserAccountController::class, 'updatePassword'])->name('users.password');
 });

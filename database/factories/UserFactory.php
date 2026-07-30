@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Role;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -35,6 +36,11 @@ class UserFactory extends Factory
             'performance_rating' => 1.0,
             'role_id' => fn () => Role::default()->id,
             'remember_token' => Str::random(10),
+            // Factory users are approved and active by default so every
+            // existing test that logs one in keeps working unchanged; tests
+            // for the pending/rejected/inactive paths override explicitly.
+            'registration_status' => User::REGISTRATION_APPROVED,
+            'is_active' => true,
         ];
     }
 
@@ -54,6 +60,14 @@ class UserFactory extends Factory
         return $this->withRole(Role::SUPERVISOR)->state(fn (array $attributes) => [
             'is_staff' => true,
         ]);
+    }
+
+    /**
+     * Indicate that the user administers accounts and registrations.
+     */
+    public function admin(): static
+    {
+        return $this->withRole(Role::ADMIN);
     }
 
     /**

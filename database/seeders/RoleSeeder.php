@@ -12,7 +12,7 @@ class RoleSeeder extends Seeder
      */
     public function run(): void
     {
-        foreach (Role::CASE_HANDLING as $roleName) {
+        foreach (Role::ALL as $roleName) {
             Role::firstOrCreate(['role_name' => $roleName]);
         }
     }

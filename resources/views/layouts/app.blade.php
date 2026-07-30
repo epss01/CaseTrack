@@ -91,6 +91,19 @@
                                        href="{{ route('workload.index') }}">{{ __('Workload') }}</a>
                                 </li>
                             @endif
+
+                            @if (Auth::user()->isAdmin())
+                                <li class="nav-item">
+                                    <a class="nav-link @if (request()->routeIs('admin.registrations.*')) active @endif"
+                                       @if (request()->routeIs('admin.registrations.*')) aria-current="page" @endif
+                                       href="{{ route('admin.registrations.index') }}">{{ __('Registrations') }}</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link @if (request()->routeIs('admin.users.*')) active @endif"
+                                       @if (request()->routeIs('admin.users.*')) aria-current="page" @endif
+                                       href="{{ route('admin.users.index') }}">{{ __('Accounts') }}</a>
+                                </li>
+                            @endif
                         @endauth
                     </ul>
 
