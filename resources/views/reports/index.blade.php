@@ -213,7 +213,7 @@
                                         @if ($officeWide)
                                             <th scope="col">{{ __('Investigator') }}</th>
                                         @endif
-                                        <th scope="col">{{ __('Weight') }}</th>
+                                        <th scope="col">{{ __('Complexity') }}</th>
                                         <th scope="col">{{ __('Docketed') }}</th>
                                         <th scope="col">{{ __('30-day (ROP)') }}</th>
                                         <th scope="col">{{ __('120-day (FIR)') }}</th>

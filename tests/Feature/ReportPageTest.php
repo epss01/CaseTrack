@@ -281,7 +281,7 @@ class ReportPageTest extends TestCase
             ->get('/reports')
             ->assertOk()
             ->assertSeeInOrder([
-                __('Docket No.'), __('Title'), __('Status'), __('Weight'),
+                __('Docket No.'), __('Title'), __('Status'), __('Complexity'),
                 __('Docketed'), __('30-day (ROP)'), __('120-day (FIR)'),
             ])
             // Paired into the two deadline columns rather than given columns
