@@ -152,13 +152,7 @@
                                             <td>{{ $case->case_title }}</td>
                                             <td>@include('cases.partials.status-badge', ['status' => $case->status])</td>
                                             <td>
-                                                <span class="weight-meter" aria-hidden="true">
-                                                    @for ($i = 1; $i <= 5; $i++)
-                                                        <span @class(['weight-meter__seg', 'is-filled' => $i <= $case->complexity_weight])></span>
-                                                    @endfor
-                                                </span>
-                                                <span class="text-muted small ms-1" aria-hidden="true">{{ $case->complexity_weight }}</span>
-                                                <span class="visually-hidden">{{ __('Complexity :n of 5', ['n' => $case->complexity_weight]) }}</span>
+                                                @include('cases.partials.weight-meter', ['weight' => $case->complexity_weight])
                                             </td>
                                             <td class="text-nowrap">{{ $case->timeline?->date_of_docket?->format('d M Y') ?? '—' }}</td>
                                             <td class="text-nowrap">{{ $case->timeline?->submission_120th_day?->format('d M Y') ?? '—' }}</td>

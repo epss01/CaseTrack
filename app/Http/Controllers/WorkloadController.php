@@ -6,6 +6,7 @@ use App\Http\Requests\UpdatePerformanceRatingRequest;
 use App\Models\AuditLog;
 use App\Models\Role;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 /**
  * The office's workload picture, and the one place P_i is set.
@@ -39,9 +40,11 @@ class WorkloadController extends Controller
      */
     public function update(UpdatePerformanceRatingRequest $request, User $investigator)
     {
-        $investigator->update($request->validated());
+        DB::transaction(function () use ($request, $investigator) {
+            $investigator->update($request->validated());
 
-        AuditLog::record($request->user(), null, AuditLog::ACTION_UPDATE);
+            AuditLog::record($request->user(), null, AuditLog::ACTION_UPDATE);
+        });
 
         return redirect()
             ->route('workload.index')

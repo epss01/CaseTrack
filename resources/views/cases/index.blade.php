@@ -33,12 +33,14 @@
                     @else
                         <div class="table-responsive">
                             <table class="table table-striped align-middle table-data">
-                                <caption class="visually-hidden">{{ __('Cases, with docket number, title and status.') }}</caption>
+                                <caption class="visually-hidden">{{ __('Cases, with docket number, title, status, complexity and date of docket.') }}</caption>
                                 <thead>
                                     <tr>
                                         <th scope="col">{{ __('Docket No.') }}</th>
                                         <th scope="col">{{ __('Title') }}</th>
                                         <th scope="col">{{ __('Status') }}</th>
+                                        <th scope="col">{{ __('Complexity') }}</th>
+                                        <th scope="col">{{ __('Date of Docket') }}</th>
                                         @if (Auth::user()->isSupervisor())
                                             <th scope="col">{{ __('Investigator') }}</th>
                                         @endif
@@ -51,6 +53,8 @@
                                             <td class="text-nowrap">{{ $case->docket_no }}</td>
                                             <td>{{ $case->case_title }}</td>
                                             <td>@include('cases.partials.status-badge', ['status' => $case->status])</td>
+                                            <td>@include('cases.partials.weight-meter', ['weight' => $case->complexity_weight])</td>
+                                            <td class="text-nowrap">{{ $case->timeline?->date_of_docket?->format('d M Y') ?? '—' }}</td>
                                             @if (Auth::user()->isSupervisor())
                                                 <td>{{ $case->investigator?->full_name }}</td>
                                             @endif

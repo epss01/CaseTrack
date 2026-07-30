@@ -39,7 +39,7 @@ class CaseController extends Controller
     public function index(Request $request)
     {
         $cases = CaseModel::visibleTo($request->user())
-            ->with('investigator')
+            ->with(['investigator', 'timeline'])
             ->latest('docket_no')
             ->paginate(15);
 
