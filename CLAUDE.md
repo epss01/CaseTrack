@@ -240,8 +240,6 @@ column for this reason. Flag this rather than inventing a workaround.
   `ACTION_UPDATE`. Note the historical split: **`ACTION_UPDATE` means a reassignment**
   (and, with a null `case_id`, a rating change) — it predates `ACTION_EDIT` and was left
   where it was rather than renamed. Don't collapse the two.
-  One site is a known wart: `WorkloadController` records its rating change **outside** any
-  transaction.
   One deliberate exception to "state-changing": `ACTION_EXPORTED` records a **read** — the
   CSV download at `/reports/export`, which takes case data out of the system. It has a null
   `case_id` (an export spans a filtered set) and no `DB::transaction()`, being a lone insert
