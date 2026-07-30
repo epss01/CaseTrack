@@ -21,8 +21,15 @@
     <div id="app">
         <a class="skip-link" href="#content">{{ __('Skip to main content') }}</a>
 
+        {{-- The same shell the table-first pages use (dashboards, /reports,
+             /alerts), so the brand and the nav links line up with the card
+             edge below them instead of sitting 20px inboard of it. One width
+             for the chrome rather than one per route: the pages still on
+             .container centre a col-md-8/10/11 card that reaches neither
+             cap, so there is no edge on them for the navbar to disagree
+             with — including the auth screens, whose form is unchanged. --}}
         <nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm">
-            <div class="container">
+            <div class="container-fluid container-wide">
                 <a class="navbar-brand" href="{{ url('/') }}">
                     <span class="brand-mark" aria-hidden="true">CT</span>
                     {{ config('app.name', 'Laravel') }}

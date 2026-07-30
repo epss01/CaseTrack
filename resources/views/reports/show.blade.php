@@ -4,8 +4,10 @@
 
 @section('content')
 {{-- Narrower than the listing that reaches it, deliberately. This page is a
-     definition list, and stretching it to 1576px only pushes each label away
-     from its own value. Width helps a table; it does not help a form. --}}
+     definition list, and stretching it to the wide shell's 1336px only pushes
+     each label away from its own value. Width helps a table; it does not help
+     a form. The navbar above is on that wide shell and this content is not —
+     also deliberate, and measured: the card here does not move. --}}
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-lg-11 col-xl-10">
