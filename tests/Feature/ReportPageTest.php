@@ -183,7 +183,7 @@ class ReportPageTest extends TestCase
             ->get('/reports')
             ->assertOk()
             ->assertSeeInOrder([__('Cases in report'), '2'])
-            ->assertSeeInOrder([__('Total weight'), '7']);
+            ->assertSeeInOrder([__('Total complexity'), '7']);
     }
 
     public function test_closed_cases_are_reported_and_deleted_ones_are_not(): void

@@ -60,9 +60,8 @@
                         <div class="stat-tile">
                             <span class="stat-tile__icon">@include('partials.icon', ['name' => 'layers'])</span>
                             <span>
-                                <span class="stat-tile__label">{{ __('Total weight') }}</span>
+                                <span class="stat-tile__label">{{ __('Total complexity') }}</span>
                                 <span class="stat-tile__value">{{ $weightTotal }}</span>
-                                <span class="stat-tile__note">{{ __('sum of complexity') }}</span>
                             </span>
                         </div>
                     </div>
