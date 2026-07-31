@@ -18,7 +18,7 @@ class AuthenticationTest extends TestCase
 
     public function test_users_can_authenticate_with_their_username(): void
     {
-        $user = User::factory()->create(['username' => 'jdelacruz']);
+        $user = User::factory()->create(['username' => 'jdelacruz', 'password' => 'password']);
 
         $response = $this->post('/login', [
             'username' => 'jdelacruz',

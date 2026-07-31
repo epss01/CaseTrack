@@ -27,13 +27,19 @@ an ordinary CRUD app, and should be reported as such.
 ## Getting the app up
 
 `preview_start` with `{name: "casetrack"}` (port 8123, config in
-`.claude/launch.json`). Demo accounts, password `password` for all:
+`.claude/launch.json`). Demo accounts:
 
 - `talonzo`, `epadilla` — **Supervisor**
 - `abautista`, `rtan`, `clim`, `focampo`, `mserrano` — **Investigator**
 
-If the case list is empty the demo data isn't seeded. Report that and review
-statically; **do not seed it yourself.**
+There is no shared password — each account got a random one printed to the
+console the moment `DemoDataSeeder` created it, and that output isn't kept
+anywhere else. If the case list is empty the demo data isn't seeded. Report
+that and review statically; **do not seed it yourself** — seeding is also
+refused outside `local`/`testing`. If you need to get into an account, ask
+whoever has shell access to run
+`php artisan users:rotate-password <username> --actor=<their-username>` and
+hand you the printed password.
 
 ## Rules for probing
 
