@@ -75,6 +75,7 @@ class AdminUserAccountTest extends TestCase
         $investigator = User::factory()->investigator()->create([
             'username' => 'to-reactivate',
             'is_active' => false,
+            'password' => 'password',
         ]);
 
         $this->actingAs($admin)
@@ -170,7 +171,7 @@ class AdminUserAccountTest extends TestCase
     public function test_password_reset_actually_changes_the_credential(): void
     {
         $admin = User::factory()->admin()->create();
-        $investigator = User::factory()->investigator()->create(['username' => 'reset-me']);
+        $investigator = User::factory()->investigator()->create(['username' => 'reset-me', 'password' => 'password']);
 
         $this->actingAs($admin)
             ->put(route('admin.users.password', $investigator), [

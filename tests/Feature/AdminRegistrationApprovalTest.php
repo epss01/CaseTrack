@@ -45,7 +45,7 @@ class AdminRegistrationApprovalTest extends TestCase
 
     public function test_an_approved_account_can_authenticate(): void
     {
-        $user = User::factory()->investigator()->create(['username' => 'approved-user']);
+        $user = User::factory()->investigator()->create(['username' => 'approved-user', 'password' => 'password']);
 
         $this->post('/login', ['username' => 'approved-user', 'password' => 'password'])
             ->assertRedirect('/home');
