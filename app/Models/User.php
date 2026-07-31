@@ -90,14 +90,24 @@ class User extends Authenticatable
      * Lower relative scores are the ones suggested for a new assignment.
      * Source: raw/wcs/Workload-Capacity-Score.docx in the project vault.
      *
-     * ponytail: one aggregate query per investigator, so a picker of five
-     * costs five SUMs. Move to withSum() on the picker query if the office
-     * ever holds more than a couple of dozen investigators.
+     * Reuses WorkloadController's withSum() alias when the caller loaded one
+     * — array_key_exists, not ??, because the alias is legitimately NULL for
+     * an investigator with no active cases, and ?? would fall through to the
+     * per-user query for exactly the users who need it least. Falls back to
+     * its own query when no alias was loaded (e.g. a bare factory instance in
+     * a test), so this keeps working without the caller's cooperation.
      */
     public function workloadCapacityScore(): float
     {
-        return $this->workloadCapacityScore ??=
-            $this->cases()->active()->sum('complexity_weight') * (2 - $this->performance_rating);
+        if ($this->workloadCapacityScore !== null) {
+            return $this->workloadCapacityScore;
+        }
+
+        $activeComplexitySum = array_key_exists('active_complexity_sum', $this->attributes)
+            ? (float) ($this->attributes['active_complexity_sum'] ?? 0)
+            : $this->cases()->active()->sum('complexity_weight');
+
+        return $this->workloadCapacityScore = $activeComplexitySum * (2 - $this->performance_rating);
     }
 
     /**

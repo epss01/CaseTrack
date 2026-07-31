@@ -92,11 +92,11 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h2 class="h6 mb-0">{{ __('Needs attention') }}</h2>
-                    <span class="badge badge-soft-blue">{{ count($rows) }}</span>
+                    <span class="badge badge-soft-blue">{{ $rows->total() }}</span>
                 </div>
 
                 <div class="card-body">
-                    @if ($rows === [])
+                    @if ($rows->isEmpty())
                         <p class="mb-0">{{ __('No deadline needs attention.') }}</p>
                     @else
                         <div class="table-responsive">
@@ -162,6 +162,8 @@
                                 </tbody>
                             </table>
                         </div>
+
+                        {{ $rows->links() }}
                     @endif
 
                     {{-- A case with no timeline row cannot be measured at all. Saying so

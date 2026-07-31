@@ -211,6 +211,37 @@ class DeadlineAlertsPageTest extends TestCase
             ->assertSeeInOrder([__('On track'), '1']);
     }
 
+    // --------------------------------------------------------- pagination
+
+    public function test_the_listing_paginates_at_fifteen_while_the_tiles_still_count_everything(): void
+    {
+        $investigator = User::factory()->investigator()->create();
+
+        // 16 overdue cases, each a day more overdue than the last, so the
+        // worst-first sort is deterministic across both pages.
+        $cases = [];
+        for ($i = 0; $i < 16; $i++) {
+            $cases[] = $this->overdueCase(assignedTo: $investigator, docketedDaysAgo: 40 + $i);
+        }
+
+        $mostOverdue = $cases[15];
+        $leastOverdue = $cases[0];
+
+        $this->actingAs($investigator)
+            ->get(route('alerts.index'))
+            ->assertOk()
+            ->assertSee($mostOverdue->docket_no)
+            ->assertDontSee($leastOverdue->docket_no)
+            ->assertSeeInOrder([__('Cases tracked'), '16']);
+
+        $this->actingAs($investigator)
+            ->get(route('alerts.index', ['page' => 2]))
+            ->assertOk()
+            ->assertSee($leastOverdue->docket_no)
+            ->assertDontSee($mostOverdue->docket_no)
+            ->assertSeeInOrder([__('Cases tracked'), '16']);
+    }
+
     // ----------------------------------------------------------------- helpers
 
     /**

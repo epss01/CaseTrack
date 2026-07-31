@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CaseModel;
 use App\Services\CaseDeadlineService;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class AlertController extends Controller
 {
@@ -24,11 +25,16 @@ class AlertController extends Controller
      */
     public function index(Request $request, CaseDeadlineService $deadlines)
     {
-        // ponytail: unpaginated, and classified in PHP rather than SQL because
-        // the service takes a CaseTimeline and a deadline can fall back to an
-        // offset the database has no column for. One row per active case in the
-        // office; paginate at 15 to match CaseController::index() if it stops
-        // fitting, and sort in the query only if the fallback ever goes away.
+        // ponytail: every active case in the office is still loaded and
+        // classified in PHP per request — pagination below caps only what
+        // renders, not the query. Classified in PHP rather than SQL because
+        // the milestone deadline is COALESCE(stored column, date_of_docket +
+        // N days): MySQL wants DATE_ADD(...), SQLite wants date(..., '+N
+        // days'), tests only run SQLite and production only runs MySQL, so
+        // that branch would ship untested. It would also restate the
+        // discharge rules and the SIXTY_DAY_ENABLED gate outside
+        // CaseDeadlineService, which CLAUDE.md forbids. Push the COALESCE
+        // into driver-aware SQL if the loaded set itself stops fitting.
         $cases = CaseModel::query()
             ->visibleTo($request->user())
             ->active()
@@ -79,6 +85,19 @@ class AlertController extends Controller
         }
 
         usort($rows, fn (array $a, array $b) => $a['milestone']['days_remaining'] <=> $b['milestone']['days_remaining']);
+
+        // In-memory pagination over the classified rows — see the ponytail:
+        // comment above for why this isn't a query-level paginate().
+        $perPage = 15;
+        $page = LengthAwarePaginator::resolveCurrentPage();
+
+        $rows = new LengthAwarePaginator(
+            array_slice($rows, ($page - 1) * $perPage, $perPage),
+            count($rows),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
 
         return view('alerts.index', [
             'rows' => $rows,

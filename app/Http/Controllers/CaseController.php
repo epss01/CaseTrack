@@ -34,16 +34,24 @@ class CaseController extends Controller
     }
 
     /**
-     * List the cases the current user is allowed to see.
+     * List the cases the current user is allowed to see, optionally narrowed
+     * by a free-text search over docket no., title, and linked party names.
      */
     public function index(Request $request)
     {
+        $search = $request->validate([
+            // max:255 bounds the LIKE — a trust-boundary guard, not a UX one.
+            'search' => ['nullable', 'string', 'max:255'],
+        ])['search'] ?? null;
+
         $cases = CaseModel::visibleTo($request->user())
+            ->search($search)
             ->with(['investigator', 'timeline'])
             ->latest('docket_no')
-            ->paginate(15);
+            ->paginate(15)
+            ->withQueryString();
 
-        return view('cases.index', ['cases' => $cases]);
+        return view('cases.index', ['cases' => $cases, 'search' => $search]);
     }
 
     /**

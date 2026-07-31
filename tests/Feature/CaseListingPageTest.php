@@ -65,4 +65,30 @@ class CaseListingPageTest extends TestCase
             ->assertOk()
             ->assertSeeInOrder(['Complexity', 'Date of Docket', 'Investigator']);
     }
+
+    public function test_the_listing_paginates_at_fifteen(): void
+    {
+        $investigator = User::factory()->investigator()->create();
+
+        $cases = CaseModel::factory()
+            ->assignedTo($investigator)
+            ->count(16)
+            ->sequence(fn ($sequence) => ['docket_no' => 'CHR-VIII-PAGE-'.str_pad($sequence->index, 4, '0', STR_PAD_LEFT)])
+            ->create();
+
+        $first = $cases->sortBy('docket_no')->last(); // latest('docket_no') puts the highest first.
+        $sixteenth = $cases->sortBy('docket_no')->first();
+
+        $this->actingAs($investigator)
+            ->get(route('cases.index'))
+            ->assertOk()
+            ->assertSee($first->docket_no)
+            ->assertDontSee($sixteenth->docket_no);
+
+        $this->actingAs($investigator)
+            ->get(route('cases.index', ['page' => 2]))
+            ->assertOk()
+            ->assertSee($sixteenth->docket_no)
+            ->assertDontSee($first->docket_no);
+    }
 }

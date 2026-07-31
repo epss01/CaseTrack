@@ -8,8 +8,8 @@ use App\Models\CaseModel;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\CaseDeadlineService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Collection;
 
 /**
  * The case listing, as a page and as a file.
@@ -35,21 +35,32 @@ class ReportController extends Controller
      */
     public function index(ReportFilterRequest $request, CaseDeadlineService $deadlines)
     {
-        $cases = $this->cases($request);
         $filters = $request->filters();
 
+        $cases = $this->casesQuery($request)
+            ->with(['timeline', 'investigator'])
+            ->latest('docket_no')
+            ->paginate(15)
+            ->withQueryString();
+
         return view('reports.index', [
-            'rows' => $cases->map(fn (CaseModel $case) => [
+            'rows' => $cases->through(fn (CaseModel $case) => [
                 'case' => $case,
                 'fields' => $this->row($case, $deadlines),
             ]),
             'filters' => $filters,
 
-            // Off the loaded collection, so the figures cost nothing and
-            // describe exactly the rows underneath them.
-            'caseCount' => $cases->count(),
-            'weightTotal' => $cases->sum('complexity_weight'),
-            'byStatus' => $cases->countBy('status'),
+            // Aggregates of their own now that the listing is paginated — they
+            // describe the whole filtered set, not just the rows on screen.
+            // caseCount is free: paginate() already ran that count.
+            'caseCount' => $cases->total(),
+            'weightTotal' => $this->casesQuery($request)->sum('complexity_weight'),
+            'byStatus' => $this->casesQuery($request)
+                ->toBase()
+                ->selectRaw('status, count(*) as total')
+                ->groupBy('status')
+                ->orderBy('status')
+                ->pluck('total', 'status'),
 
             'excludedCount' => $this->excludedByDateFilter($request),
 
@@ -133,7 +144,12 @@ class ReportController extends Controller
      */
     public function export(ReportFilterRequest $request, CaseDeadlineService $deadlines)
     {
-        $cases = $this->cases($request);
+        // The whole filtered set, not the listing's page — a download has to
+        // cover what was filtered for, not what happened to be on screen.
+        $cases = $this->casesQuery($request)
+            ->with(['timeline', 'investigator'])
+            ->latest('docket_no')
+            ->get();
 
         // Written before the stream opens, not inside the closure: the closure
         // runs after the response has been handed to the client, so a failure
@@ -166,27 +182,19 @@ class ReportController extends Controller
     /**
      * The cases a report covers: who may see them, then what was asked for.
      *
-     * The single query every report is built on. Closed cases are included —
+     * Unfiltered/unordered on purpose — the single query definition every
+     * report caller builds on top of (the paginated listing, the whole-set
+     * CSV, and the caseCount/weightTotal/byStatus aggregates), so scoping and
+     * filtering can never drift between them. Closed cases are included —
      * unlike /alerts this does not call active(), because a report over a date
      * range that omitted completed work could not describe the range. Deleted
      * cases stay out via SoftDeletes.
-     *
-     * ponytail: unpaginated. The CSV has to cover the whole filtered set
-     * whatever the page does, and the listing's counts then come free off the
-     * loaded collection instead of costing a query each. Paginate the listing
-     * at 15 to match CaseController::index() if an unfiltered office-wide
-     * report stops fitting; the export stays whole either way.
-     *
-     * @return Collection<int, CaseModel>
      */
-    private function cases(ReportFilterRequest $request): Collection
+    private function casesQuery(ReportFilterRequest $request): Builder
     {
         return CaseModel::query()
             ->visibleTo($request->user())
-            ->filteredBy($request->filters())
-            ->with(['timeline', 'investigator'])
-            ->latest('docket_no')
-            ->get();
+            ->filteredBy($request->filters());
     }
 
     /**

@@ -211,6 +211,31 @@ class ReportExportTest extends TestCase
             ->assertSessionHasErrors('investigator_id');
     }
 
+    // -------------------------------------------------------- pagination
+
+    /**
+     * The listing paginates at 15; the export must not. A later refactor
+     * that let casesQuery() slip a page limit into the CSV path would fail
+     * here even though the listing above still looked correct.
+     */
+    public function test_the_export_covers_every_matching_case_not_just_a_page(): void
+    {
+        $investigator = User::factory()->investigator()->create();
+
+        $dockets = [];
+        for ($i = 0; $i < 16; $i++) {
+            $docket = 'CHR-VIII-EXP-'.str_pad((string) $i, 4, '0', STR_PAD_LEFT);
+            $this->caseFor($investigator, attributes: ['docket_no' => $docket]);
+            $dockets[] = $docket;
+        }
+
+        $csv = $this->export($investigator);
+
+        foreach ($dockets as $docket) {
+            $this->assertStringContainsString($docket, $csv);
+        }
+    }
+
     // ------------------------------------------------------------ content
 
     public function test_the_header_row_names_every_column(): void

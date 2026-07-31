@@ -272,6 +272,8 @@
                             </table>
                         </div>
 
+                        {{ $rows->links() }}
+
                         <p class="text-muted small mb-0 mt-3">
                             {{ __('Office region and the exact submission dates are included in the CSV download.') }}
                         </p>

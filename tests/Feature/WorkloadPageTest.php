@@ -63,6 +63,43 @@ class WorkloadPageTest extends TestCase
         );
     }
 
+    public function test_the_listing_paginates_at_fifteen_lightest_first(): void
+    {
+        $supervisor = User::factory()->supervisor()->create();
+
+        $investigators = [];
+
+        for ($i = 1; $i <= 16; $i++) {
+            $investigator = User::factory()->investigator()->create([
+                'first_name' => "Investigator{$i}",
+                'last_name' => 'Test',
+                'performance_rating' => 1.0,
+            ]);
+
+            CaseModel::factory()->assignedTo($investigator)->create([
+                'status' => CaseModel::STATUS_DOCKETED,
+                'complexity_weight' => $i,
+            ]);
+
+            $investigators[$i] = $investigator;
+        }
+
+        $lightest = $investigators[1]; // WCS 1, sorts first
+        $heaviest = $investigators[16]; // WCS 16, sorts last — page 2
+
+        $this->actingAs($supervisor)
+            ->get(route('workload.index'))
+            ->assertOk()
+            ->assertSee($lightest->full_name)
+            ->assertDontSee($heaviest->full_name);
+
+        $this->actingAs($supervisor)
+            ->get(route('workload.index', ['page' => 2]))
+            ->assertOk()
+            ->assertSee($heaviest->full_name)
+            ->assertDontSee($lightest->full_name);
+    }
+
     public function test_an_investigator_cannot_reach_the_workload_page(): void
     {
         $investigator = User::factory()->investigator()->create();

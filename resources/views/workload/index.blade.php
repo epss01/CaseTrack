@@ -45,7 +45,9 @@
                                         <tr>
                                             <td>
                                                 {{ $investigator->full_name }}
-                                                @if ($loop->first)
+                                                {{-- Lowest WCS office-wide, not just first on this page — the
+                                                     badge would otherwise relabel page 2's top row. --}}
+                                                @if ($loop->first && $investigators->currentPage() === 1)
                                                     <span class="badge bg-success">{{ __('suggested') }}</span>
                                                 @endif
                                             </td>
@@ -76,6 +78,8 @@
                                 </tbody>
                             </table>
                         </div>
+
+                        {{ $investigators->links() }}
                     @endif
                 </div>
             </div>

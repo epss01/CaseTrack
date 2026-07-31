@@ -170,6 +170,66 @@ class ReportPageTest extends TestCase
             ->assertSee(__('No cases match this filter.'));
     }
 
+    // -------------------------------------------------------- pagination
+
+    public function test_the_listing_paginates_at_fifteen_while_the_tiles_still_count_everything(): void
+    {
+        $investigator = User::factory()->investigator()->create();
+
+        $cases = [];
+        for ($i = 0; $i < 16; $i++) {
+            $cases[] = $this->caseFor($investigator, attributes: [
+                'docket_no' => 'CHR-VIII-RPT-'.str_pad((string) $i, 4, '0', STR_PAD_LEFT),
+            ]);
+        }
+
+        // latest('docket_no') sorts descending, so the highest docket number
+        // is first (page 1) and the lowest is last (page 2).
+        $first = $cases[15];
+        $sixteenth = $cases[0];
+
+        $this->actingAs($investigator)
+            ->get(route('reports.index'))
+            ->assertOk()
+            ->assertSee($first->docket_no)
+            ->assertDontSee($sixteenth->docket_no)
+            ->assertSeeInOrder([__('Cases in report'), '16']);
+
+        $this->actingAs($investigator)
+            ->get(route('reports.index', ['page' => 2]))
+            ->assertOk()
+            ->assertSee($sixteenth->docket_no)
+            ->assertDontSee($first->docket_no)
+            ->assertSeeInOrder([__('Cases in report'), '16']);
+    }
+
+    /**
+     * The filter and the page number both ride the query string — this pins
+     * that a status filter still excludes a non-matching case once a second
+     * page is in play, and that the filter still shows in the form there.
+     */
+    public function test_a_status_filter_still_applies_on_page_two(): void
+    {
+        $investigator = User::factory()->investigator()->create();
+
+        for ($i = 0; $i < 16; $i++) {
+            $this->caseFor($investigator, status: CaseModel::STATUS_DOCKETED, attributes: [
+                'docket_no' => 'CHR-VIII-FLT-'.str_pad((string) $i, 4, '0', STR_PAD_LEFT),
+            ]);
+        }
+
+        $excluded = $this->caseFor($investigator, status: CaseModel::STATUS_CLOSED, attributes: [
+            'docket_no' => 'CHR-VIII-FLT-EXCLUDED',
+        ]);
+
+        $this->actingAs($investigator)
+            ->get(route('reports.index', ['status' => CaseModel::STATUS_DOCKETED, 'page' => 2]))
+            ->assertOk()
+            ->assertDontSee($excluded->docket_no)
+            ->assertSee('value="'.CaseModel::STATUS_DOCKETED.'"', escape: false)
+            ->assertSeeInOrder([__('Cases in report'), '16']);
+    }
+
     // ------------------------------------------------------------- tiles
 
     public function test_the_tiles_describe_the_filtered_set(): void

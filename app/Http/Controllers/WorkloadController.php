@@ -23,11 +23,16 @@ class WorkloadController extends Controller
             ->whereRelation('role', 'role_name', Role::INVESTIGATOR)
             ->withCount(['cases as active_cases_count' => fn ($query) => $query->active()])
             ->withSum(['cases as active_complexity_sum' => fn ($query) => $query->active()], 'complexity_weight')
+            // WCS_i = active_complexity_sum * (2 - performance_rating) — the
+            // same formula User::workloadCapacityScore() computes, done in SQL
+            // so the ranking can be paginated. COALESCE matters: withSum()
+            // yields NULL, not 0, for an investigator with no active cases,
+            // and NULL * anything sorts as NULL.
+            ->orderByRaw('COALESCE(active_complexity_sum, 0) * (2 - performance_rating)')
             ->orderBy('last_name')
             ->orderBy('first_name')
-            ->get()
-            ->sortBy(fn (User $investigator) => $investigator->workloadCapacityScore())
-            ->values();
+            ->paginate(15)
+            ->withQueryString();
 
         return view('workload.index', ['investigators' => $investigators]);
     }

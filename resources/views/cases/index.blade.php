@@ -3,9 +3,43 @@
 @section('title', Auth::user()->isSupervisor() ? __('All Cases') : __('My Cases'))
 
 @section('content')
-<div class="container">
+{{-- Wider than the app's default shell, matching /alerts and /reports: this
+     page is a table first, and .container's 1320px cap left a third of a
+     wide screen empty. --}}
+<div class="container-fluid container-wide">
     <div class="row justify-content-center">
-        <div class="col-md-10">
+        <div class="col-12">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h2 class="h6 mb-0">{{ __('Search') }}</h2>
+                </div>
+
+                <div class="card-body">
+                    <form method="GET" action="{{ route('cases.index') }}">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-sm-8 col-lg-6">
+                                <label for="search" class="form-label">{{ __('Docket no., title, or party name') }}</label>
+                                <input type="text" class="form-control @error('search') is-invalid @enderror"
+                                       id="search" name="search" value="{{ $search ?? '' }}"
+                                       autocomplete="off">
+                                @error('search')
+                                    <span class="invalid-feedback" role="alert">{{ $message }}</span>
+                                @enderror
+                            </div>
+
+                            <div class="col-12 d-flex gap-2 justify-content-end">
+                                @if (filled($search))
+                                    <a href="{{ route('cases.index') }}" class="btn btn-outline-secondary">
+                                        {{ __('Clear') }}
+                                    </a>
+                                @endif
+                                <button type="submit" class="btn btn-primary">{{ __('Apply') }}</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h1 class="h6 mb-0">
@@ -29,7 +63,7 @@
                     @endif
 
                     @if ($cases->isEmpty())
-                        <p class="mb-0">{{ __('No cases to show.') }}</p>
+                        <p class="mb-0">{{ filled($search) ? __('No cases match this search.') : __('No cases to show.') }}</p>
                     @else
                         <div class="table-responsive">
                             <table class="table table-striped align-middle table-data">

@@ -167,6 +167,44 @@ class CaseModel extends Model
             ));
     }
 
+    /**
+     * Narrow the query to cases matching a free-text search term.
+     *
+     * Matches the case's own docket number and title, or the name of any
+     * linked victim, respondent, or complainant — there is no standalone
+     * people-directory page, so "search the case and people tables" resolves
+     * to this one scope reached through from /cases.
+     *
+     * The whole disjunction sits inside one where(fn ...) closure — that
+     * grouping is the security boundary. scopeVisibleTo() adds a leading
+     * `where investigator_id = ?`; an ungrouped orWhere here would turn "my
+     * cases matching X" into "my cases, or anyone's case matching X". Chain
+     * search() after visibleTo(), never before.
+     *
+     * ponytail: % and _ in $term act as LIKE wildcards, which only widens the
+     * match set within the caller's already-scoped query — it cannot escape
+     * scopeVisibleTo(). Not escaped: SQLite needs an explicit ESCAPE clause
+     * to neutralize them and MySQL doesn't, and the behaviour this guards
+     * against (a slightly looser match) isn't worth a driver-specific branch.
+     */
+    public function scopeSearch(Builder $query, ?string $term): Builder
+    {
+        if (blank($term)) {
+            return $query;
+        }
+
+        $like = '%'.$term.'%';
+
+        return $query->where(function (Builder $q) use ($like) {
+            $q->where('docket_no', 'like', $like)
+                ->orWhere('case_title', 'like', $like);
+
+            foreach (['victims', 'respondents', 'complainants'] as $relation) {
+                $q->orWhereHas($relation, fn (Builder $people) => $people->where('name', 'like', $like));
+            }
+        });
+    }
+
     public function investigator()
     {
         return $this->belongsTo(User::class, 'investigator_id');
