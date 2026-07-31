@@ -30,11 +30,17 @@ it, adding a CSS framework, or introducing a JS framework.
 
 1. `preview_start` with `{name: "casetrack"}` — the config is in
    `.claude/launch.json`, port 8123.
-2. Log in. Demo accounts (password `password` for all):
+2. Log in. Demo accounts:
    - `talonzo` — **Supervisor**: sees all cases, the Workload page, and the
      delete/reassign actions.
    - `abautista` — **Investigator**: sees only their own cases, no Workload
      link, no delete/reassign.
+
+   There is no shared password — each account got a random one printed to the
+   console when `DemoDataSeeder` created it. If you don't have that output,
+   ask whoever has shell access to run
+   `php artisan users:rotate-password <username> --actor=<their-username>`
+   and hand you the printed password.
 3. **Review both roles.** The nav, the case listing columns, and the available
    actions all differ. A finding that only holds for one role must say which.
 

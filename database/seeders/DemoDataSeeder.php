@@ -12,6 +12,7 @@ use App\Models\Victim;
 use App\Services\CaseDeadlineService;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 /**
  * Click-through demo data: 2 supervisors, 5 investigators, 15 cases.
@@ -252,13 +253,28 @@ class DemoDataSeeder extends Seeder
 
     public function run(): void
     {
+        if (! app()->environment(['local', 'testing'])) {
+            throw new \RuntimeException(
+                'Seeding demo accounts is refused outside local/testing (APP_ENV='.app()->environment().').'
+            );
+        }
+
         $this->call(RoleSeeder::class);
 
-        $supervisors = $this->staff(self::SUPERVISORS, Role::SUPERVISOR);
-        $investigators = $this->staff(self::INVESTIGATORS, Role::INVESTIGATOR);
+        $credentials = [];
+        $supervisors = $this->staff(self::SUPERVISORS, Role::SUPERVISOR, $credentials);
+        $investigators = $this->staff(self::INVESTIGATORS, Role::INVESTIGATOR, $credentials);
 
         $this->say('Demo staff ready: '.count($supervisors).' supervisors, '
-            .count($investigators).' investigators (password: "password").');
+            .count($investigators).' investigators.');
+
+        if ($credentials) {
+            $this->command?->table(['username', 'password'], $credentials);
+            $this->command?->warn('Copy these now — they are not stored or shown again.');
+        }
+
+        $this->say('Existing accounts keep their current password — reset a lost one with '
+            .'"php artisan users:rotate-password <username> --actor=<you>".');
 
         if ($this->alreadySeeded()) {
             $this->say('Demo cases already present — skipping. Delete the DEMO- '
@@ -281,11 +297,12 @@ class DemoDataSeeder extends Seeder
      * Create the demo staff, reusing any account that already exists.
      *
      * @param  list<array{username: string, first: string, last: string, rating?: float}>  $people
+     * @param  list<array{0: string, 1: string}>  $credentials  Accumulates [username, password] for accounts created this call.
      * @return list<User>
      */
-    private function staff(array $people, string $roleName): array
+    private function staff(array $people, string $roleName, array &$credentials): array
     {
-        return array_map(function (array $person) use ($roleName) {
+        return array_map(function (array $person) use ($roleName, &$credentials) {
             $existing = User::where('username', $person['username'])->first();
 
             if ($existing) {
@@ -297,12 +314,16 @@ class DemoDataSeeder extends Seeder
                 return $existing;
             }
 
+            $password = Str::password(16);
+            $credentials[] = [$person['username'], $password];
+
             return User::factory()->withRole($roleName)->create([
                 'username' => $person['username'],
                 'first_name' => $person['first'],
                 'last_name' => $person['last'],
                 'is_staff' => $roleName === Role::SUPERVISOR,
                 'performance_rating' => $person['rating'] ?? 1.0,
+                'password' => $password,
             ]);
         }, $people);
     }
