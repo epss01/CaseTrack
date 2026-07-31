@@ -61,6 +61,17 @@ class AuditLog extends Model
      */
     public const ACTION_EXPORTED = 'EXPORTED';
 
+    /**
+     * A password reset performed outside the ordinary account flows (e.g. an
+     * operator running users:rotate-password from the shell). Carries a null
+     * case_id, same precedent as the rating-change and export entries.
+     *
+     * Known limitation, inherited rather than introduced here: audit_logs has
+     * no target-user column, so this names who performed the reset, not whose
+     * password was reset.
+     */
+    public const ACTION_ACCOUNT_PASSWORD_RESET = 'ACCOUNT_PASSWORD_RESET';
+
     const UPDATED_AT = null;
     const CREATED_AT = 'timestamp';
 
