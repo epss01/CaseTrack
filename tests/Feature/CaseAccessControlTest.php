@@ -166,12 +166,12 @@ class CaseAccessControlTest extends TestCase
         $this->assertFalse($investigator->can('reassign', $case));
     }
 
-    public function test_role_names_are_the_two_the_office_uses(): void
+    public function test_role_names_are_the_three_the_office_uses(): void
     {
         $this->seed(\Database\Seeders\RoleSeeder::class);
 
         $this->assertSame(
-            [Role::INVESTIGATOR, Role::SUPERVISOR],
+            [Role::ADMIN, Role::INVESTIGATOR, Role::SUPERVISOR],
             Role::orderBy('role_name')->pluck('role_name')->all()
         );
     }

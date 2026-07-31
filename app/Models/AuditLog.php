@@ -62,6 +62,27 @@ class AuditLog extends Model
     public const ACTION_EXPORTED = 'EXPORTED';
 
     /**
+     * Admin actions on registrations and accounts. All carry a null case_id,
+     * same precedent as the rating-change and export entries — none of them
+     * are scoped to a case.
+     *
+     * Known limitation, inherited rather than introduced here: audit_logs
+     * has no target-user column, so these name the admin who acted, not
+     * who was acted on. Same open gap already logged against ACTION_UPDATE
+     * for rating changes. Distinct activated/deactivated constants at least
+     * keep the direction of the change recoverable from the constant alone.
+     */
+    public const ACTION_REGISTRATION_APPROVED = 'REGISTRATION_APPROVED';
+
+    public const ACTION_REGISTRATION_REJECTED = 'REGISTRATION_REJECTED';
+
+    public const ACTION_ACCOUNT_ACTIVATED = 'ACCOUNT_ACTIVATED';
+
+    public const ACTION_ACCOUNT_DEACTIVATED = 'ACCOUNT_DEACTIVATED';
+
+    public const ACTION_ACCOUNT_ROLE_CHANGED = 'ACCOUNT_ROLE_CHANGED';
+
+    /**
      * A password reset performed outside the ordinary account flows (e.g. an
      * operator running users:rotate-password from the shell). Carries a null
      * case_id, same precedent as the rating-change and export entries.

@@ -13,6 +13,19 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     /**
+     * Registration status. Free text with named constants, matching how
+     * CaseModel::status works — pending is the fail-closed default set by
+     * the column itself, so a row created any other way than through
+     * RegisterController or the Admin account-management screen still
+     * cannot log in.
+     */
+    public const REGISTRATION_PENDING = 'pending';
+
+    public const REGISTRATION_APPROVED = 'approved';
+
+    public const REGISTRATION_REJECTED = 'rejected';
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var list<string>
@@ -26,6 +39,10 @@ class User extends Authenticatable
         'is_staff',
         'performance_rating',
         'role_id',
+        'registration_status',
+        'approved_by',
+        'approved_at',
+        'is_active',
     ];
 
     /**
@@ -55,6 +72,8 @@ class User extends Authenticatable
             'is_staff' => 'boolean',
             'performance_rating' => 'float',
             'password' => 'hashed',
+            'is_active' => 'boolean',
+            'approved_at' => 'datetime',
         ];
     }
 
@@ -107,9 +126,22 @@ class User extends Authenticatable
         return $this->hasRole(Role::INVESTIGATOR);
     }
 
+    public function isAdmin(): bool
+    {
+        return $this->hasRole(Role::ADMIN);
+    }
+
     public function role()
     {
         return $this->belongsTo(Role::class);
+    }
+
+    /**
+     * The admin who approved this registration, if any.
+     */
+    public function approvedBy()
+    {
+        return $this->belongsTo(User::class, 'approved_by');
     }
 
     public function cases()

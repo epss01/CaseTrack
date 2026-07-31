@@ -41,36 +41,62 @@ class AuthenticationTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_users_can_register(): void
+    public function test_users_can_register_but_land_pending_approval(): void
     {
+        $role = Role::firstOrCreate(['role_name' => Role::INVESTIGATOR]);
+
         $response = $this->post('/register', [
             'username' => 'jdelacruz',
             'first_name' => 'Juan',
             'last_name' => 'Dela Cruz',
             'office_region' => 'CHR Region VIII',
+            'role_id' => $role->id,
             'password' => 'secret-password',
             'password_confirmation' => 'secret-password',
         ]);
 
-        $response->assertRedirect('/home');
-        $this->assertAuthenticated();
+        // A pending registration is never logged in — it awaits an Admin's
+        // approval before it can authenticate at all.
+        $response->assertRedirect('/login');
+        $this->assertGuest();
 
         $user = User::where('username', 'jdelacruz')->firstOrFail();
 
         $this->assertSame('Juan Dela Cruz', $user->full_name);
         $this->assertSame(Role::INVESTIGATOR, $user->role->role_name);
+        $this->assertSame(User::REGISTRATION_PENDING, $user->registration_status);
         $this->assertFalse($user->is_staff);
     }
 
-    public function test_registration_requires_a_unique_username(): void
+    public function test_registration_cannot_select_the_admin_role(): void
     {
-        User::factory()->create(['username' => 'jdelacruz']);
+        $admin = Role::firstOrCreate(['role_name' => Role::ADMIN]);
 
         $this->post('/register', [
             'username' => 'jdelacruz',
             'first_name' => 'Juan',
             'last_name' => 'Dela Cruz',
             'office_region' => 'CHR Region VIII',
+            'role_id' => $admin->id,
+            'password' => 'secret-password',
+            'password_confirmation' => 'secret-password',
+        ])->assertSessionHasErrors('role_id');
+
+        $this->assertGuest();
+        $this->assertNull(User::where('username', 'jdelacruz')->first());
+    }
+
+    public function test_registration_requires_a_unique_username(): void
+    {
+        User::factory()->create(['username' => 'jdelacruz']);
+        $role = Role::firstOrCreate(['role_name' => Role::INVESTIGATOR]);
+
+        $this->post('/register', [
+            'username' => 'jdelacruz',
+            'first_name' => 'Juan',
+            'last_name' => 'Dela Cruz',
+            'office_region' => 'CHR Region VIII',
+            'role_id' => $role->id,
             'password' => 'secret-password',
             'password_confirmation' => 'secret-password',
         ])->assertSessionHasErrors('username');

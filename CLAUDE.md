@@ -103,11 +103,18 @@ The manuscript (Chapter III, Tables 3-4–3-10) uses `auth_user` / `casetrack_*`
 **The code does not.** Use the as-built names below. See `wiki/project/database-schema.md`
 in the vault for the full as-designed vs. as-built comparison.
 
-- `roles` — `role_name`. Model `Role`, constants `Role::INVESTIGATOR` / `Role::SUPERVISOR`.
-- `users` — investigator/staff accounts. `username` (unique), `password` (hashed),
+- `roles` — `role_name`. Model `Role`, constants `Role::INVESTIGATOR` / `Role::SUPERVISOR` /
+  `Role::ADMIN` (added 2026-07-31). `Role::CASE_HANDLING` is still only the first two —
+  Admin deliberately never enters it, since `CaseModelPolicy` and three nav links treat
+  membership in that constant as "may open, view, or edit a case," which an Admin never
+  does. `Role::ALL` (all three) exists solely for `RoleSeeder`.
+- `users` — investigator/staff/admin accounts. `username` (unique), `password` (hashed),
   `first_name`, `last_name`, `office_region` (default 'CHR Region VIII'),
   `is_staff` (bool, see note below), `performance_rating` (decimal 2,1, default 1.0),
-  `role_id` FK → `roles.id`. No email column — auth is username-based.
+  `role_id` FK → `roles.id`. No email column — auth is username-based. Added 2026-07-31:
+  `registration_status` (string, default `'pending'`; constants `User::REGISTRATION_PENDING`
+  / `_APPROVED` / `_REJECTED`), `approved_by` (nullable FK → `users.id`, `nullOnDelete`),
+  `approved_at` (nullable timestamp), `is_active` (bool, default `true`).
 - `cases` — core case record. Model is `CaseModel`, not `Case` (reserved PHP word);
   `protected $table = 'cases'`. Fields: `docket_no` (unique), `case_title`,
   `incident_details`, `source_info` (nullable), `investigator_id` FK → `users.id`,
@@ -184,18 +191,78 @@ Docketed / Under investigation / For review
 - **Investigator** — sees and manages only their own assigned cases.
 - **Supervisor** — office-wide: sees and edits every case, and alone may delete, reassign,
   or set performance ratings.
+- **Admin** (added 2026-07-31) — never touches case data. Scoped to exactly two things:
+  approving/rejecting new registrations and managing existing accounts (activate/deactivate,
+  role change, password reset). Gated by `role:Admin` middleware alone, no policy class —
+  same convention as `/workload`, since nothing here is a per-case decision.
 - Authorization is driven by `roles`/`role_id`, via `User::hasRole()` /
-  `isSupervisor()` / `isInvestigator()`. **`is_staff` still exists on `users` but nothing
-  reads it for authorization** — it's only written by the factory/seeder and asserted in
-  one auth test. Don't add new logic that branches on it; use roles.
+  `isSupervisor()` / `isInvestigator()` / `isAdmin()`. **`is_staff` still exists on `users`
+  but nothing reads it for authorization** — it's only written by the factory/seeder and
+  asserted in one auth test. Don't add new logic that branches on it; use roles.
 - Two enforcement layers, both backend, never UI-only:
   - `EnsureUserHasRole` middleware, aliased `role` — coarse route gate,
-    e.g. `role:Investigator,Supervisor` on the case group, `role:Supervisor` on `/workload`.
+    e.g. `role:Investigator,Supervisor` on the case group, `role:Supervisor` on `/workload`,
+    `role:Admin` on `/admin/*`.
   - `CaseModelPolicy` — per-record decisions (`viewAny`, `view`, `create`, `update`,
     `delete`, `reassign`), wired via `authorizeResource()`.
   - List queries use `CaseModel::scopeVisibleTo($user)`, which mirrors `view()`.
-- A page with no per-case decision to make (like `/workload`) is gated by middleware alone
-  — don't invent a policy class for it.
+- A page with no per-case decision to make (like `/workload`, `/admin/registrations`,
+  `/admin/users`) is gated by middleware alone — don't invent a policy class for it.
+
+## Registration approval and account management (built 2026-07-31)
+Closes two findings from the 2026-07-30 `security-reviewer` run: self-registration landed
+anyone as Investigator with no gate, and there was no way to disable a departing or
+compromised account short of a direct database edit.
+
+- **Registration.** `RegisterController` now lets a registrant pick Investigator or
+  Supervisor (`Role::selectableRoleRule()` — `Rule::exists('roles','id')->whereIn(
+  'role_name', Role::CASE_HANDLING)` — is the boundary that keeps Admin unreachable from
+  this form; the same rule gates the account-management role-change screen). Every new
+  account lands `registration_status = 'pending'` (also the column's own default, so a row
+  inserted any other way still can't authenticate) and is logged straight back out —
+  `RegisterController::registered()` undoes the login `RegistersUsers::register()` performs
+  by default. `POST /register` carries `throttle:5,1`.
+- **Login gate.** `LoginController::credentials()` adds `registration_status => approved`
+  and `is_active => true` as query constraints (`EloquentUserProvider::retrieveByCredentials()`
+  treats every non-password key that way), so a pending/rejected/deactivated account fails
+  with the same generic "these credentials do not match" message a wrong password gets — no
+  way to distinguish a disqualified username from one that doesn't exist. That only stops a
+  *new* login; `EnsureAccountIsActive` (appended to the `web` middleware group globally, not
+  a route group) ends an *already-authenticated* session the moment its account stops being
+  approved and active, so a deactivation isn't outlived by a session started before it.
+- **Admin provisioning: `php artisan make:admin` only.** No route, no view — interactive
+  prompt for username/name/password, same validation shape as registration. Registration
+  can't reach Admin (`selectableRoleRule()`) and neither can the role-change screen
+  (`UserAccountController::updateRole()` refuses an Admin *target*); this command is the
+  entire provisioning surface. Needed one extra line in `bootstrap/app.php`
+  (`->withCommands([...])`) — `withRouting(commands: 'routes/console.php')` only registers
+  that one file as a command-route source, it does **not** auto-discover
+  `app/Console/Commands` the way Laravel's default skeleton does.
+- **Account management** (`UserAccountController`, `/admin/users`): activate/deactivate,
+  role change (Investigator ↔ Supervisor only — never a destination *or* source, so an
+  Admin row is never role-changeable), and admin-performed password reset (admin types the
+  new password directly; relies on the model's `hashed` cast auto-hashing on `update()`, the
+  same mechanism `RegisterController::create()`'s explicit `Hash::make()` is idempotent
+  against). Every mutating action refuses to target the acting admin's own account
+  (`abort_if($user->is($request->user()), 403)`) — no self-lockout, no self-promotion.
+- **Deactivation is a soft flag, never deletion** — `audit_logs.user_id` is `NOT NULL` with
+  no `onDelete` clause (RESTRICT by omission; unlike `audit_logs.case_id`, which is
+  `nullOnDelete`), so a user with any audit history can't be hard-deleted regardless. Demonstrated
+  live during this build: deleting a just-provisioned admin account failed at the database
+  until its own audit rows were removed first.
+- **New `AuditLog` constants**, same add-only convention as every other action: `ACTION_REGISTRATION_APPROVED`,
+  `ACTION_REGISTRATION_REJECTED`, `ACTION_ACCOUNT_ACTIVATED`, `ACTION_ACCOUNT_DEACTIVATED`,
+  `ACTION_ACCOUNT_ROLE_CHANGED`, `ACTION_ACCOUNT_PASSWORD_RESET` — all `case_id => null`
+  (same precedent as the rating-change and export entries), each written inside the same
+  `DB::transaction()` as its mutation. **Known limitation, inherited not introduced:**
+  `audit_logs` has no target-user column, so these name the *admin who acted*, not who was
+  acted on — the same open gap already logged against the rating-change entry. Distinct
+  activated/deactivated constants at least keep the direction recoverable from the constant
+  alone.
+- **Open, not yet reconciled:** the vault (`wiki/project/admin-role-scoping.md`) has one
+  password-reset decision still on the table between "admin performs the reset directly"
+  (built) and "user requests, admin approves" — flagged back to JP to reconcile, not
+  resolved by this build.
 
 ## Business logic that MUST stay deterministic (no AI/LLM involved)
 - Statutory legal deadlines: 30-day, 60-day, and 120-day milestones off `case_timelines`.
@@ -229,10 +296,13 @@ column for this reason. Flag this rather than inventing a workaround.
 - Every state-changing action on case data should write an audit entry via
   `AuditLog::record($user, $case, $action)` (`$case` may be null for actions not scoped to
   one case, like a rating change), called **inside** the action's `DB::transaction()`.
-  **Every state-changing site now does this** (closed 2026-07-30): intake
+  **Every state-changing site now does this** (nine case-data sites closed 2026-07-30, six
+  more added 2026-07-31 for registration/account actions — fifteen total): intake
   (`ACTION_CREATE`), ordinary edits (`ACTION_EDIT`), Set Timeline
-  (`ACTION_TIMELINE_UPDATE`), delete, reassign, performance-rating changes, and all three
-  closure steps (`ACTION_CLOSURE_PROPOSED` / `_CONFIRMED` / `_REJECTED`).
+  (`ACTION_TIMELINE_UPDATE`), delete, reassign, performance-rating changes, all three
+  closure steps (`ACTION_CLOSURE_PROPOSED` / `_CONFIRMED` / `_REJECTED`), registration
+  approve/reject (`ACTION_REGISTRATION_APPROVED` / `_REJECTED`), and account management
+  (`ACTION_ACCOUNT_ACTIVATED` / `_DEACTIVATED` / `_ROLE_CHANGED` / `_PASSWORD_RESET`).
   **The constant carries the whole meaning** — `audit_logs` has no diff column and no
   field list, so an act the constant doesn't name is unrecoverable from the trail. Hence a
   distinct constant per closure step (a trail that can't tell a request from an approval
