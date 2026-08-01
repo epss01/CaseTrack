@@ -50,6 +50,7 @@ class AdminUserAccountTest extends TestCase
 
         $this->assertDatabaseHas('audit_logs', [
             'user_id' => $admin->id,
+            'target_user_id' => $investigator->id,
             'case_id' => null,
             'action_performed' => AuditLog::ACTION_ACCOUNT_DEACTIVATED,
         ]);
@@ -92,6 +93,7 @@ class AdminUserAccountTest extends TestCase
 
         $this->assertDatabaseHas('audit_logs', [
             'user_id' => $admin->id,
+            'target_user_id' => $investigator->id,
             'case_id' => null,
             'action_performed' => AuditLog::ACTION_ACCOUNT_ACTIVATED,
         ]);
@@ -117,6 +119,7 @@ class AdminUserAccountTest extends TestCase
 
         $this->assertDatabaseHas('audit_logs', [
             'user_id' => $admin->id,
+            'target_user_id' => $investigator->id,
             'case_id' => null,
             'action_performed' => AuditLog::ACTION_ACCOUNT_ROLE_CHANGED,
         ]);
@@ -192,6 +195,7 @@ class AdminUserAccountTest extends TestCase
 
         $this->assertDatabaseHas('audit_logs', [
             'user_id' => $admin->id,
+            'target_user_id' => $investigator->id,
             'case_id' => null,
             'action_performed' => AuditLog::ACTION_ACCOUNT_PASSWORD_RESET,
         ]);

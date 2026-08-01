@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AlertController;
+use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\CaseController;
 use App\Http\Controllers\CaseTimelineController;
 use App\Http\Controllers\RegistrationApprovalController;
@@ -93,4 +94,6 @@ Route::middleware(['auth', 'role:Admin'])->prefix('admin')->name('admin.')->grou
     Route::put('users/{user}/active', [UserAccountController::class, 'updateActive'])->name('users.active');
     Route::put('users/{user}/role', [UserAccountController::class, 'updateRole'])->name('users.role');
     Route::put('users/{user}/password', [UserAccountController::class, 'updatePassword'])->name('users.password');
+
+    Route::get('audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
 });

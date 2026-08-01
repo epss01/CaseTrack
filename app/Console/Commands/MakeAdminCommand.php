@@ -2,9 +2,11 @@
 
 namespace App\Console\Commands;
 
+use App\Models\AuditLog;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
@@ -52,15 +54,22 @@ class MakeAdminCommand extends Command
             return self::FAILURE;
         }
 
-        User::create([
-            'username' => $username,
-            'first_name' => $firstName,
-            'last_name' => $lastName,
-            'password' => Hash::make($password),
-            'role_id' => Role::firstOrCreate(['role_name' => Role::ADMIN])->id,
-            'registration_status' => User::REGISTRATION_APPROVED,
-            'is_active' => true,
-        ]);
+        DB::transaction(function () use ($username, $firstName, $lastName, $password) {
+            $admin = User::create([
+                'username' => $username,
+                'first_name' => $firstName,
+                'last_name' => $lastName,
+                'password' => Hash::make($password),
+                'role_id' => Role::firstOrCreate(['role_name' => Role::ADMIN])->id,
+                'registration_status' => User::REGISTRATION_APPROVED,
+                'is_active' => true,
+            ]);
+
+            // Actor and target are the same admin — the first admin
+            // predates every account, so there is no one else to attribute
+            // its creation to.
+            AuditLog::record($admin, null, AuditLog::ACTION_ACCOUNT_CREATED, $admin);
+        });
 
         $this->info("Admin account '{$username}' created.");
 

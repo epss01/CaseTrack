@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
@@ -91,15 +93,23 @@ class RegisterController extends Controller
      */
     protected function create(array $data)
     {
-        return User::create([
-            'username' => $data['username'],
-            'first_name' => $data['first_name'],
-            'last_name' => $data['last_name'],
-            'office_region' => $data['office_region'],
-            'password' => Hash::make($data['password']),
-            'role_id' => $data['role_id'],
-            'registration_status' => User::REGISTRATION_PENDING,
-        ]);
+        return DB::transaction(function () use ($data) {
+            $user = User::create([
+                'username' => $data['username'],
+                'first_name' => $data['first_name'],
+                'last_name' => $data['last_name'],
+                'office_region' => $data['office_region'],
+                'password' => Hash::make($data['password']),
+                'role_id' => $data['role_id'],
+                'registration_status' => User::REGISTRATION_PENDING,
+            ]);
+
+            // Actor and target are the same user — a registrant acts alone,
+            // there is no one else yet to attribute the creation to.
+            AuditLog::record($user, null, AuditLog::ACTION_ACCOUNT_CREATED, $user);
+
+            return $user;
+        });
     }
 
     /**

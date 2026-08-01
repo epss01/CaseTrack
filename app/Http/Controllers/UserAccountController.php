@@ -48,7 +48,8 @@ class UserAccountController extends Controller
             AuditLog::record(
                 $request->user(),
                 null,
-                $validated['is_active'] ? AuditLog::ACTION_ACCOUNT_ACTIVATED : AuditLog::ACTION_ACCOUNT_DEACTIVATED
+                $validated['is_active'] ? AuditLog::ACTION_ACCOUNT_ACTIVATED : AuditLog::ACTION_ACCOUNT_DEACTIVATED,
+                $user
             );
         });
 
@@ -64,7 +65,7 @@ class UserAccountController extends Controller
         DB::transaction(function () use ($request, $user) {
             $user->update($request->validated());
 
-            AuditLog::record($request->user(), null, AuditLog::ACTION_ACCOUNT_ROLE_CHANGED);
+            AuditLog::record($request->user(), null, AuditLog::ACTION_ACCOUNT_ROLE_CHANGED, $user);
         });
 
         return redirect()
@@ -82,7 +83,7 @@ class UserAccountController extends Controller
             // value, Eloquent hashes it on save.
             $user->update(['password' => $request->validated('password')]);
 
-            AuditLog::record($request->user(), null, AuditLog::ACTION_ACCOUNT_PASSWORD_RESET);
+            AuditLog::record($request->user(), null, AuditLog::ACTION_ACCOUNT_PASSWORD_RESET, $user);
         });
 
         return redirect()

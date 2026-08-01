@@ -174,7 +174,11 @@ class CaseTimelineTest extends TestCase
             ->assertForbidden();
 
         $this->assertNull($case->fresh()->timeline->date_submitted_to);
-        $this->assertDatabaseCount('audit_logs', 0);
+        $this->assertDatabaseMissing('audit_logs', ['action_performed' => AuditLog::ACTION_TIMELINE_UPDATE]);
+        $this->assertSame(2, AuditLog::where('user_id', $investigator->id)
+            ->where('case_id', $case->id)
+            ->where('action_performed', AuditLog::ACTION_ACCESS_DENIED)
+            ->count());
     }
 
     // ----------------------------------------------------------------- audit

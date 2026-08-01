@@ -103,6 +103,11 @@
                                        @if (request()->routeIs('admin.users.*')) aria-current="page" @endif
                                        href="{{ route('admin.users.index') }}">{{ __('Accounts') }}</a>
                                 </li>
+                                <li class="nav-item">
+                                    <a class="nav-link @if (request()->routeIs('admin.audit-logs.*')) active @endif"
+                                       @if (request()->routeIs('admin.audit-logs.*')) aria-current="page" @endif
+                                       href="{{ route('admin.audit-logs.index') }}">{{ __('Audit Log') }}</a>
+                                </li>
                             @endif
                         @endauth
                     </ul>
