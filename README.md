@@ -26,11 +26,11 @@ Make sure these are installed before setting up the project:
 | npm | 9+ |
 | MySQL | 8.x |
 
-**PHP 8.4 is a hard requirement, not a recommendation** — despite `composer.json` declaring
-`"php": "^8.2"`. The lock file resolved against 8.4, and `vendor/composer/platform_check.php`
-aborts with a 500 on anything below `8.4.0`. XAMPP's bundled PHP 8.2.12 therefore cannot run
-`artisan` at all, so if you use XAMPP for MySQL you still need a separate PHP. If `php -v`
-reports below 8.4, install a newer one rather than working around it.
+**PHP 8.4 is a hard requirement, not a recommendation** — `composer.json` declares
+`"php": "^8.4"` and `vendor/composer/platform_check.php` aborts with a 500 on anything below
+`8.4.0`. XAMPP's bundled PHP 8.2.12 therefore cannot run `artisan` at all, so if you use XAMPP
+for MySQL you still need a separate PHP. If `php -v` reports below 8.4, install a newer one
+rather than working around it.
 
 ## Setup Instructions (fresh clone)
 
@@ -113,7 +113,25 @@ reports below 8.4, install a newer one rather than working around it.
    php artisan serve
    ```
 
-   Visit [http://127.0.0.1:8000](http://127.0.0.1:8000) — it redirects to `/login`. Use `/register` to create an account.
+   Visit [http://127.0.0.1:8000](http://127.0.0.1:8000) — it redirects to `/login`.
+
+   **A fresh database has no Admin account, so registering alone won't get you in.**
+   `/register` lands a new account in `pending` status — it can't log in until an Admin
+   approves it, and there's no route or view to create the first Admin (deliberately: it's
+   the entire provisioning surface for that role). Bootstrap one from the shell first:
+
+   ```bash
+   php artisan make:admin
+   ```
+
+   It prompts for a username, name, and password. Log in as that account to approve any
+   subsequent `/register` signups from `/admin/registrations`, or seed a full set of demo
+   accounts instead (Investigators and Supervisors, already approved — see
+   `database/seeders/DemoDataSeeder.php`; it refuses to run outside `local`/`testing`):
+
+   ```bash
+   php artisan db:seed --class=DemoDataSeeder
+   ```
 
 ## Pulling changes into an existing clone
 
@@ -145,22 +163,31 @@ routes are read at request time and never need a rebuild.
 
 ## Project Structure
 
-Standard Laravel 11 layout:
+Beyond the `laravel/ui` scaffold, the app is organized by feature:
 
-- `app/Http/Controllers/Auth/` — authentication controllers (login, register, password reset) from `laravel/ui`
-- `app/Http/Controllers/HomeController.php` — post-login landing page controller
-- `resources/views/auth/` — Bootstrap-styled login/register/password views
-- `resources/views/layouts/app.blade.php` — main Bootstrap navbar layout
+- `app/Http/Controllers/Auth/` — login, registration, and password-confirmation controllers from `laravel/ui` (email-based reset/verify are disabled — the schema has no email column)
+- `app/Http/Controllers/` — `CaseController`, `CaseTimelineController` (case intake, editing, closure, timelines); `ReportController`, `AlertController` (case listings, CSV export, deadline alerts); `WorkloadController` (workload capacity ranking, performance ratings); `RegistrationApprovalController`, `UserAccountController`, `AuditLogController` (Admin-only: registration approval, account management, audit log viewer); `HomeController` (routes to the right dashboard by role)
+- `app/Models/` — `CaseModel` (not `Case`, a reserved word), `User`, `Role`, `AuditLog`, `CaseTimeline`, `Victim`, `Respondent`, `Complainant`
+- `app/Policies/CaseModelPolicy.php` — per-case authorization (view/update/delete/reassign/closure), wired via `authorizeResource()`
+- `app/Http/Middleware/` — `EnsureUserHasRole` (route-level role gate), `EnsureAccountIsActive` (ends a session if its account is deactivated or unapproved mid-session)
+- `app/Services/CaseDeadlineService.php` — the only place that does date arithmetic on statutory case-timeline deadlines
+- `app/Console/Commands/` — `make:admin` (the only way to provision an Admin account — no route, no view), `users:rotate-password`
+- `resources/views/` — grouped by feature (`cases/`, `reports/`, `workload/`, `admin/`, `auth/`), sharing `layouts/app.blade.php`
 - `resources/sass/app.scss` — imports Bootstrap SCSS and custom variables
-- `routes/web.php` — app routes, including `Auth::routes()`
-- `database/migrations/` — schema migrations (users, cache, jobs tables by default)
+- `routes/web.php` — role-gated route groups (`role:Investigator,Supervisor`, `role:Supervisor`, `role:Admin`) plus `Auth::routes()`
+- `database/migrations/` — case/victim/respondent/complainant/timeline tables, `audit_logs`, the Admin role and account-status columns, alongside the three Laravel defaults (`users`, `cache`, `jobs`)
+- `database/seeders/` — `RoleSeeder`, `DatabaseSeeder`, `DemoDataSeeder` (all refuse to run outside `local`/`testing`)
 
 ## Common Commands
 
 ```bash
-php artisan migrate:fresh   # reset the database
-php artisan route:list      # list all routes
-php artisan test            # run the test suite (also checks assets are built and current)
-npm run build               # rebuild assets after a change under resources/sass or resources/js
-npm run dev                 # watch and rebuild while developing
+php artisan migrate:fresh    # reset the database
+php artisan route:list       # list all routes
+php artisan test             # run the test suite (also checks assets are built and current)
+php artisan make:admin       # provision an Admin account (no route/view exists for this)
+npm run build                # rebuild assets after a change under resources/sass or resources/js
+npm run dev                  # watch and rebuild while developing
+
+# generate a new password for an account, ending its sessions
+php artisan users:rotate-password <username> --actor=<you>
 ```
