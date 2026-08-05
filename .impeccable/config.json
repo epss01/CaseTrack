@@ -1,0 +1,23 @@
+{
+  "detector": {
+    "extensions": [
+      {
+        "ext": ".blade.php",
+        "engine": "html"
+      }
+    ],
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "resources/sass/_casetrack.scss"
+        ],
+        "createdAt": "2026-08-05T00:58:51.013Z",
+        "reason": "Confirmed intentional 2026-08-05: row accent keeps a stat tile's promised count (pending/overdue) visible in the table, reused by both cases.index and alerts.index"
+      }
+    ]
+  }
+}

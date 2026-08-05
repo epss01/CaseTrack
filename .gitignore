@@ -23,3 +23,5 @@ yarn-error.log
 /.zed
 /.claude/settings.local.json
 /.claude/launch.json
+/.impeccable/config.local.json
+/.impeccable/hook.cache.json

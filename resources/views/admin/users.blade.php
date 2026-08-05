@@ -29,7 +29,7 @@
                             <caption class="visually-hidden">{{ __('Every approved account, with role, status, and account actions.') }}</caption>
                             <thead>
                                 <tr>
-                                    <th scope="col">{{ __('Name') }}</th>
+                                    <th scope="col" class="col-title">{{ __('Name') }}</th>
                                     <th scope="col">{{ __('Username') }}</th>
                                     <th scope="col">{{ __('Role') }}</th>
                                     <th scope="col">{{ __('Status') }}</th>
@@ -43,7 +43,7 @@
                                         $isAdminRow = $user->isAdmin();
                                     @endphp
                                     <tr>
-                                        <td>
+                                        <td class="col-title">
                                             {{ $user->full_name }}
                                             @if ($isSelf)
                                                 <span class="badge bg-secondary">{{ __('you') }}</span>

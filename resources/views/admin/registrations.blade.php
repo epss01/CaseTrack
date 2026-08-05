@@ -26,7 +26,7 @@
                                 <caption class="visually-hidden">{{ __('Pending registrations, with requested role and submission date.') }}</caption>
                                 <thead>
                                     <tr>
-                                        <th scope="col">{{ __('Name') }}</th>
+                                        <th scope="col" class="col-title">{{ __('Name') }}</th>
                                         <th scope="col">{{ __('Username') }}</th>
                                         <th scope="col">{{ __('Requested Role') }}</th>
                                         <th scope="col">{{ __('Submitted') }}</th>
@@ -36,7 +36,7 @@
                                 <tbody>
                                     @foreach ($pending as $user)
                                         <tr>
-                                            <td>{{ $user->full_name }}</td>
+                                            <td class="col-title">{{ $user->full_name }}</td>
                                             <td>{{ $user->username }}</td>
                                             <td>{{ $user->role->role_name }}</td>
                                             <td class="text-nowrap">{{ $user->created_at->format('d M Y') }}</td>

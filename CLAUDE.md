@@ -359,6 +359,17 @@ column for this reason. Flag this rather than inventing a workaround.
   `Role::assignableInvestigatorRule()` and `CaseModel::complexityWeightRules()`.
 
 ## Workflow notes
+- **Design review split (decided 2026-08-05):** `/impeccable audit` is the WCAG 2.1 AA
+  source of truth (contrast, ARIA, keyboard, semantic HTML, forms) — it's backed by a
+  deterministic detector and scores accessibility as one of five fixed dimensions. The
+  `ui-ux-reviewer` subagent no longer covers accessibility; it's scoped to usability,
+  cross-view consistency, and workflow/information-architecture judgment calls that
+  `/impeccable audit` doesn't make. Run both when reviewing a new or changed Blade view —
+  they don't overlap. `PRODUCT.md` and `DESIGN.md` at the project root back the Impeccable
+  skill; see them (and `.impeccable/config.json`, which registers `.blade.php` with the
+  detector) before assuming a design decision isn't already written down. The per-edit and
+  Stop-time Impeccable hook is on, layered with the existing `guard-writes.php` hook — both
+  fire on `Edit`/`Write`, independently.
 - Work in small, single-feature increments (one controller/feature/migration at a time).
 - After generating code, run `php artisan test` before moving to the next task.
 - **Changed anything under `resources/sass/` or `resources/js/`? Run `npm run build`.**
