@@ -38,7 +38,7 @@ class RegistrationApprovalController extends Controller
                 'approved_at' => now(),
             ]);
 
-            AuditLog::record($request->user(), null, AuditLog::ACTION_REGISTRATION_APPROVED);
+            AuditLog::record($request->user(), null, AuditLog::ACTION_REGISTRATION_APPROVED, $user);
         });
 
         return redirect()
@@ -55,7 +55,7 @@ class RegistrationApprovalController extends Controller
         DB::transaction(function () use ($request, $user) {
             $user->update(['registration_status' => User::REGISTRATION_REJECTED]);
 
-            AuditLog::record($request->user(), null, AuditLog::ACTION_REGISTRATION_REJECTED);
+            AuditLog::record($request->user(), null, AuditLog::ACTION_REGISTRATION_REJECTED, $user);
         });
 
         return redirect()

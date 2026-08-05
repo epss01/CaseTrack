@@ -128,6 +128,7 @@ class AdminRegistrationApprovalTest extends TestCase
         $this->assertDatabaseCount('audit_logs', 1);
         $this->assertDatabaseHas('audit_logs', [
             'user_id' => $admin->id,
+            'target_user_id' => $pending->id,
             'case_id' => null,
             'action_performed' => AuditLog::ACTION_REGISTRATION_APPROVED,
         ]);
@@ -152,6 +153,7 @@ class AdminRegistrationApprovalTest extends TestCase
         $this->assertDatabaseCount('audit_logs', 1);
         $this->assertDatabaseHas('audit_logs', [
             'user_id' => $admin->id,
+            'target_user_id' => $pending->id,
             'case_id' => null,
             'action_performed' => AuditLog::ACTION_REGISTRATION_REJECTED,
         ]);

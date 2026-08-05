@@ -46,6 +46,17 @@ class RotatePasswordCommandTest extends TestCase
         $this->assertSame(2, AuditLog::where('action_performed', AuditLog::ACTION_ACCOUNT_PASSWORD_RESET)
             ->where('user_id', $actor->id)
             ->count());
+
+        $this->assertDatabaseHas('audit_logs', [
+            'user_id' => $actor->id,
+            'target_user_id' => $userA->id,
+            'action_performed' => AuditLog::ACTION_ACCOUNT_PASSWORD_RESET,
+        ]);
+        $this->assertDatabaseHas('audit_logs', [
+            'user_id' => $actor->id,
+            'target_user_id' => $userB->id,
+            'action_performed' => AuditLog::ACTION_ACCOUNT_PASSWORD_RESET,
+        ]);
     }
 
     public function test_it_requires_a_valid_actor(): void

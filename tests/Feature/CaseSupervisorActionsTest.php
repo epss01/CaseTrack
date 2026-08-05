@@ -103,7 +103,11 @@ class CaseSupervisorActionsTest extends TestCase
             ->assertForbidden();
 
         $this->assertNotSoftDeleted($case);
-        $this->assertDatabaseCount('audit_logs', 0);
+        $this->assertDatabaseMissing('audit_logs', ['action_performed' => AuditLog::ACTION_DELETE]);
+        $this->assertSame(2, AuditLog::where('user_id', $investigator->id)
+            ->where('case_id', $case->id)
+            ->where('action_performed', AuditLog::ACTION_ACCESS_DENIED)
+            ->count());
     }
 
     public function test_the_delete_control_is_hidden_from_investigators(): void
@@ -228,7 +232,11 @@ class CaseSupervisorActionsTest extends TestCase
         $case->refresh();
 
         $this->assertSame($investigator->id, $case->investigator_id);
-        $this->assertDatabaseCount('audit_logs', 0);
+        $this->assertDatabaseMissing('audit_logs', ['action_performed' => AuditLog::ACTION_UPDATE]);
+        $this->assertSame(2, AuditLog::where('user_id', $investigator->id)
+            ->where('case_id', $case->id)
+            ->where('action_performed', AuditLog::ACTION_ACCESS_DENIED)
+            ->count());
     }
 
     public function test_the_ordinary_edit_form_still_cannot_move_a_case(): void

@@ -54,7 +54,7 @@ class WorkloadController extends Controller
         DB::transaction(function () use ($request, $investigator) {
             $investigator->update($request->validated());
 
-            AuditLog::record($request->user(), null, AuditLog::ACTION_UPDATE);
+            AuditLog::record($request->user(), null, AuditLog::ACTION_UPDATE, $investigator);
         });
 
         return redirect()

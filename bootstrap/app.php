@@ -1,8 +1,14 @@
 <?php
 
+use App\Models\AuditLog;
+use App\Models\CaseModel;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -30,5 +36,30 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [\App\Http\Middleware\EnsureAccountIsActive::class]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        // Makes a denied request visible in the trail instead of leaving
+        // reconnaissance-by-URL-probing invisible: a CaseModelPolicy denial
+        // (AuthorizationException, before Laravel's default rendering turns
+        // it into a 403) or an EnsureUserHasRole/abort_if() denial (already
+        // an HttpException — also matches 404/405, hence the status check).
+        // Returns null always: this is a side effect on the way to the
+        // ordinary 403 response, never a replacement for it.
+        $exceptions->render(function (AuthorizationException|HttpException $e, Request $request) {
+            $user = $request->user();
+
+            if ($user === null) {
+                return null;
+            }
+
+            if ($e instanceof HttpException && $e->getStatusCode() !== 403) {
+                return null;
+            }
+
+            $case = $request->route('case');
+
+            DB::transaction(function () use ($user, $case) {
+                AuditLog::record($user, $case instanceof CaseModel ? $case : null, AuditLog::ACTION_ACCESS_DENIED);
+            });
+
+            return null;
+        });
     })->create();

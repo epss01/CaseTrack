@@ -163,6 +163,7 @@ class WorkloadPageTest extends TestCase
         // Not case-scoped, so case_id stays null — the column allows it.
         $this->assertDatabaseHas('audit_logs', [
             'user_id' => $supervisor->id,
+            'target_user_id' => $investigator->id,
             'case_id' => null,
             'action_performed' => AuditLog::ACTION_UPDATE,
         ]);

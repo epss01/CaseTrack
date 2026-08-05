@@ -84,7 +84,7 @@ class RotatePasswordCommand extends Command
 
                 DB::table('sessions')->where('user_id', $user->id)->delete();
 
-                AuditLog::record($actor, null, AuditLog::ACTION_ACCOUNT_PASSWORD_RESET);
+                AuditLog::record($actor, null, AuditLog::ACTION_ACCOUNT_PASSWORD_RESET, $user);
             });
 
             $rows[] = [$user->username, $newPassword];

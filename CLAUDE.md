@@ -294,15 +294,20 @@ column for this reason. Flag this rather than inventing a workaround.
   `ReportController` for the shape this produces.
 - Every new feature that touches case data needs a role/policy check.
 - Every state-changing action on case data should write an audit entry via
-  `AuditLog::record($user, $case, $action)` (`$case` may be null for actions not scoped to
-  one case, like a rating change), called **inside** the action's `DB::transaction()`.
+  `AuditLog::record($user, $case, $action, $target = null)` (`$case` may be null for actions
+  not scoped to one case, like a rating change; `$target` is the user acted *on*, when there
+  is one), called **inside** the action's `DB::transaction()`.
   **Every state-changing site now does this** (nine case-data sites closed 2026-07-30, six
-  more added 2026-07-31 for registration/account actions — fifteen total): intake
+  more added 2026-07-31 for registration/account actions, four more added 2026-08-01 for
+  authentication/authorization events — nineteen total, eighteen constants): intake
   (`ACTION_CREATE`), ordinary edits (`ACTION_EDIT`), Set Timeline
   (`ACTION_TIMELINE_UPDATE`), delete, reassign, performance-rating changes, all three
   closure steps (`ACTION_CLOSURE_PROPOSED` / `_CONFIRMED` / `_REJECTED`), registration
-  approve/reject (`ACTION_REGISTRATION_APPROVED` / `_REJECTED`), and account management
-  (`ACTION_ACCOUNT_ACTIVATED` / `_DEACTIVATED` / `_ROLE_CHANGED` / `_PASSWORD_RESET`).
+  approve/reject (`ACTION_REGISTRATION_APPROVED` / `_REJECTED`), account management
+  (`ACTION_ACCOUNT_ACTIVATED` / `_DEACTIVATED` / `_ROLE_CHANGED` / `_PASSWORD_RESET`), a
+  successful login (`ACTION_LOGIN`), a new account coming into existence
+  (`ACTION_ACCOUNT_CREATED` — self-registration and `make:admin`), and a denied request
+  (`ACTION_ACCESS_DENIED`, see below).
   **The constant carries the whole meaning** — `audit_logs` has no diff column and no
   field list, so an act the constant doesn't name is unrecoverable from the trail. Hence a
   distinct constant per closure step (a trail that can't tell a request from an approval
@@ -315,6 +320,41 @@ column for this reason. Flag this rather than inventing a workaround.
   `case_id` (an export spans a filtered set) and no `DB::transaction()`, being a lone insert
   with nothing to roll back beside it. Viewing the same listing as a page is **not** audited;
   logging page views would bury the entries that record actual changes.
+  Two more sites are deliberately not a controller action: `ACTION_LOGIN` fires from an
+  `Illuminate\Auth\Events\Login` listener in `AppServiceProvider::boot()`, not a
+  `LoginController` hook, so a remember-me cookie resuming a session — which never touches
+  the controller — is still audited; it's guarded to only fire when the account is approved
+  and active, the same two flags `LoginController::credentials()` already gates login on, so
+  a registration's own momentary self-login-then-logout and a deactivated account's
+  remember-me cookie getting bounced by `EnsureAccountIsActive` don't get recorded as if they
+  survived. `ACTION_ACCESS_DENIED` fires from an `$exceptions->render()` callback in
+  `bootstrap/app.php`, catching both `CaseModelPolicy` denials (`AuthorizationException`) and
+  `EnsureUserHasRole`/`abort_if()` denials (Symfony `HttpException`, filtered to status 403)
+  in one place; it records only when `$request->user()` isn't null (a guest is redirected,
+  never 403'd, and `audit_logs.user_id` is `NOT NULL`) and sets `case_id` when the denied
+  route already resolved a `CaseModel`. **Not audited: failed logins.** Almost none are
+  attributable — `LoginController::credentials()` adds `registration_status`/`is_active` as
+  query constraints, so an unknown, pending, rejected, or deactivated username never resolves
+  a user for `record()` to attribute an entry to, and there's no username column to fall back
+  to. Logging only the attributable sliver (right username, wrong password) would look like
+  failed-login coverage without being it.
+  **`target_user_id`** (nullable FK → `users.id`, `nullOnDelete` — descriptive, not the
+  attribution the row exists for, so unlike `user_id` it isn't RESTRICT) closes the "who was
+  acted on" gap flagged across three prior sessions: every account/registration/rating-change
+  entry used to name only the actor. Populated at all seven of those sites plus the three new
+  actor-is-target sites (self-registration, `make:admin`, and `users:rotate-password`, whose
+  existing `--actor=` flag was already solving a different problem — an operator acting *on*
+  someone else). **Still not populated:** the reassignment site (`ACTION_UPDATE` in
+  `CaseController::reassign`) — its target is arguably the incoming investigator, but that
+  row already carries a `case_id` that makes it independently readable, and reassignment
+  itself is out of scope for the pass that added the column. One-line follow-up, not urgent.
+- **`/admin/audit-logs`** (`AuditLogController`, `role:Admin` middleware only, no policy
+  class — same convention as `/admin/registrations` and `/admin/users`) is the trail's first
+  read path: filterable by acting user, action, and date range, paginated at the query level
+  like `/reports` and `/workload` (`paginate(25)->withQueryString()`). Deliberately no link
+  from a row's case to `reports.show` — Admin never opens, views, or edits a case, and that
+  link would 403 the only role that can see the page; the docket number is shown as plain
+  text instead.
 - Share validation rules rather than duplicating them across requests — see
   `Role::assignableInvestigatorRule()` and `CaseModel::complexityWeightRules()`.
 

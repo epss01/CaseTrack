@@ -59,7 +59,12 @@ class CaseClosureApprovalTest extends TestCase
             ->assertForbidden();
 
         $this->assertSame('Under investigation', $theirCase->fresh()->status);
-        $this->assertDatabaseCount('audit_logs', 0);
+        $this->assertDatabaseMissing('audit_logs', ['action_performed' => AuditLog::ACTION_CLOSURE_PROPOSED]);
+        $this->assertDatabaseHas('audit_logs', [
+            'user_id' => $investigator->id,
+            'case_id' => $theirCase->id,
+            'action_performed' => AuditLog::ACTION_ACCESS_DENIED,
+        ]);
     }
 
     public function test_proposing_twice_does_not_overwrite_the_stored_prior_status(): void
@@ -98,7 +103,12 @@ class CaseClosureApprovalTest extends TestCase
             ->assertForbidden();
 
         $this->assertSame(CaseModel::STATUS_PENDING_CLOSURE, $case->fresh()->status);
-        $this->assertDatabaseCount('audit_logs', 0);
+        $this->assertDatabaseMissing('audit_logs', ['action_performed' => AuditLog::ACTION_CLOSURE_CONFIRMED]);
+        $this->assertDatabaseHas('audit_logs', [
+            'user_id' => $investigator->id,
+            'case_id' => $case->id,
+            'action_performed' => AuditLog::ACTION_ACCESS_DENIED,
+        ]);
     }
 
     public function test_an_investigator_cannot_reach_the_closure_review_page(): void
@@ -337,7 +347,11 @@ class CaseClosureApprovalTest extends TestCase
             ->assertForbidden();
 
         $this->assertSame(CaseModel::STATUS_PENDING_CLOSURE, $case->fresh()->status);
-        $this->assertDatabaseCount('audit_logs', 0);
+        $this->assertDatabaseMissing('audit_logs', ['action_performed' => AuditLog::ACTION_CLOSURE_PROPOSED]);
+        $this->assertDatabaseMissing('audit_logs', ['action_performed' => AuditLog::ACTION_CLOSURE_CONFIRMED]);
+        $this->assertSame(3, AuditLog::where('user_id', $outsider->id)
+            ->where('action_performed', AuditLog::ACTION_ACCESS_DENIED)
+            ->count());
     }
 
     public function test_guests_are_redirected_to_the_login_screen(): void
