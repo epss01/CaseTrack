@@ -253,6 +253,52 @@ class CaseIntakeTest extends TestCase
         $this->assertDatabaseCount('cases', 0);
     }
 
+    public function test_the_picker_excludes_rejected_pending_and_deactivated_investigators(): void
+    {
+        $supervisor = User::factory()->supervisor()->create();
+
+        User::factory()->investigator()->create(['first_name' => 'Ana', 'last_name' => 'Cruz']);
+        User::factory()->investigator()->create([
+            'first_name' => 'Rejected', 'last_name' => 'Reyes',
+            'registration_status' => User::REGISTRATION_REJECTED,
+        ]);
+        User::factory()->investigator()->create([
+            'first_name' => 'Pending', 'last_name' => 'Ramos',
+            'registration_status' => User::REGISTRATION_PENDING,
+        ]);
+        User::factory()->investigator()->create([
+            'first_name' => 'Departed', 'last_name' => 'Diaz',
+            'is_active' => false,
+        ]);
+
+        $this->actingAs($supervisor)
+            ->get(route('cases.create'))
+            ->assertOk()
+            ->assertSee('Ana Cruz')
+            ->assertDontSee('Rejected Reyes')
+            ->assertDontSee('Pending Ramos')
+            ->assertDontSee('Departed Diaz');
+    }
+
+    public function test_a_case_cannot_be_assigned_to_a_rejected_pending_or_deactivated_investigator(): void
+    {
+        $supervisor = User::factory()->supervisor()->create();
+
+        $rejected = User::factory()->investigator()->create(['registration_status' => User::REGISTRATION_REJECTED]);
+        $pending = User::factory()->investigator()->create(['registration_status' => User::REGISTRATION_PENDING]);
+        $deactivated = User::factory()->investigator()->create(['is_active' => false]);
+
+        foreach ([$rejected, $pending, $deactivated] as $ineligible) {
+            $this->actingAs($supervisor)
+                ->post(route('cases.store'), $this->intakePayload([
+                    'investigator_id' => $ineligible->id,
+                ]))
+                ->assertSessionHasErrors('investigator_id');
+        }
+
+        $this->assertDatabaseCount('cases', 0);
+    }
+
     public function test_at_least_one_victim_and_one_respondent_are_required(): void
     {
         $investigator = User::factory()->investigator()->create();

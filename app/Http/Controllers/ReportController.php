@@ -66,9 +66,14 @@ class ReportController extends Controller
 
             // Only a supervisor has anyone to choose between: an investigator
             // sees one caseload whatever the filter says.
+            //
+            // approved() only, not is_active: a deactivated investigator's
+            // past cases are still worth filtering by, so they stay in this
+            // dropdown even though they can no longer receive new ones.
             'investigators' => $request->user()->isSupervisor()
                 ? User::query()
                     ->whereRelation('role', 'role_name', Role::INVESTIGATOR)
+                    ->approved()
                     ->orderBy('last_name')
                     ->orderBy('first_name')
                     ->get()

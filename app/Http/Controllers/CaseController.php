@@ -317,6 +317,11 @@ class CaseController extends Controller
      * Investigators do not choose: the form has no picker for them and
      * StoreCaseRequest pins the assignment to themselves regardless.
      *
+     * Offers only investigators who can actually take the case — approved
+     * registration, still active. Role::assignableInvestigatorRule()
+     * enforces the same set server-side, so a rejected/pending/deactivated
+     * id can't be POSTed straight past this list either.
+     *
      * @return \Illuminate\Database\Eloquent\Collection<int, User>
      */
     protected function assignableInvestigators(User $user)
@@ -327,6 +332,8 @@ class CaseController extends Controller
 
         return User::query()
             ->whereRelation('role', 'role_name', Role::INVESTIGATOR)
+            ->approved()
+            ->where('is_active', true)
             ->orderBy('last_name')
             ->orderBy('first_name')
             ->get()

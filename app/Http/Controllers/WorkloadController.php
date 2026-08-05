@@ -21,6 +21,12 @@ class WorkloadController extends Controller
     {
         $investigators = User::query()
             ->whereRelation('role', 'role_name', Role::INVESTIGATOR)
+            // Rejected/pending registrants were never real users and hold no
+            // cases — excluded. is_active is deliberately NOT filtered: a
+            // deactivated investigator is departed but may still hold an
+            // active caseload, which needs to stay visible here to be
+            // reassigned rather than vanish unseen.
+            ->approved()
             ->withCount(['cases as active_cases_count' => fn ($query) => $query->active()])
             ->withSum(['cases as active_complexity_sum' => fn ($query) => $query->active()], 'complexity_weight')
             // WCS_i = active_complexity_sum * (2 - performance_rating) — the

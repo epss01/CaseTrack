@@ -147,6 +147,17 @@ class User extends Authenticatable
     }
 
     /**
+     * Accounts an admin approved. Excludes pending and rejected registrations
+     * — they were never real users and hold no cases, so they are noise in
+     * any listing. Says nothing about is_active: a deactivated account is a
+     * departed user whose caseload and history still matter.
+     */
+    public function scopeApproved($query)
+    {
+        return $query->where('registration_status', self::REGISTRATION_APPROVED);
+    }
+
+    /**
      * The admin who approved this registration, if any.
      */
     public function approvedBy()

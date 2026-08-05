@@ -100,6 +100,34 @@ class WorkloadPageTest extends TestCase
             ->assertDontSee($lightest->full_name);
     }
 
+    public function test_a_rejected_investigator_is_hidden_but_a_deactivated_one_still_shows(): void
+    {
+        $supervisor = User::factory()->supervisor()->create();
+
+        // Never a real user — excluded everywhere.
+        $rejected = User::factory()->investigator()->create([
+            'first_name' => 'Rejected', 'last_name' => 'Reyes',
+            'registration_status' => User::REGISTRATION_REJECTED,
+        ]);
+
+        // A departed investigator: no longer assignable, but their existing
+        // caseload must stay visible here so it can be reassigned.
+        $deactivated = User::factory()->investigator()->create([
+            'first_name' => 'Departed', 'last_name' => 'Diaz',
+            'is_active' => false,
+        ]);
+        CaseModel::factory()->assignedTo($deactivated)->create([
+            'status' => CaseModel::STATUS_DOCKETED,
+            'complexity_weight' => 3,
+        ]);
+
+        $this->actingAs($supervisor)
+            ->get(route('workload.index'))
+            ->assertOk()
+            ->assertDontSee('Rejected Reyes')
+            ->assertSee('Departed Diaz');
+    }
+
     public function test_an_investigator_cannot_reach_the_workload_page(): void
     {
         $investigator = User::factory()->investigator()->create();

@@ -55,15 +55,33 @@ class Role extends Model
      * Validation rule constraining a user id to someone who actually holds
      * the Investigator role — a case may not be assigned to a supervisor.
      *
-     * Shared by intake (StoreCaseRequest) and reassignment
-     * (ReassignCaseRequest) so the two cannot drift apart.
+     * The loose form: says nothing about registration/active state. Used
+     * where a departed investigator still needs to be reachable, e.g.
+     * filtering reports by someone no longer taking new cases.
      */
-    public static function assignableInvestigatorRule(): Exists
+    public static function investigatorRule(): Exists
     {
         return Rule::exists('users', 'id')->where(fn ($query) => $query->whereIn(
             'role_id',
             static::query()->where('role_name', self::INVESTIGATOR)->select('id')
         ));
+    }
+
+    /**
+     * A user id belonging to an investigator who may actually receive a
+     * case: approved registration, account still active. Excludes a
+     * rejected/pending registrant (never a real user) and a deactivated
+     * investigator (departed — still has cases, but takes no new ones).
+     *
+     * Mirrors CaseController::assignableInvestigators(), the picker that
+     * offers these same people, and is shared by intake (StoreCaseRequest)
+     * and reassignment (ReassignCaseRequest) so the two cannot drift apart.
+     */
+    public static function assignableInvestigatorRule(): Exists
+    {
+        return static::investigatorRule()->where(fn ($query) => $query
+            ->where('is_active', true)
+            ->where('registration_status', User::REGISTRATION_APPROVED));
     }
 
     /**

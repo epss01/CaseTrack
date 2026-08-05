@@ -36,10 +36,15 @@ class ReportFilterRequest extends FormRequest
             // someone holding the Investigator role, so only such a person can
             // be worth filtering by.
             //
+            // Deliberately the loose rule, not assignableInvestigatorRule():
+            // a departed (deactivated) investigator's cases are still worth
+            // reporting on, so they must stay a valid filter value even
+            // though they can no longer receive new cases.
+            //
             // This is a convenience, not a boundary. An investigator who passes
             // a colleague's id still meets scopeVisibleTo() first and gets an
             // empty set back, never the colleague's cases.
-            'investigator_id' => ['nullable', Role::assignableInvestigatorRule()],
+            'investigator_id' => ['nullable', Role::investigatorRule()],
 
             // Free text on purpose. cases.status has no ratified vocabulary —
             // three named constants, two more values circulating only in the

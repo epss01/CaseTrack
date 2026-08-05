@@ -87,7 +87,7 @@ class StoreCaseRequest extends FormRequest
             'respondents.required' => __('Record at least one respondent.'),
             'respondents.min' => __('Record at least one respondent.'),
             'investigator_id.required' => __('Choose the investigator this case is assigned to.'),
-            'investigator_id.exists' => __('The selected user is not an investigator.'),
+            'investigator_id.exists' => __('The selected user is not an investigator who can be assigned cases.'),
         ];
     }
 
