@@ -12,7 +12,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the branching strategy — `main` is 
 - **Framework:** Laravel 11 (PHP)
 - **Auth scaffolding:** `laravel/ui` (Blade views + Bootstrap 5)
 - **Frontend build:** Vite + Sass (compiles `resources/sass/app.scss`)
-- **Database:** MySQL — the test suite runs on in-memory SQLite instead (see step 6)
+- **Database:** MariaDB (bundled with XAMPP) — the test suite runs on in-memory SQLite instead (see step 6)
 
 ## Prerequisites
 
@@ -24,13 +24,13 @@ Make sure these are installed before setting up the project:
 | Composer | 2.x |
 | Node.js | 18+ (LTS recommended) |
 | npm | 9+ |
-| MySQL | 8.x |
+| MariaDB | 10.4+ (bundled with XAMPP) |
 
 **PHP 8.4 is a hard requirement, not a recommendation** — `composer.json` declares
 `"php": "^8.4"` and `vendor/composer/platform_check.php` aborts with a 500 on anything below
 `8.4.0`. XAMPP's bundled PHP 8.2.12 therefore cannot run `artisan` at all, so if you use XAMPP
-for MySQL you still need a separate PHP. If `php -v` reports below 8.4, install a newer one
-rather than working around it.
+for the database you still need a separate PHP. If `php -v` reports below 8.4, install a newer
+one rather than working around it.
 
 ## Setup Instructions (fresh clone)
 
@@ -67,8 +67,9 @@ rather than working around it.
 
 6. **Set up the database**
 
-   The app runs on **MySQL**. `.env.example` still carries Laravel's stock SQLite default, so
-   copying it in step 4 leaves you on the wrong database — set these values in your `.env`:
+   The app runs on **MariaDB** (XAMPP's bundled database, not a separate MySQL install).
+   `.env.example` already carries the right driver and port for this project's setup, so step 4
+   should leave you on the correct values — confirm your `.env` has these:
 
    ```dotenv
    DB_CONNECTION=mysql
@@ -79,8 +80,10 @@ rather than working around it.
    DB_PASSWORD=
    ```
 
-   `3307` is where XAMPP's MySQL listens on this project's setup, because a separate standalone
-   MySQL 8 already holds the default `3306`. Check which port your own MySQL uses and set that.
+   (`DB_CONNECTION=mysql` is correct even though the server is MariaDB — Laravel's MySQL driver
+   speaks MariaDB's wire protocol natively.) `3307` is where XAMPP's MariaDB listens on this
+   project's setup, because a separate standalone MySQL 8 already holds the default `3306`.
+   Check which port your own database uses and set that.
 
    Create the schema (via phpMyAdmin, or `CREATE DATABASE casetrack;`), then run the migrations:
 
@@ -90,7 +93,7 @@ rather than working around it.
 
    **The test suite never touches this database.** `phpunit.xml` pins `DB_CONNECTION=sqlite` and
    `DB_DATABASE=:memory:`, so `php artisan test` builds a fresh in-memory SQLite database on every
-   run. Only what you drive through a browser reaches the MySQL one — worth remembering when a
+   run. Only what you drive through a browser reaches the MariaDB one — worth remembering when a
    query behaves differently under test than it does in the app.
 
 7. **Build front-end assets**
@@ -191,3 +194,32 @@ npm run dev                  # watch and rebuild while developing
 # generate a new password for an account, ending its sessions
 php artisan users:rotate-password <username> --actor=<you>
 ```
+
+## Running with Docker
+
+An optional, additive alternative to the setup above — app (`php:8.4-cli`) + database
+(`mariadb:10.4`, matching the version above) in containers. This doesn't replace the host
+workflow; both work side by side against their own separate databases.
+
+```bash
+cp .env.docker .env
+docker compose up -d --build
+docker compose exec app php artisan migrate
+```
+
+Visit [http://localhost:8000/login](http://localhost:8000/login). First boot installs Composer
+and npm dependencies and builds assets automatically (a few minutes); later boots skip whatever
+already exists. Seed demo accounts the same way as the host setup:
+`docker compose exec app php artisan db:seed --class=DemoDataSeeder`.
+
+A couple of things that will otherwise cost you time:
+
+- The container runs as **root** — fine for a throwaway dev container on a bind mount, not a
+  choice to carry into any future production image.
+- The database publishes on **`127.0.0.1:3308`**, not 3306 or 3307 — both are already taken on
+  a machine also running XAMPP and a standalone MySQL. Only matters if you want to reach it from
+  a host tool like phpMyAdmin; the app container talks to it over the Docker network regardless.
+- `node_modules` is a separate volume, not the bind-mounted host folder — the host's copy has
+  Windows-native build binaries (`esbuild`/`rollup`) that don't run inside the Linux container.
+
+`docker compose down -v` stops everything and drops the database volume.

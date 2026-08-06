@@ -21,12 +21,17 @@ NOT an AI/chatbot system. Deterministic, rule-based deadline tracking only.
 
   Adding `%USERPROFILE%\.config\herd-lite\bin` to PATH would remove the need for this,
   but nothing in the repo depends on that being done.
-- Database: MySQL (XAMPP, port 3307 — a separate standalone MySQL 8 runs on 3306; `.env`
-  points at the XAMPP instance, database `casetrack`). Tests run on SQLite in-memory
-  via `phpunit.xml` — only the test suite uses SQLite, so anything driven through a
-  browser is hitting the real MySQL database.
+- Database: MariaDB 10.4 (XAMPP's bundled database, not a separate MySQL install — verified
+  2026-08-06, `SELECT VERSION()` on port 3307 returns `10.4.32-MariaDB`; README and this file
+  previously said "MySQL" here, which was wrong), port 3307 — a separate standalone MySQL 8
+  runs on 3306; `.env` points at the XAMPP instance, database `casetrack`. Tests run on SQLite
+  in-memory via `phpunit.xml` — only the test suite uses SQLite, so anything driven through a
+  browser is hitting the real MariaDB database. (`DB_CONNECTION=mysql` in `.env` is still
+  correct — Laravel's MySQL driver speaks MariaDB's wire protocol natively.)
 - Frontend: HTML5, CSS3, JavaScript, Bootstrap 5 (`laravel/ui` preset, not Breeze/Tailwind)
-- Local dev: XAMPP for MySQL, Herd Lite for PHP
+- Local dev: XAMPP for MariaDB, Herd Lite for PHP. A Docker alternative (`docker compose up`,
+  `mariadb:10.4` + `php:8.4-cli`) also exists as of 2026-08-06 — see README's "Running with
+  Docker" section. Additive only; doesn't replace this host setup.
 - Composer lives beside the PHP binary and is likewise **not on PATH**:
   `C:\Users\admin\.config\herd-lite\bin\composer.phar`, invoked through the same
   absolute PHP path. (The `composer.phar` under `AppData\Roaming\Composer` is
