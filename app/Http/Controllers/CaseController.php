@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class CaseController extends Controller
 {
@@ -137,10 +138,21 @@ class CaseController extends Controller
             'source_info' => ['nullable', 'string', 'max:255'],
             'status' => CaseModel::statusRulesFor($case),
             'complexity_weight' => CaseModel::complexityWeightRules(),
+            'updated_at' => ['required', 'string'],
         ]);
 
         DB::transaction(function () use ($request, $case, $validated) {
-            $case->update($validated);
+            // Optimistic lock: lockForUpdate() so the compare-then-write can't
+            // race a concurrent save between the read and the write below.
+            $fresh = CaseModel::whereKey($case->getKey())->lockForUpdate()->firstOrFail();
+
+            if ($fresh->updated_at->format('Y-m-d H:i:s') !== $validated['updated_at']) {
+                throw ValidationException::withMessages([
+                    'updated_at' => __('This case was updated by someone else while you were editing. Reload the page to see the latest version before saving again.'),
+                ]);
+            }
+
+            $case->update(collect($validated)->except('updated_at')->all());
 
             AuditLog::record($request->user(), $case, AuditLog::ACTION_EDIT);
         });

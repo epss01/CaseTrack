@@ -253,6 +253,7 @@ class CaseSupervisorActionsTest extends TestCase
                 'complexity_weight' => 2,
                 'investigator_id' => $colleague->id,
                 'docket_no' => 'CHR-VIII-2026-9999',
+                'updated_at' => $case->updated_at->format('Y-m-d H:i:s'),
             ])
             ->assertRedirect(route('cases.show', $case));
 
@@ -273,6 +274,7 @@ class CaseSupervisorActionsTest extends TestCase
                 'incident_details' => 'Corrected details',
                 'status' => 'Under investigation',
                 'complexity_weight' => 4,
+                'updated_at' => $case->updated_at->format('Y-m-d H:i:s'),
             ])
             ->assertRedirect(route('cases.show', $case))
             ->assertSessionHasNoErrors();

@@ -11,6 +11,13 @@
                     <form method="POST" action="{{ route('cases.update', $case) }}">
                         @csrf
                         @method('PUT')
+                        <input type="hidden" name="updated_at" value="{{ old('updated_at', $case->updated_at->format('Y-m-d H:i:s')) }}">
+
+                        @error('updated_at')
+                            <div class="alert alert-warning" role="alert">
+                                {{ $message }}
+                            </div>
+                        @enderror
 
                         <div class="row mb-3">
                             <label for="case_title" class="col-md-4 col-form-label text-md-end">{{ __('Case Title') }}</label>
