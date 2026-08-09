@@ -223,3 +223,31 @@ A couple of things that will otherwise cost you time:
   Windows-native build binaries (`esbuild`/`rollup`) that don't run inside the Linux container.
 
 `docker compose down -v` stops everything and drops the database volume.
+
+## Switching back to XAMPP (from Docker)
+
+The reverse direction of the section above — hop back to the host XAMPP + Herd Lite setup that
+`## Setup Instructions` assumes by default, without hand-editing `.env`:
+
+```bash
+cp .env.xampp .env
+php artisan key:generate
+```
+
+A couple of things that will otherwise cost you time:
+
+- **Start MariaDB first** — XAMPP Control Panel, or `C:\xampp\mysql_start.bat`. `.env.xampp`
+  points at **port 3307** (XAMPP's bundled MariaDB), not Docker's 3308 or the standalone MySQL 8
+  on 3306.
+- **Use Herd Lite's PHP, not XAMPP's bundled one.** XAMPP's bundled PHP (8.2.12) can't run
+  `artisan` at all — this project needs 8.4+. The working binary is Herd Lite, at
+  `C:\Users\admin\.config\herd-lite\bin\php.exe`, and it's **not on PATH**, so invoke it by
+  absolute path:
+
+  ```bash
+  "C:/Users/admin/.config/herd-lite/bin/php.exe" artisan serve
+  ```
+
+  Composer lives beside it at `...\herd-lite\bin\composer.phar`, same rule.
+- No asset rebuild needed for this switch — `public/build` doesn't depend on which `.env` is
+  active.
