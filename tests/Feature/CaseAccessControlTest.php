@@ -82,6 +82,7 @@ class CaseAccessControlTest extends TestCase
                 'source_info' => 'Walk-in',
                 'status' => 'Under investigation',
                 'complexity_weight' => 3,
+                'updated_at' => $case->updated_at->format('Y-m-d H:i:s'),
             ])
             ->assertRedirect(route('cases.show', $case));
 
@@ -104,6 +105,7 @@ class CaseAccessControlTest extends TestCase
                 'incident_details' => $case->incident_details,
                 'status' => 'For review',
                 'complexity_weight' => $case->complexity_weight,
+                'updated_at' => $case->updated_at->format('Y-m-d H:i:s'),
             ])
             ->assertRedirect(route('cases.show', $case));
 

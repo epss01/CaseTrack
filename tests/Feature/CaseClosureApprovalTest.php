@@ -245,6 +245,7 @@ class CaseClosureApprovalTest extends TestCase
                 'incident_details' => $case->incident_details,
                 'status' => CaseModel::STATUS_CLOSED,
                 'complexity_weight' => $case->complexity_weight,
+                'updated_at' => $case->updated_at->format('Y-m-d H:i:s'),
             ])
             ->assertSessionHasErrors('status');
 
@@ -267,6 +268,7 @@ class CaseClosureApprovalTest extends TestCase
                 'incident_details' => $case->incident_details,
                 'status' => CaseModel::STATUS_DOCKETED,
                 'complexity_weight' => $case->complexity_weight,
+                'updated_at' => $case->updated_at->format('Y-m-d H:i:s'),
             ])
             ->assertSessionHasErrors('status');
 
@@ -286,6 +288,7 @@ class CaseClosureApprovalTest extends TestCase
                 'incident_details' => $case->incident_details,
                 'status' => CaseModel::STATUS_CLOSED,
                 'complexity_weight' => $case->complexity_weight,
+                'updated_at' => $case->updated_at->format('Y-m-d H:i:s'),
             ])
             ->assertSessionHasNoErrors();
 
