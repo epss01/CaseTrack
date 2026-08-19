@@ -120,6 +120,25 @@ class AuditLog extends Model
     public const ACTION_ACCESS_DENIED = 'ACCESS_DENIED';
 
     /**
+     * A login blocked by ThrottlesLogins' lockout (LoginController), fired
+     * only when the attempted username resolves to a real approved+active
+     * account. This row names the account being attacked, not the
+     * attacker — audit_logs has no IP or username column, and user_id is
+     * NOT NULL, so there is nowhere to attribute the source of the attempt.
+     * target_user_id is always null, same reasoning as ACTION_LOGIN: a
+     * lockout acts on no one but the account being guessed against.
+     *
+     * Deliberately partial, same reasoning as "not audited: failed logins"
+     * above ACTION_LOGIN: a lockout against an unknown, pending, rejected,
+     * or deactivated username resolves no user for record() to attribute
+     * an entry to, so it is not recorded at all. Logging only the
+     * attributable sliver would look like lockout coverage without being
+     * it — this constant answers "is someone guessing at a real account's
+     * password," not "how many lockouts happened."
+     */
+    public const ACTION_LOGIN_LOCKOUT = 'LOGIN_LOCKOUT';
+
+    /**
      * Every action constant, in one place. RoleActions::ALL precedent — for
      * the audit log viewer's filter dropdown and its Rule::in(), so the
      * viewer's vocabulary can't silently drift from what record() accepts.
@@ -145,6 +164,7 @@ class AuditLog extends Model
         self::ACTION_LOGIN,
         self::ACTION_ACCOUNT_CREATED,
         self::ACTION_ACCESS_DENIED,
+        self::ACTION_LOGIN_LOCKOUT,
     ];
 
     const UPDATED_AT = null;

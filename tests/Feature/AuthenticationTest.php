@@ -202,4 +202,102 @@ class AuthenticationTest extends TestCase
         $this->get('/password/reset')->assertNotFound();
         $this->get('/email/verify')->assertNotFound();
     }
+
+    /**
+     * ThrottlesLogins (via AuthenticatesUsers on LoginController) caps failed
+     * attempts at 5 before locking out — no throttle: route middleware
+     * needed, the trait already keys on username+IP. The 6th attempt is
+     * blocked before the password is even checked.
+     */
+    public function test_repeated_failed_logins_are_locked_out(): void
+    {
+        User::factory()->create(['username' => 'jdelacruz', 'password' => 'password']);
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->post('/login', ['username' => 'jdelacruz', 'password' => 'wrong-password'])
+                ->assertSessionHasErrors('username');
+        }
+
+        $this->post('/login', ['username' => 'jdelacruz', 'password' => 'password'])
+            ->assertStatus(302)
+            ->assertSessionHasErrors('username');
+
+        $this->assertGuest();
+    }
+
+    /**
+     * The throttle key is username+IP (ThrottlesLogins::throttleKey()), not
+     * IP alone — a lockout on one username must not block a different
+     * username from the same client.
+     */
+    public function test_a_lockout_on_one_username_does_not_block_another(): void
+    {
+        User::factory()->create(['username' => 'jdelacruz', 'password' => 'password']);
+        User::factory()->create(['username' => 'mreyes', 'password' => 'password']);
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->post('/login', ['username' => 'jdelacruz', 'password' => 'wrong-password']);
+        }
+
+        $response = $this->post('/login', ['username' => 'mreyes', 'password' => 'password']);
+
+        $response->assertRedirect('/home');
+        $this->assertAuthenticatedAs(User::where('username', 'mreyes')->first());
+    }
+
+    /**
+     * A correct password before the 5-attempt cap clears the counter
+     * (ThrottlesLogins::clearLoginAttempts() in sendLoginResponse()) — a
+     * legitimate user who mistypes twice isn't penalized afterward.
+     */
+    public function test_a_successful_login_clears_prior_failed_attempts(): void
+    {
+        $user = User::factory()->create(['username' => 'jdelacruz', 'password' => 'password']);
+
+        $this->post('/login', ['username' => 'jdelacruz', 'password' => 'wrong-password']);
+        $this->post('/login', ['username' => 'jdelacruz', 'password' => 'wrong-password']);
+
+        $this->post('/login', ['username' => 'jdelacruz', 'password' => 'password'])
+            ->assertRedirect('/home');
+
+        $this->assertAuthenticatedAs($user);
+    }
+
+    /**
+     * A lockout against a real, approved+active username is audited so a
+     * password-guessing run against a known account is visible in the
+     * trail — see ACTION_LOGIN_LOCKOUT's docblock for why this is
+     * deliberately the only case that gets recorded.
+     */
+    public function test_a_lockout_against_a_real_account_is_audited(): void
+    {
+        $user = User::factory()->create(['username' => 'jdelacruz', 'password' => 'password']);
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->post('/login', ['username' => 'jdelacruz', 'password' => 'wrong-password']);
+        }
+        $this->post('/login', ['username' => 'jdelacruz', 'password' => 'password']);
+
+        $this->assertDatabaseHas('audit_logs', [
+            'user_id' => $user->id,
+            'target_user_id' => null,
+            'case_id' => null,
+            'action_performed' => AuditLog::ACTION_LOGIN_LOCKOUT,
+        ]);
+    }
+
+    /**
+     * An unknown username resolves no user for the Lockout listener to
+     * attribute an entry to, same reasoning as failed logins generally —
+     * logging only the attributable sliver would misrepresent coverage.
+     */
+    public function test_a_lockout_against_an_unknown_username_writes_no_audit_entry(): void
+    {
+        for ($i = 0; $i < 5; $i++) {
+            $this->post('/login', ['username' => 'nonexistent', 'password' => 'wrong-password']);
+        }
+        $this->post('/login', ['username' => 'nonexistent', 'password' => 'wrong-password']);
+
+        $this->assertDatabaseMissing('audit_logs', ['action_performed' => AuditLog::ACTION_LOGIN_LOCKOUT]);
+    }
 }

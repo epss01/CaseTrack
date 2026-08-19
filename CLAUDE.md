@@ -235,6 +235,26 @@ compromised account short of a direct database edit.
   *new* login; `EnsureAccountIsActive` (appended to the `web` middleware group globally, not
   a route group) ends an *already-authenticated* session the moment its account stops being
   approved and active, so a deactivation isn't outlived by a session started before it.
+- **Login rate limiting (added 2026-08-19): inherited from the framework, not route
+  middleware.** `LoginController` uses `AuthenticatesUsers`, which pulls in
+  `ThrottlesLogins` — `login()` already checks `hasTooManyLoginAttempts()` before every
+  attempt and calls `incrementLoginAttempts()` on failure, so `POST /login` needs no
+  `throttle:` middleware of its own; adding one would just be a second, redundant limiter.
+  Keyed `strtolower(username)|ip` (`ThrottlesLogins::throttleKey()`), so a lockout on one
+  username never blocks a different one from the same client, and vice versa. Attempt cap
+  stays at the trait default of 5 (matching registration's `throttle:5,1`); the decay
+  window is widened from the trait's 60-second default to 15 minutes via
+  `LoginController::$decayMinutes` — 60 seconds was too short to meaningfully slow a
+  password-guessing script. A correct password before the cap clears the counter
+  (`clearLoginAttempts()`), so mistyping twice and then succeeding isn't penalized.
+  **`AuditLog::ACTION_LOGIN_LOCKOUT`** fires from an `Illuminate\Auth\Events\Lockout`
+  listener in `AppServiceProvider::boot()` (same placement as the `Login` listener) —
+  but only when the attempted username resolves to a real approved+active account.
+  Same reasoning as "not audited: failed logins" below: an unknown, pending, rejected, or
+  deactivated username resolves no user to attribute an entry to, so a lockout against one
+  is silently not recorded — logging only the attributable sliver would look like lockout
+  coverage without being it. `target_user_id` is always null on this action (a lockout has
+  no target, only an account being guessed against).
 - **Admin provisioning: `php artisan make:admin` only.** No route, no view — interactive
   prompt for username/name/password, same validation shape as registration. Registration
   can't reach Admin (`selectableRoleRule()`) and neither can the role-change screen
@@ -304,15 +324,17 @@ column for this reason. Flag this rather than inventing a workaround.
   is one), called **inside** the action's `DB::transaction()`.
   **Every state-changing site now does this** (nine case-data sites closed 2026-07-30, six
   more added 2026-07-31 for registration/account actions, four more added 2026-08-01 for
-  authentication/authorization events — nineteen total, eighteen constants): intake
+  authentication/authorization events, one more added 2026-08-19 for the login lockout —
+  twenty total, nineteen constants): intake
   (`ACTION_CREATE`), ordinary edits (`ACTION_EDIT`), Set Timeline
   (`ACTION_TIMELINE_UPDATE`), delete, reassign, performance-rating changes, all three
   closure steps (`ACTION_CLOSURE_PROPOSED` / `_CONFIRMED` / `_REJECTED`), registration
   approve/reject (`ACTION_REGISTRATION_APPROVED` / `_REJECTED`), account management
   (`ACTION_ACCOUNT_ACTIVATED` / `_DEACTIVATED` / `_ROLE_CHANGED` / `_PASSWORD_RESET`), a
   successful login (`ACTION_LOGIN`), a new account coming into existence
-  (`ACTION_ACCOUNT_CREATED` — self-registration and `make:admin`), and a denied request
-  (`ACTION_ACCESS_DENIED`, see below).
+  (`ACTION_ACCOUNT_CREATED` — self-registration and `make:admin`), a denied request
+  (`ACTION_ACCESS_DENIED`, see below), and a login lockout against a real account
+  (`ACTION_LOGIN_LOCKOUT`, see below).
   **The constant carries the whole meaning** — `audit_logs` has no diff column and no
   field list, so an act the constant doesn't name is unrecoverable from the trail. Hence a
   distinct constant per closure step (a trail that can't tell a request from an approval
@@ -325,7 +347,7 @@ column for this reason. Flag this rather than inventing a workaround.
   `case_id` (an export spans a filtered set) and no `DB::transaction()`, being a lone insert
   with nothing to roll back beside it. Viewing the same listing as a page is **not** audited;
   logging page views would bury the entries that record actual changes.
-  Two more sites are deliberately not a controller action: `ACTION_LOGIN` fires from an
+  Three sites are deliberately not a controller action: `ACTION_LOGIN` fires from an
   `Illuminate\Auth\Events\Login` listener in `AppServiceProvider::boot()`, not a
   `LoginController` hook, so a remember-me cookie resuming a session — which never touches
   the controller — is still audited; it's guarded to only fire when the account is approved
@@ -342,7 +364,13 @@ column for this reason. Flag this rather than inventing a workaround.
   query constraints, so an unknown, pending, rejected, or deactivated username never resolves
   a user for `record()` to attribute an entry to, and there's no username column to fall back
   to. Logging only the attributable sliver (right username, wrong password) would look like
-  failed-login coverage without being it.
+  failed-login coverage without being it. `ACTION_LOGIN_LOCKOUT` fires from an
+  `Illuminate\Auth\Events\Lockout` listener, same placement as `ACTION_LOGIN`'s — the
+  attempt cap is `ThrottlesLogins`, not route middleware, see the Login rate limiting note
+  above — and the same attributability logic as failed logins applies: only fired when the
+  attempted username resolves to a real approved+active account, silently skipped otherwise.
+  `target_user_id` is always null (a lockout has no target, only an account being guessed
+  against).
   **`target_user_id`** (nullable FK → `users.id`, `nullOnDelete` — descriptive, not the
   attribution the row exists for, so unlike `user_id` it isn't RESTRICT) closes the "who was
   acted on" gap flagged across three prior sessions: every account/registration/rating-change
