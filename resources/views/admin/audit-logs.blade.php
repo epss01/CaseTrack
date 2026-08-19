@@ -89,6 +89,7 @@
                                     <th scope="col">{{ __('Action') }}</th>
                                     <th scope="col">{{ __('Target') }}</th>
                                     <th scope="col">{{ __('Case') }}</th>
+                                    <th scope="col">{{ __('Notes') }}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -103,10 +104,11 @@
                                              reports.show would 403 the only role that can see
                                              this page. --}}
                                         <td>{{ $log->case?->docket_no ?? '—' }}</td>
+                                        <td>{{ $log->notes ?? '—' }}</td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="text-center text-muted">{{ __('No matching entries.') }}</td>
+                                        <td colspan="6" class="text-center text-muted">{{ __('No matching entries.') }}</td>
                                     </tr>
                                 @endforelse
                             </tbody>

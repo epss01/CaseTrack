@@ -24,6 +24,7 @@ class CaseIntakeTest extends TestCase
             'incident_details' => 'Complainant reports a warrantless arrest on 12 June.',
             'source_info' => 'Walk-in',
             'complexity_weight' => 3,
+            'is_torture_case' => '0',
             'date_of_docket' => '2026-06-12',
             'complainants' => [
                 ['name' => 'Josefa Ramos'],
@@ -172,6 +173,38 @@ class CaseIntakeTest extends TestCase
         }
 
         $this->assertDatabaseCount('cases', 0);
+    }
+
+    public function test_is_torture_case_is_required_at_intake(): void
+    {
+        $investigator = User::factory()->investigator()->create();
+
+        $this->actingAs($investigator)
+            ->post(route('cases.store'), $this->intakePayload(['is_torture_case' => '']))
+            ->assertSessionHasErrors('is_torture_case');
+
+        $this->assertDatabaseCount('cases', 0);
+    }
+
+    public function test_is_torture_case_is_captured_and_persisted_at_intake(): void
+    {
+        $investigator = User::factory()->investigator()->create();
+
+        $this->actingAs($investigator)
+            ->post(route('cases.store'), $this->intakePayload(['is_torture_case' => '1']))
+            ->assertSessionHasNoErrors();
+
+        $case = CaseModel::where('docket_no', 'CHR-VIII-2026-0100')->firstOrFail();
+
+        $this->assertTrue($case->is_torture_case);
+    }
+
+    public function test_a_pre_existing_case_with_no_torture_case_determination_reads_as_null(): void
+    {
+        $investigator = User::factory()->investigator()->create();
+        $case = CaseModel::factory()->assignedTo($investigator)->create(['is_torture_case' => null]);
+
+        $this->assertNull($case->fresh()->is_torture_case);
     }
 
     public function test_a_supervisor_sees_the_picker_ordered_by_workload_with_the_lowest_suggested(): void

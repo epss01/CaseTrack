@@ -207,6 +207,7 @@
                                         <th scope="col">{{ __('Docket No.') }}</th>
                                         <th scope="col">{{ __('Title') }}</th>
                                         <th scope="col">{{ __('Status') }}</th>
+                                        <th scope="col">{{ __('Phase') }}</th>
                                         {{-- Shown only where there is more than one
                                              caseload in view, exactly as /alerts does. --}}
                                         @if ($officeWide)
@@ -232,6 +233,7 @@
                                             <td class="text-nowrap">
                                                 @include('cases.partials.status-badge', ['status' => $fields['status']])
                                             </td>
+                                            <td>{{ $row['case']->docket_phase ?? '—' }}</td>
                                             @if ($officeWide)
                                                 <td>{{ $fields['investigator'] ?? '—' }}</td>
                                             @endif

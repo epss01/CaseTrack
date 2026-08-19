@@ -139,6 +139,17 @@ class AuditLog extends Model
     public const ACTION_LOGIN_LOCKOUT = 'LOGIN_LOCKOUT';
 
     /**
+     * A supervisor editing a case they are not the assigned investigator on
+     * (CHR-Answers-2026-08-01, item 6). Kept apart from ACTION_EDIT, which
+     * keeps meaning "the assigned investigator edited their own case" —
+     * collapsing the two would hide exactly the fact this exists to record.
+     * Always carries a reason in `notes`: CaseController::update() requires
+     * one before this fires, so the trail can say why, not just that it
+     * happened.
+     */
+    public const ACTION_EDIT_ON_BEHALF = 'EDIT_ON_BEHALF';
+
+    /**
      * Every action constant, in one place. RoleActions::ALL precedent — for
      * the audit log viewer's filter dropdown and its Rule::in(), so the
      * viewer's vocabulary can't silently drift from what record() accepts.
@@ -165,6 +176,7 @@ class AuditLog extends Model
         self::ACTION_ACCOUNT_CREATED,
         self::ACTION_ACCESS_DENIED,
         self::ACTION_LOGIN_LOCKOUT,
+        self::ACTION_EDIT_ON_BEHALF,
     ];
 
     const UPDATED_AT = null;
@@ -175,6 +187,7 @@ class AuditLog extends Model
         'target_user_id',
         'case_id',
         'action_performed',
+        'notes',
     ];
 
     /**
@@ -188,15 +201,17 @@ class AuditLog extends Model
      * assigned casework, and case_id is nullable for exactly this shape of
      * entry. $target is optional for the same reason on the other side: many
      * actions (a login, an export, a denial) have no one to name but the
-     * actor.
+     * actor. $notes is free-text context — currently only ACTION_EDIT_ON_BEHALF
+     * uses it, to carry the supervisor's stated reason.
      */
-    public static function record(User $user, ?CaseModel $case, string $action, ?User $target = null): self
+    public static function record(User $user, ?CaseModel $case, string $action, ?User $target = null, ?string $notes = null): self
     {
         return static::create([
             'user_id' => $user->id,
             'target_user_id' => $target?->id,
             'case_id' => $case?->id,
             'action_performed' => $action,
+            'notes' => $notes,
         ]);
     }
 

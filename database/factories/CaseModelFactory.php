@@ -26,7 +26,12 @@ class CaseModelFactory extends Factory
             'incident_details' => fake()->paragraph(),
             'source_info' => fake()->randomElement(['Walk-in', 'Referral', 'Media report']),
             'investigator_id' => fn () => User::factory()->investigator(),
-            'status' => fake()->randomElement(['Docketed', 'Under investigation', 'For review', 'Closed']),
+            'status' => fake()->randomElement([
+                CaseModel::STATUS_DOCKETED,
+                CaseModel::STATUS_UNDER_INVESTIGATION,
+                CaseModel::STATUS_FOR_REVIEW,
+                CaseModel::STATUS_CLOSED,
+            ]),
             'complexity_weight' => fake()->numberBetween(1, 5),
         ];
     }

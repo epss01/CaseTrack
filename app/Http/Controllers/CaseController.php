@@ -78,6 +78,7 @@ class CaseController extends Controller
                 'source_info' => $request->validated('source_info'),
                 'investigator_id' => $request->validated('investigator_id'),
                 'complexity_weight' => $request->validated('complexity_weight'),
+                'is_torture_case' => $request->validated('is_torture_case'),
                 'status' => CaseModel::STATUS_DOCKETED,
             ]);
 
@@ -114,9 +115,12 @@ class CaseController extends Controller
     /**
      * Show the edit form for a case.
      */
-    public function edit(CaseModel $case)
+    public function edit(Request $request, CaseModel $case)
     {
-        return view('cases.edit', ['case' => $case]);
+        return view('cases.edit', [
+            'case' => $case,
+            'onBehalf' => $request->user()->isSupervisor() && $case->investigator_id !== $request->user()->id,
+        ]);
     }
 
     /**
@@ -129,9 +133,18 @@ class CaseController extends Controller
      *
      * Audited as ACTION_EDIT rather than ACTION_UPDATE, which reassign() has
      * already taken.
+     *
+     * A supervisor editing a case they are not the assigned investigator on
+     * must state why (CHR-Answers-2026-08-01, item 6): no hard technical
+     * gate, since CHR described this as an accountability expectation for
+     * leave/handover coverage, not a workflow to enforce. An investigator's
+     * own cases stay exactly as unconditional as before — CaseModelPolicy is
+     * untouched.
      */
     public function update(Request $request, CaseModel $case)
     {
+        $onBehalf = $request->user()->isSupervisor() && $case->investigator_id !== $request->user()->id;
+
         $validated = $request->validate([
             'case_title' => ['required', 'string', 'max:255'],
             'incident_details' => ['required', 'string'],
@@ -139,9 +152,10 @@ class CaseController extends Controller
             'status' => CaseModel::statusRulesFor($case),
             'complexity_weight' => CaseModel::complexityWeightRules(),
             'updated_at' => ['required', 'string'],
+            'reason' => $onBehalf ? ['required', 'string', 'max:500'] : ['nullable', 'string', 'max:500'],
         ]);
 
-        DB::transaction(function () use ($request, $case, $validated) {
+        DB::transaction(function () use ($request, $case, $validated, $onBehalf) {
             // Optimistic lock: lockForUpdate() so the compare-then-write can't
             // race a concurrent save between the read and the write below.
             $fresh = CaseModel::whereKey($case->getKey())->lockForUpdate()->firstOrFail();
@@ -152,9 +166,13 @@ class CaseController extends Controller
                 ]);
             }
 
-            $case->update(collect($validated)->except('updated_at')->all());
+            $case->update(collect($validated)->except(['updated_at', 'reason'])->all());
 
-            AuditLog::record($request->user(), $case, AuditLog::ACTION_EDIT);
+            if ($onBehalf) {
+                AuditLog::record($request->user(), $case, AuditLog::ACTION_EDIT_ON_BEHALF, notes: $validated['reason']);
+            } else {
+                AuditLog::record($request->user(), $case, AuditLog::ACTION_EDIT);
+            }
         });
 
         return redirect()

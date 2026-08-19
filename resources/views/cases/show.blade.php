@@ -96,6 +96,13 @@
                         <dt class="col-sm-3">{{ __('Complexity Weight') }}</dt>
                         <dd class="col-sm-9">{{ $case->complexity_weight }}</dd>
 
+                        {{-- Null for any case docketed before this field existed: shown as "Not
+                             determined" rather than "No" so an unknown never reads as a fact. --}}
+                        <dt class="col-sm-3">{{ __('Torture Case') }}</dt>
+                        <dd class="col-sm-9">
+                            {{ is_null($case->is_torture_case) ? __('Not determined') : ($case->is_torture_case ? __('Yes') : __('No')) }}
+                        </dd>
+
                         {{-- Record creation, distinct from the official Date of Docket below. --}}
                         <dt class="col-sm-3">{{ __('Date Encoded') }}</dt>
                         <dd class="col-sm-9">{{ $case->created_at?->format('d M Y') ?? '—' }}</dd>

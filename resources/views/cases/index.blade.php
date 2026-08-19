@@ -73,6 +73,7 @@
                                         <th scope="col">{{ __('Docket No.') }}</th>
                                         <th scope="col">{{ __('Title') }}</th>
                                         <th scope="col">{{ __('Status') }}</th>
+                                        <th scope="col">{{ __('Phase') }}</th>
                                         <th scope="col">{{ __('Complexity') }}</th>
                                         <th scope="col">{{ __('Date of Docket') }}</th>
                                         @if (Auth::user()->isSupervisor())
@@ -87,6 +88,7 @@
                                             <td class="text-nowrap">{{ $case->docket_no }}</td>
                                             <td>{{ $case->case_title }}</td>
                                             <td>@include('cases.partials.status-badge', ['status' => $case->status])</td>
+                                            <td>{{ $case->docket_phase ?? '—' }}</td>
                                             <td>@include('cases.partials.weight-meter', ['weight' => $case->complexity_weight])</td>
                                             <td class="text-nowrap">{{ $case->timeline?->date_of_docket?->format('d M Y') ?? '—' }}</td>
                                             @if (Auth::user()->isSupervisor())

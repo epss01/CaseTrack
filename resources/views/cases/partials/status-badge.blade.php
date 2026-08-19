@@ -6,17 +6,16 @@
     Shared by the dashboard and the case list so the same field cannot render as a
     badge on one page and plain text on the other, one click apart.
 
-    Only two statuses get a colour of their own, and both are constants that
-    already drive behaviour: Pending Closure is waiting on a supervisor, Closed is
-    out of the active caseload. Everything else — including the free-text
-    'Under investigation' and 'For review' — reads as an ordinary open case. This
-    view does not decide what any other status means.
+    Colour comes from CaseModel::STATUS_COLOURS, the same ratified five-value map
+    that drives partials/status-distribution.blade.php's bar and legend — a status
+    used to collapse to one blue badge here while showing four colours on the
+    dashboard, one click away. Anything outside the five still renders (status is
+    an unconstrained string column), hashed to the same ramp the bar falls back to.
 --}}
 @php
-    $statusBadgeClass = match ($status) {
-        \App\Models\CaseModel::STATUS_PENDING_CLOSURE => 'badge-soft-amber',
-        \App\Models\CaseModel::STATUS_CLOSED => 'badge-soft-slate',
-        default => 'badge-soft-blue',
-    };
+    $ramp = ['#1d4ed8', '#3b82f6', '#93c5fd', '#1e3a8a'];
+
+    $colour = \App\Models\CaseModel::STATUS_COLOURS[$status]
+        ?? $ramp[crc32($status) % count($ramp)];
 @endphp
-<span class="badge {{ $statusBadgeClass }}">{{ $status }}</span>
+<span class="badge" style="background-color: {{ $colour }}1a; color: {{ $colour }}; border: 1px solid {{ $colour }}66;">{{ $status }}</span>

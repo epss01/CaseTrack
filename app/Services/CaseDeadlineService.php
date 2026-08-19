@@ -52,16 +52,18 @@ class CaseDeadlineService
     /**
      * The 60th-day milestone is computed but never surfaced.
      *
-     * It binds only torture cases, and no case-type field exists anywhere in
-     * the schema — not in the manuscript's design, not in the migrations
-     * (wiki/project/chr-open-questions.md, item 3). Turning it on today would
-     * apply the torture-case rule to every case in the office indiscriminately,
-     * which is worse than not showing it at all.
+     * It binds only torture cases. cases.is_torture_case now exists
+     * (CHR-Answers-2026-08-01, item 3), which clears one of two blockers —
+     * but it's nullable, since pre-existing cases have no ground truth for
+     * it, and this flag still cannot be flipped on it alone. Turning it on
+     * today would apply the torture-case rule to every case in the office
+     * indiscriminately, including the ones marked "not determined," which is
+     * worse than not showing it at all.
      *
-     * Flip this to true once a cases.case_type column exists AND the milestone
-     * is scoped to the case types it actually binds. Note the second gap while
-     * you are there: no column records that a 60th-day report was filed, so
-     * only the FIR can currently discharge it.
+     * Flip this to true once the milestone is scoped to is_torture_case AND
+     * an extension-request/grant field exists AND a column records that a
+     * 60th-day RORP was actually filed (currently only the FIR can discharge
+     * it). None of those three is done by this change.
      */
     public const SIXTY_DAY_ENABLED = false;
 
