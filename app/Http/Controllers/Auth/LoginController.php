@@ -30,6 +30,21 @@ class LoginController extends Controller
     protected $redirectTo = '/home';
 
     /**
+     * How long a lockout holds once ThrottlesLogins' 5-attempt cap is hit.
+     *
+     * ThrottlesLogins::decayMinutes() reads this via property_exists() -
+     * the trait's own default is 60 seconds, too short to meaningfully slow
+     * a password-guessing script. Attempt count is left at the trait
+     * default (5), matching registration's throttle:5,1 attempt count;
+     * only the window is widened. A correct password still clears the
+     * counter immediately (clearLoginAttempts() in sendLoginResponse()),
+     * so a legitimate user who mistypes twice then succeeds is unaffected.
+     *
+     * @var int
+     */
+    protected $decayMinutes = 15;
+
+    /**
      * Create a new controller instance.
      *
      * @return void

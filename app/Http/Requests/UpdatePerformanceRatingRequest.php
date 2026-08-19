@@ -7,11 +7,18 @@ use Illuminate\Foundation\Http\FormRequest;
 class UpdatePerformanceRatingRequest extends FormRequest
 {
     /**
-     * Authorization is handled by the role:Supervisor middleware on the route.
+     * role:Supervisor middleware on the route covers who may reach this
+     * action; this covers what the {investigator} route-model-bound target
+     * may be. Unlike ReassignCaseRequest's investigator_id (a posted
+     * value, validated through Role::assignableInvestigatorRule()), the
+     * target here is bound straight from the URL to any User row — without
+     * this check a supervisor could set a performance_rating, a value that
+     * only means anything for the WCS formula's P_i, on another supervisor
+     * or an admin.
      */
     public function authorize(): bool
     {
-        return true;
+        return $this->route('investigator')?->isInvestigator() === true;
     }
 
     /**

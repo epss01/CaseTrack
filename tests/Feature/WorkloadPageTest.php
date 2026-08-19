@@ -149,6 +149,38 @@ class WorkloadPageTest extends TestCase
         $this->assertSame(1.0, $colleague->fresh()->performance_rating);
     }
 
+    /**
+     * The {investigator} route parameter is bound to any User row — unlike
+     * ReassignCaseRequest's investigator_id, which is validated through
+     * Role::assignableInvestigatorRule(), this one is a URL segment with no
+     * posted value to validate. UpdatePerformanceRatingRequest::authorize()
+     * closes that: performance_rating only means anything for the WCS
+     * formula's P_i, which only applies to investigators.
+     */
+    public function test_a_supervisor_cannot_rate_another_supervisor(): void
+    {
+        $supervisor = User::factory()->supervisor()->create();
+        $otherSupervisor = User::factory()->supervisor()->create(['performance_rating' => 1.0]);
+
+        $this->actingAs($supervisor)
+            ->put(route('workload.update', $otherSupervisor), ['performance_rating' => 0.1])
+            ->assertForbidden();
+
+        $this->assertSame(1.0, $otherSupervisor->fresh()->performance_rating);
+    }
+
+    public function test_a_supervisor_cannot_rate_an_admin(): void
+    {
+        $supervisor = User::factory()->supervisor()->create();
+        $admin = User::factory()->admin()->create(['performance_rating' => 1.0]);
+
+        $this->actingAs($supervisor)
+            ->put(route('workload.update', $admin), ['performance_rating' => 0.1])
+            ->assertForbidden();
+
+        $this->assertSame(1.0, $admin->fresh()->performance_rating);
+    }
+
     public function test_a_supervisor_can_set_a_rating_and_it_is_audited(): void
     {
         $supervisor = User::factory()->supervisor()->create();
