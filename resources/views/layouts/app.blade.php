@@ -90,6 +90,13 @@
                                        @if (request()->routeIs('workload.*')) aria-current="page" @endif
                                        href="{{ route('workload.index') }}">{{ __('Workload') }}</a>
                                 </li>
+
+                                {{-- Bulk case intake, Supervisor-only — see routes/web.php. --}}
+                                <li class="nav-item">
+                                    <a class="nav-link @if (request()->routeIs('cases.import.*')) active @endif"
+                                       @if (request()->routeIs('cases.import.*')) aria-current="page" @endif
+                                       href="{{ route('cases.import.create') }}">{{ __('Import Cases') }}</a>
+                                </li>
                             @endif
 
                             @if (Auth::user()->isAdmin())
