@@ -142,6 +142,27 @@ class CaseTimelineTest extends TestCase
         $this->assertSame('2026-06-12', $case->fresh()->timeline->date_of_docket->toDateString());
     }
 
+    /**
+     * New with case import (wiki/project/case-import.md): every milestone
+     * must fall on or after date_of_docket. Shared via
+     * CaseTimeline::chronologyRules() rather than import-only, so the manual
+     * form gains the same guard — nothing enforced this before.
+     */
+    public function test_a_milestone_before_the_date_of_docket_is_rejected(): void
+    {
+        $investigator = User::factory()->investigator()->create();
+        $case = CaseModel::factory()->assignedTo($investigator)->create();
+        $case->timeline()->create(['date_of_docket' => '2026-06-12']);
+
+        $this->actingAs($investigator)
+            ->put(route('cases.timeline.update', $case), $this->timelinePayload([
+                'submission_120th_day' => '2026-01-01',
+            ]))
+            ->assertSessionHasErrors('submission_120th_day');
+
+        $this->assertNull($case->fresh()->timeline->submission_120th_day);
+    }
+
     public function test_a_supervisor_can_set_the_timeline_on_any_case(): void
     {
         $supervisor = User::factory()->supervisor()->create();

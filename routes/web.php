@@ -3,6 +3,7 @@
 use App\Http\Controllers\AlertController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\CaseController;
+use App\Http\Controllers\CaseImportController;
 use App\Http\Controllers\CaseTimelineController;
 use App\Http\Controllers\RegistrationApprovalController;
 use App\Http\Controllers\ReportController;
@@ -19,6 +20,20 @@ Route::get('/', function () {
 Auth::routes(['reset' => false, 'verify' => false]);
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+
+// Bulk case intake (CSV/XLSX) — Supervisor-only, unlike the general case
+// routes below: import creates cases and assigns investigators, and reads as
+// bulk data entry rather than ordinary casework (CLAUDE.md, Registration
+// approval and account management / Roles). Registered before
+// Route::resource('cases', ...) below: GET cases/import is the same
+// two-segment shape as GET cases/{case} (show), and Laravel matches route
+// definitions in registration order, so the wildcard would otherwise swallow
+// "import" as a case id first.
+Route::middleware(['auth', 'role:Supervisor'])->prefix('cases')->name('cases.')->group(function () {
+    Route::get('import', [CaseImportController::class, 'create'])->name('import.create');
+    Route::post('import/preview', [CaseImportController::class, 'preview'])->name('import.preview');
+    Route::post('import', [CaseImportController::class, 'store'])->name('import.store');
+});
 
 // The middleware keeps anyone without a case-handling role out entirely;
 // CaseModelPolicy then decides which individual cases are reachable.

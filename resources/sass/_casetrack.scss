@@ -311,3 +311,13 @@
         background-color: $primary;
     }
 }
+
+// ---------------------------------------------------------------------- icons
+//
+// Inline SVG icons rendered by partials/icon.blade.php
+.ct-icon {
+    display: inline-block;
+    width: 1.125rem;
+    height: 1.125rem;
+    vertical-align: -0.125em;
+}

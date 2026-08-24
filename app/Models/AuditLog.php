@@ -150,6 +150,18 @@ class AuditLog extends Model
     public const ACTION_EDIT_ON_BEHALF = 'EDIT_ON_BEHALF';
 
     /**
+     * A bulk case import (CSV/XLSX) completing. Written once per import run,
+     * case_id null — mirrors ACTION_EXPORTED, the other entry that spans a
+     * set of cases rather than one. Each case the run actually creates gets
+     * its own ACTION_CREATE too, exactly as if it had been docketed by hand,
+     * so an imported case is traceable the same way a hand-entered one is;
+     * this constant is the only record that they arrived together as one
+     * batch. target_user_id is always null, same reasoning as
+     * ACTION_EXPORTED: an import has no target, only an actor and a count.
+     */
+    public const ACTION_IMPORTED = 'IMPORTED';
+
+    /**
      * Every action constant, in one place. RoleActions::ALL precedent — for
      * the audit log viewer's filter dropdown and its Rule::in(), so the
      * viewer's vocabulary can't silently drift from what record() accepts.
@@ -177,6 +189,7 @@ class AuditLog extends Model
         self::ACTION_ACCESS_DENIED,
         self::ACTION_LOGIN_LOCKOUT,
         self::ACTION_EDIT_ON_BEHALF,
+        self::ACTION_IMPORTED,
     ];
 
     const UPDATED_AT = null;

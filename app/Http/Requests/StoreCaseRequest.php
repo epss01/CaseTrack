@@ -40,6 +40,19 @@ class StoreCaseRequest extends FormRequest
      */
     public function rules(): array
     {
+        return static::intakeRules();
+    }
+
+    /**
+     * The rules a new case must satisfy, shared with CaseImportService so an
+     * imported case is validated identically to one entered by hand — the
+     * whole reason Option B import reuses this rather than a looser,
+     * import-only rule set (wiki/project/case-import.md).
+     *
+     * @return array<string, mixed>
+     */
+    public static function intakeRules(): array
+    {
         return [
             'docket_no' => ['required', 'string', 'max:255', 'unique:cases,docket_no'],
             'case_title' => ['required', 'string', 'max:255'],
