@@ -38,6 +38,33 @@ class CaseModel extends Model
      */
     public const STATUS_PENDING_CLOSURE = 'Pending Closure';
 
+    /**
+     * A case actively being worked, prior to review.
+     */
+    public const STATUS_UNDER_INVESTIGATION = 'Under investigation';
+
+    /**
+     * A case awaiting a supervisor's review before it can move further.
+     */
+    public const STATUS_FOR_REVIEW = 'For review';
+
+    /**
+     * The ratified five-value status vocabulary (CHR-Answers-2026-08-01),
+     * each mapped to the colour it renders as everywhere a status is shown.
+     *
+     * Listed in the order a case moves through them — this array also drives
+     * legend/sort order wherever it's consumed. A status not listed here
+     * (status is still an unconstrained string column) is still handled by
+     * every consumer, via a hashed fallback; it just isn't one of the five.
+     */
+    public const STATUS_COLOURS = [
+        self::STATUS_DOCKETED => '#1d4ed8',
+        self::STATUS_UNDER_INVESTIGATION => '#3b82f6',
+        self::STATUS_FOR_REVIEW => '#93c5fd',
+        self::STATUS_PENDING_CLOSURE => '#b45309',
+        self::STATUS_CLOSED => '#94a3b8',
+    ];
+
     protected $table = 'cases';
 
     protected $fillable = [
@@ -49,6 +76,7 @@ class CaseModel extends Model
         'status',
         'status_before_closure',
         'complexity_weight',
+        'is_torture_case',
     ];
 
     protected function casts(): array
@@ -56,7 +84,30 @@ class CaseModel extends Model
         return [
             'investigator_id' => 'integer',
             'complexity_weight' => 'integer',
+            'is_torture_case' => 'boolean',
         ];
+    }
+
+    /**
+     * "New" if docketed this calendar year, "Pending" if an earlier year
+     * (CHR-Answers-2026-08-01, item 8). Derived, not stored, so it can never
+     * drift out of sync with date_of_docket. Null when the case has no
+     * timeline row yet — load the timeline relation before reading this or
+     * it N+1s per case.
+     */
+    protected function docketPhase(): \Illuminate\Database\Eloquent\Casts\Attribute
+    {
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(
+            get: function () {
+                $docketedOn = $this->timeline?->date_of_docket;
+
+                if ($docketedOn === null) {
+                    return null;
+                }
+
+                return $docketedOn->year === now()->year ? 'New' : 'Pending';
+            },
+        );
     }
 
     /**

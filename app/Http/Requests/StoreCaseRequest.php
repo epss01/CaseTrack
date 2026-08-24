@@ -63,6 +63,13 @@ class StoreCaseRequest extends FormRequest
             // score is meaningless if every case is docketed weightless.
             'complexity_weight' => CaseModel::complexityWeightRules(),
 
+            // Required, not defaulted (CHR-Answers-2026-08-01, item 3): the
+            // 60-day RORP milestone binds torture cases only, and this has to
+            // be determined at docketing, not guessed later. See
+            // CaseModel::$fillable and the is_torture_case migration for why
+            // pre-existing cases are nullable instead.
+            'is_torture_case' => ['required', 'boolean'],
+
             // Opens the case timeline. The remaining milestone dates are not
             // known at intake and are filled in later via the timeline form.
             'date_of_docket' => ['required', 'date'],
@@ -115,6 +122,7 @@ class StoreCaseRequest extends FormRequest
             'incident_details' => __('incident details'),
             'source_info' => __('source of information'),
             'complexity_weight' => __('complexity weight'),
+            'is_torture_case' => __('torture case'),
             'date_of_docket' => __('date of docket'),
             'complainants.*.name' => __('complainant name'),
             'victims.*.name' => __('victim name'),

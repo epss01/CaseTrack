@@ -18,35 +18,18 @@
     /*
      * A colour per status, stable everywhere.
      *
-     * An earlier version assigned the blue ramp by rank within whoever's caseload
-     * was on screen. That made the same status render a different shade depending
-     * on whose dashboard you were looking at, and shift for one investigator as
-     * their mix changed — which defeats the point of having a legend at all.
-     *
-     * So: two behavioural constants keep reserved colours (Pending Closure is
-     * waiting on a supervisor, Closed is out of the active set), the two free-text
-     * values already in circulation get a fixed shade each, and anything new is
-     * hashed to the ramp so it is at least consistent from one day to the next.
-     *
-     * This is presentation only. It constrains nothing, validates nothing, and a
-     * status not listed here still renders correctly — the status vocabulary is
-     * still unratified and this view does not pretend otherwise.
+     * The five-value vocabulary is ratified (CHR-Answers-2026-08-01, item 2)
+     * and its colours now live on CaseModel::STATUS_COLOURS, shared with
+     * cases/partials/status-badge.blade.php so a status can't render one way
+     * here and another way one click away. Anything outside those five
+     * (status is still an unconstrained string column) is hashed to the ramp
+     * so it is at least consistent from one day to the next.
      */
     // Steps are two rungs apart, not adjacent: #3b82f6 beside #60a5fa rendered as
     // one solid blue bar, which defeats the only thing the bar is for.
     $ramp = ['#1d4ed8', '#3b82f6', '#93c5fd', '#1e3a8a'];
 
-    // Listed in the order a case moves through them, because this array doubles
-    // as the legend's sort order below. Each status keeps the colour it had when
-    // the map was keyed differently — the whole point is that a colour does not
-    // move, so reordering the array must not repaint anything.
-    $fixed = [
-        CaseModel::STATUS_DOCKETED => '#1d4ed8',
-        'Under investigation' => '#3b82f6',
-        'For review' => '#93c5fd',
-        CaseModel::STATUS_PENDING_CLOSURE => '#b45309',
-        CaseModel::STATUS_CLOSED => '#94a3b8',
-    ];
+    $fixed = CaseModel::STATUS_COLOURS;
 
     $colourFor = fn (string $status) => $fixed[$status]
         ?? $ramp[crc32($status) % count($ramp)];

@@ -79,6 +79,22 @@
                                 @enderror
                             </div>
 
+                            <div class="col-md-6">
+                                <label class="form-label d-block">{{ __('Torture Case') }}</label>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input @error('is_torture_case') is-invalid @enderror" type="radio" name="is_torture_case" id="is_torture_case_yes" value="1" @checked(old('is_torture_case') === '1') required>
+                                    <label class="form-check-label" for="is_torture_case_yes">{{ __('Yes') }}</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input @error('is_torture_case') is-invalid @enderror" type="radio" name="is_torture_case" id="is_torture_case_no" value="0" @checked(old('is_torture_case') === '0') required>
+                                    <label class="form-check-label" for="is_torture_case_no">{{ __('No') }}</label>
+                                </div>
+                                <span class="form-text d-block">{{ __('Determines whether the 60th-day RORP milestone applies. Must be identified at docketing.') }}</span>
+                                @error('is_torture_case')
+                                    <span class="invalid-feedback d-block" role="alert"><strong>{{ $message }}</strong></span>
+                                @enderror
+                            </div>
+
                             @if ($investigators->isNotEmpty())
                                 <div class="col-md-6">
                                     <label for="investigator_id" class="form-label">{{ __('Assign To') }}</label>

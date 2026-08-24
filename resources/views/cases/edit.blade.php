@@ -37,7 +37,9 @@
                             <label for="status" class="col-md-4 col-form-label text-md-end">{{ __('Status') }}</label>
 
                             <div class="col-md-6">
-                                <input id="status" type="text" class="form-control @error('status') is-invalid @enderror" name="status" value="{{ old('status', $case->status) }}" required>
+                                <select id="status" class="form-select @error('status') is-invalid @enderror" name="status" required>
+                                    @include('cases.partials.status-options', ['case' => $case, 'selected' => old('status', $case->status)])
+                                </select>
 
                                 @error('status')
                                     <span class="invalid-feedback" role="alert">
@@ -90,6 +92,23 @@
                                 @enderror
                             </div>
                         </div>
+
+                        @if ($onBehalf)
+                            <div class="row mb-3">
+                                <label for="reason" class="col-md-4 col-form-label text-md-end">{{ __('Reason for editing this case') }}</label>
+
+                                <div class="col-md-6">
+                                    <textarea id="reason" rows="3" class="form-control @error('reason') is-invalid @enderror" name="reason" required>{{ old('reason') }}</textarea>
+                                    <div class="form-text">{{ __('You are not the assigned investigator on this case. State why you\'re editing it (e.g. covering leave, handover) — this is recorded in the audit trail.') }}</div>
+
+                                    @error('reason')
+                                        <span class="invalid-feedback" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                    @enderror
+                                </div>
+                            </div>
+                        @endif
 
                         <div class="row mb-0">
                             <div class="col-md-6 offset-md-4">

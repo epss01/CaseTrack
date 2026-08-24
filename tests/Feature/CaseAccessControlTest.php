@@ -106,6 +106,9 @@ class CaseAccessControlTest extends TestCase
                 'status' => 'For review',
                 'complexity_weight' => $case->complexity_weight,
                 'updated_at' => $case->updated_at->format('Y-m-d H:i:s'),
+                // A supervisor editing a case they aren't assigned to must
+                // state why (CHR-Answers-2026-08-01, item 6).
+                'reason' => 'Covering while the assigned investigator is on leave.',
             ])
             ->assertRedirect(route('cases.show', $case));
 

@@ -285,6 +285,9 @@ class CaseImportService
 
             $rules = StoreCaseRequest::intakeRules();
             unset($rules['investigator_id']);
+            // Legacy import files have no ground truth for torture case type;
+            // cases.is_torture_case is nullable for pre-existing cases.
+            unset($rules['is_torture_case']);
             // Investigator resolution already ran above and reports its own
             // message; only re-check eligibility (active, approved, actually
             // an Investigator) once a candidate id was actually found.

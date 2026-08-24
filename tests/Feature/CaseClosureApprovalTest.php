@@ -289,6 +289,9 @@ class CaseClosureApprovalTest extends TestCase
                 'status' => CaseModel::STATUS_CLOSED,
                 'complexity_weight' => $case->complexity_weight,
                 'updated_at' => $case->updated_at->format('Y-m-d H:i:s'),
+                // The supervisor isn't the assigned investigator, so this
+                // edit needs a stated reason (CHR-Answers-2026-08-01, item 6).
+                'reason' => 'Correcting a typo noticed during review.',
             ])
             ->assertSessionHasNoErrors();
 
