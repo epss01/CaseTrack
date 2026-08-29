@@ -148,7 +148,12 @@
                                             {{-- nowrap: the wrapper already scrolls, so letting a
                                                  docket number break across four lines on a phone
                                                  costs legibility and buys nothing. --}}
-                                            <td class="text-nowrap">{{ $case->docket_no }}</td>
+                                            <td class="text-nowrap">
+                                                @if ($case->status === CaseModel::STATUS_PENDING_CLOSURE)
+                                                    <span class="row-flag row-flag--amber">@include('partials.icon', ['name' => 'clock'])</span>
+                                                @endif
+                                                {{ $case->docket_no }}
+                                            </td>
                                             <td>{{ $case->case_title }}</td>
                                             <td>@include('cases.partials.status-badge', ['status' => $case->status])</td>
                                             <td>

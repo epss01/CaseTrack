@@ -205,7 +205,7 @@
                                 <thead>
                                     <tr>
                                         <th scope="col">{{ __('Docket No.') }}</th>
-                                        <th scope="col">{{ __('Title') }}</th>
+                                        <th scope="col" class="col-title">{{ __('Title') }}</th>
                                         <th scope="col">{{ __('Status') }}</th>
                                         <th scope="col">{{ __('Phase') }}</th>
                                         {{-- Shown only where there is more than one
@@ -229,7 +229,7 @@
                                                  dates and badges. Everything else wraps, so
                                                  the table answers to its container. --}}
                                             <td class="text-nowrap">{{ $fields['docket_no'] }}</td>
-                                            <td>{{ $fields['case_title'] }}</td>
+                                            <td class="col-title">{{ $fields['case_title'] }}</td>
                                             <td class="text-nowrap">
                                                 @include('cases.partials.status-badge', ['status' => $fields['status']])
                                             </td>

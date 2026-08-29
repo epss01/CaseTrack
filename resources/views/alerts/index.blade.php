@@ -107,7 +107,7 @@
                                 <thead>
                                     <tr>
                                         <th scope="col">{{ __('Docket No.') }}</th>
-                                        <th scope="col">{{ __('Title') }}</th>
+                                        <th scope="col" class="col-title">{{ __('Title') }}</th>
                                         @if ($officeWide)
                                             <th scope="col">{{ __('Investigator') }}</th>
                                         @endif
@@ -133,8 +133,13 @@
                                                  identifier and reads badly split. A name is not,
                                                  and holding it on one line cost ~90px that the
                                                  title column was paying for. --}}
-                                            <td class="text-nowrap">{{ $case->docket_no }}</td>
-                                            <td>{{ $case->case_title }}</td>
+                                            <td class="text-nowrap">
+                                                @if ($milestone['status'] === CaseDeadlineService::STATUS_OVERDUE)
+                                                    <span class="row-flag row-flag--red">@include('partials.icon', ['name' => 'alert-triangle'])</span>
+                                                @endif
+                                                {{ $case->docket_no }}
+                                            </td>
+                                            <td class="col-title">{{ $case->case_title }}</td>
                                             @if ($officeWide)
                                                 <td>{{ $case->investigator?->full_name ?? '—' }}</td>
                                             @endif

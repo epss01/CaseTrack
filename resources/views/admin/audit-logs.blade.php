@@ -85,9 +85,9 @@
                             <thead>
                                 <tr>
                                     <th scope="col">{{ __('Timestamp') }}</th>
-                                    <th scope="col">{{ __('Actor') }}</th>
+                                    <th scope="col" class="col-title">{{ __('Actor') }}</th>
                                     <th scope="col">{{ __('Action') }}</th>
-                                    <th scope="col">{{ __('Target') }}</th>
+                                    <th scope="col" class="col-title">{{ __('Target') }}</th>
                                     <th scope="col">{{ __('Case') }}</th>
                                     <th scope="col">{{ __('Notes') }}</th>
                                 </tr>
@@ -96,9 +96,9 @@
                                 @forelse ($logs as $log)
                                     <tr>
                                         <td class="text-nowrap">{{ $log->timestamp->format('Y-m-d H:i:s') }}</td>
-                                        <td>{{ $log->user?->full_name ?? __('(deleted user)') }}</td>
+                                        <td class="col-title">{{ $log->user?->full_name ?? __('(deleted user)') }}</td>
                                         <td><code>{{ $log->action_performed }}</code></td>
-                                        <td>{{ $log->targetUser?->full_name ?? '—' }}</td>
+                                        <td class="col-title">{{ $log->targetUser?->full_name ?? '—' }}</td>
                                         {{-- Plain text, not a link: Admin never opens, views, or
                                              edits a case (CLAUDE.md, Roles/access rules), and
                                              reports.show would 403 the only role that can see

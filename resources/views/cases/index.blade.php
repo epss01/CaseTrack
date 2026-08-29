@@ -71,7 +71,7 @@
                                 <thead>
                                     <tr>
                                         <th scope="col">{{ __('Docket No.') }}</th>
-                                        <th scope="col">{{ __('Title') }}</th>
+                                        <th scope="col" class="col-title">{{ __('Title') }}</th>
                                         <th scope="col">{{ __('Status') }}</th>
                                         <th scope="col">{{ __('Phase') }}</th>
                                         <th scope="col">{{ __('Complexity') }}</th>
@@ -86,7 +86,7 @@
                                     @foreach ($cases as $case)
                                         <tr>
                                             <td class="text-nowrap">{{ $case->docket_no }}</td>
-                                            <td>{{ $case->case_title }}</td>
+                                            <td class="col-title">{{ $case->case_title }}</td>
                                             <td>@include('cases.partials.status-badge', ['status' => $case->status])</td>
                                             <td>{{ $case->docket_phase ?? '—' }}</td>
                                             <td>@include('cases.partials.weight-meter', ['weight' => $case->complexity_weight])</td>

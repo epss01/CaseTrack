@@ -218,16 +218,39 @@
     background-color: $casetrack-red-bg;
 }
 
-// The stat tile promises that N cases await approval; without this the table
-// gives those rows nothing to distinguish them and the promise goes unmet.
-//
-// The row tint itself is Bootstrap's .table-warning, applied in the markup:
+// The stat tile promises N cases await approval (or, on /alerts, N are
+// overdue); without something in the table those rows have nothing to
+// distinguish them and the promise goes unmet. The row tint itself is
+// Bootstrap's .table-warning, applied in the markup alongside .row-pending —
 // striping sets --bs-table-bg-type through a higher-specificity selector
-// (.table-striped > tbody > tr:nth-of-type(odd) > *), so a custom box-shadow
-// here loses to it silently. Bootstrap's own row variant is designed to compose
-// with striping, so this only adds the edge accent on top of it.
-.row-pending > :first-child {
-    border-left: 3px solid $casetrack-amber;
+// (.table-striped > tbody > tr:nth-of-type(odd) > *), so that tint already
+// survives striping on its own and needs nothing added here.
+//
+// This used to add a 3px border-left in the docket cell — the single most
+// recognizable "AI-generated UI" tell there is, per the design detector, and
+// it was wrong in one more way besides: hardcoded to amber, so /alerts'
+// Overdue rows (a red-meaning state) got an amber edge. A row-flag icon in
+// the same cell replaces it, reusing the exact glyph each page's own stat
+// tile already uses for that count (clock for Pending Closure, alert-triangle
+// for Overdue) instead of inventing a second visual language, and colored to
+// match the state it actually names.
+.row-flag {
+    display: inline-flex;
+    margin-right: 0.35rem;
+    vertical-align: -2px;
+
+    svg {
+        width: 0.85rem;
+        height: 0.85rem;
+    }
+
+    &--amber {
+        color: $casetrack-amber;
+    }
+
+    &--red {
+        color: $casetrack-red;
+    }
 }
 
 // ------------------------------------------------------------------ wide pages
@@ -267,6 +290,16 @@
     // is ugly; a table that scrolls sideways is worse, and nothing is hidden.
     td {
         overflow-wrap: anywhere;
+    }
+
+    // Without a floor, an ordinary multi-word title absorbs the same squeeze
+    // .text-nowrap was fixed for above: at 375–704px it shrank to where
+    // overflow-wrap: anywhere broke every word into single characters, because
+    // nothing forced the table past the wrapper's width to trigger its scroll
+    // first. This floor is sized for a normal title to keep wrapping at spaces;
+    // .table-responsive still takes over for anything that needs more.
+    td.col-title {
+        min-width: 14rem;
     }
 
     // The action column takes its content's width and no more. `width: 1%` is
