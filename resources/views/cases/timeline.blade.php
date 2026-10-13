@@ -6,6 +6,7 @@
         'date_submission_rop' => __('Date of Submission (ROP)'),
         'extension_30_days' => __('30-Day Extension'),
         'submission_60th_day' => __('Submission (60th Day)'),
+        'date_submission_60th_day_rorp' => __('Submission (60th Day RORP)'),
         'submission_120th_day' => __('Submission (120th Day)'),
         'target_date_fir' => __('Target Date (FIR)'),
         'date_fir_submitted' => __('Date FIR Submitted'),

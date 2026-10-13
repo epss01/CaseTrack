@@ -50,20 +50,29 @@ class CaseDeadlineService
     public const FIR_TARGET_DAYS = 100;
 
     /**
-     * The 60th-day milestone is computed but never surfaced.
+     * The 60th-day milestone is computed and conditionally surfaced.
      *
-     * It binds only torture cases. cases.is_torture_case now exists
-     * (CHR-Answers-2026-08-01, item 3), which clears one of two blockers —
-     * but it's nullable, since pre-existing cases have no ground truth for
-     * it, and this flag still cannot be flipped on it alone. Turning it on
-     * today would apply the torture-case rule to every case in the office
-     * indiscriminately, including the ones marked "not determined," which is
-     * worse than not showing it at all.
+     * It binds only torture cases (is_torture_case === true). An extension-
+     * request/grant field is also required (not yet implemented). This flag
+     * gates the milestone's visibility, but it will only appear for cases
+     * where is_torture_case === true.
      *
-     * Flip this to true once the milestone is scoped to is_torture_case AND
-     * an extension-request/grant field exists AND a column records that a
-     * 60th-day RORP was actually filed (currently only the FIR can discharge
-     * it). None of those three is done by this change.
+     * Turning this on before the extension-request/grant field exists would
+     * apply the torture-case rule to cases with is_torture_case === true
+     * (which is safe), but the milestone would remain invisible for
+     * is_torture_case !== true (false or null) due to case-scoping in
+     * statusesFor().
+     *
+     * The milestone becomes visible when BOTH:
+     *  - This flag is true
+     *  - The case's is_torture_case === true
+     *
+     * Once the extension-request/grant field is implemented, all three
+     * conditions must be met for the milestone to be active.
+     *
+     * ponytail: SIXTY_DAY_ENABLED remains false pending clarification on the
+     * "extension-request/grant field" requirement — see [this session's summary] —
+     * flip once resolved.
      */
     public const SIXTY_DAY_ENABLED = false;
 
@@ -79,9 +88,8 @@ class CaseDeadlineService
      * The statutory milestones, and the submission that discharges each.
      *
      * A deadline only binds while its submission is outstanding — the 30-day
-     * mark until the ROP is filed, the 120-day mark until the FIR is. The 60th
-     * day has no submission column of its own; nothing in the schema records
-     * that a RORP was filed.
+     * mark until the ROP is filed, the 60th day until the RORP is filed, and the
+     * 120-day mark until the FIR is.
      *
      * target_date_fir is absent on purpose: it is the office's internal target,
      * not a statutory deadline, so missing it is not an alert.
@@ -94,7 +102,7 @@ class CaseDeadlineService
         ],
         self::SIXTIETH_DAY => [
             'column' => 'submission_60th_day',
-            'discharged_by' => null,
+            'discharged_by' => 'date_submission_60th_day_rorp',
             'label' => '60th day (RORP)',
         ],
         self::HUNDRED_TWENTIETH_DAY => [
@@ -140,12 +148,11 @@ class CaseDeadlineService
     /**
      * The milestones a user may be shown.
      *
-     * This filter is the entire gate, and statusesFor() below is the only way
-     * into a controller or a view — so a milestone missing from here cannot
-     * reach rendered output, while deadlineOn() and deadlinesFor() go on
-     * computing it. There is deliberately no second entry point that returns
-     * the gated milestones anyway: that would be a door left open for exactly
-     * the mistake the flag exists to prevent.
+     * This filter gates milestones by the SIXTY_DAY_ENABLED flag. The 60th day
+     * additionally requires the case to be a torture case (is_torture_case ===
+     * true), which is checked in statusesFor(). There is deliberately no second
+     * entry point that returns the gated milestones anyway: that would be a door
+     * left open for exactly the mistake the flag exists to prevent.
      *
      * @return array<int, array{column: string, discharged_by: string|null, label: string}>
      */
@@ -186,6 +193,11 @@ class CaseDeadlineService
         $statuses = [];
 
         foreach (self::visibleMilestones() as $days => $milestone) {
+            // Skip 60th day for non-torture cases (is_torture_case !== true)
+            if ($days === self::SIXTIETH_DAY && ($timeline->case->is_torture_case !== true)) {
+                continue;
+            }
+
             // The stored column is the office's own record of the deadline and
             // wins wherever it is set — the Set Timeline form is free entry with
             // no cross-field validation, so overriding what an investigator
