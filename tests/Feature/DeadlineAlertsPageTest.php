@@ -176,8 +176,6 @@ class DeadlineAlertsPageTest extends TestCase
      */
     public function test_a_case_well_past_its_sixtieth_day_shows_no_trace_when_flag_is_off(): void
     {
-        $this->markTestSkipped('The 60-day milestone has been enabled; this test verifies behavior with flag off.');
-
         $investigator = User::factory()->investigator()->create();
 
         $docketedDaysAgo = 90;
