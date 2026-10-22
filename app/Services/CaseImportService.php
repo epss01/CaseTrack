@@ -238,8 +238,8 @@ class CaseImportService
         }
 
         $usersByUsername = User::pluck('id', 'username');
-        $usersByFullName = User::get(['id', 'first_name', 'last_name'])
-            ->groupBy(fn (User $u) => Str::lower(trim("{$u->first_name} {$u->last_name}")));
+        $usersByFullName = User::all(['id', 'first_name', 'last_name'])
+            ->groupBy(fn ($u) => Str::lower(trim("{$u->first_name} {$u->last_name}")));
 
         $ready = [];
         $defaultedWeight = 0;
