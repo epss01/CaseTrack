@@ -318,8 +318,6 @@ class ReportExportTest extends TestCase
      */
     public function test_the_sixtieth_day_appears_nowhere_in_the_export_when_flag_is_off(): void
     {
-        $this->markTestSkipped('The 60-day milestone has been enabled; this test verifies behavior with flag off.');
-
         $investigator = User::factory()->investigator()->create();
 
         $this->caseFor($investigator, docketedOn: '2026-01-01');
