@@ -3,12 +3,13 @@
 namespace Database\Factories;
 
 use App\Models\CaseModel;
+use App\Models\CaseTimeline;
 use App\Services\CaseDeadlineService;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\CaseTimeline>
+ * @extends Factory<CaseTimeline>
  */
 class CaseTimelineFactory extends Factory
 {
@@ -70,7 +71,7 @@ class CaseTimelineFactory extends Factory
      * arithmetic live. Kept as a method here because the seeder and its tests
      * call it, and because a factory reading the service is the right way round.
      *
-     * @return array<string, \Carbon\CarbonImmutable>
+     * @return array<string, CarbonImmutable>
      */
     public static function deadlinesFor(CarbonImmutable $docketedOn): array
     {

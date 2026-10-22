@@ -352,7 +352,7 @@ class CaseController extends Controller
      * enforces the same set server-side, so a rejected/pending/deactivated
      * id can't be POSTed straight past this list either.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, User>
+     * @return Collection<int, User>
      */
     protected function assignableInvestigators(User $user)
     {

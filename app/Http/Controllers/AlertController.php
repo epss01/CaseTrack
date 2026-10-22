@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CaseModel;
 use App\Services\CaseDeadlineService;
+use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -21,7 +22,7 @@ class AlertController extends Controller
      * is no per-case decision to make on a list page, so no policy class, the
      * same call /workload makes.
      *
-     * @return \Illuminate\Contracts\Support\Renderable
+     * @return Renderable
      */
     public function index(Request $request, CaseDeadlineService $deadlines)
     {

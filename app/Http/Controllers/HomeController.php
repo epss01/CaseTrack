@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CaseModel;
+use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Http\Request;
 
 class HomeController extends Controller
@@ -26,7 +27,7 @@ class HomeController extends Controller
      * through $user->cases(), which is scoped to investigator_id at source —
      * there is no route parameter to swap for someone else's caseload.
      *
-     * @return \Illuminate\Contracts\Support\Renderable
+     * @return Renderable
      */
     public function index(Request $request)
     {
@@ -93,7 +94,7 @@ class HomeController extends Controller
      * second query, and two figures that agree only by coincidence eventually
      * do not.
      *
-     * @return \Illuminate\Contracts\Support\Renderable
+     * @return Renderable
      */
     private function supervisorDashboard()
     {

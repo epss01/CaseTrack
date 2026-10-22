@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\CaseModel;
-use App\Models\CaseTimeline;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;

@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use App\Models\CaseModel;
 use App\Models\CaseTimeline;
 use App\Services\CaseDeadlineService;
 use Carbon\CarbonImmutable;
@@ -292,7 +293,7 @@ class CaseDeadlineServiceTest extends TestCase
         );
 
         // Mock the case relationship to return is_torture_case = true
-        $caseMock = $this->createMock(\App\Models\CaseModel::class);
+        $caseMock = $this->createMock(CaseModel::class);
         $caseMock->is_torture_case = true;
         $timeline->case = $caseMock;
 
@@ -331,7 +332,7 @@ class CaseDeadlineServiceTest extends TestCase
         );
 
         // Mock the case relationship to return is_torture_case = true
-        $caseMock = $this->createMock(\App\Models\CaseModel::class);
+        $caseMock = $this->createMock(CaseModel::class);
         $caseMock->is_torture_case = true;
         $timeline->case = $caseMock;
 
@@ -356,7 +357,7 @@ class CaseDeadlineServiceTest extends TestCase
         $timeline->date_submission_60th_day_rorp = $this->today()->subDays(5); // Filed 5 days ago
 
         // Mock the case relationship to return is_torture_case = true
-        $caseMock = $this->createMock(\App\Models\CaseModel::class);
+        $caseMock = $this->createMock(CaseModel::class);
         $caseMock->is_torture_case = true;
         $timeline->case = $caseMock;
 
@@ -384,7 +385,7 @@ class CaseDeadlineServiceTest extends TestCase
         $timeline = $this->docketedDaysAgo(200); // Well past the 60th day
 
         // Mock the case relationship to return is_torture_case = false
-        $caseMock = $this->createMock(\App\Models\CaseModel::class);
+        $caseMock = $this->createMock(CaseModel::class);
         $caseMock->is_torture_case = false;
         $timeline->case = $caseMock;
 
@@ -408,7 +409,7 @@ class CaseDeadlineServiceTest extends TestCase
         $timeline = $this->docketedDaysAgo(200); // Well past the 60th day
 
         // Mock the case relationship to return is_torture_case = null
-        $caseMock = $this->createMock(\App\Models\CaseModel::class);
+        $caseMock = $this->createMock(CaseModel::class);
         $caseMock->is_torture_case = null;
         $timeline->case = $caseMock;
 
@@ -434,7 +435,7 @@ class CaseDeadlineServiceTest extends TestCase
         $tortureTimeline->date_submission_rop = $this->today()->subDays(70); // Discharge 30-day
 
         // Mock the case relationship to return is_torture_case = true
-        $tortureCaseMock = $this->createMock(\App\Models\CaseModel::class);
+        $tortureCaseMock = $this->createMock(CaseModel::class);
         $tortureCaseMock->is_torture_case = true;
         $tortureTimeline->case = $tortureCaseMock;
 
@@ -456,7 +457,7 @@ class CaseDeadlineServiceTest extends TestCase
         $nonTortureTimeline->date_submission_rop = $this->today()->subDays(70); // Discharge 30-day
 
         // Mock the case relationship to return is_torture_case = false
-        $nonTortureCaseMock = $this->createMock(\App\Models\CaseModel::class);
+        $nonTortureCaseMock = $this->createMock(CaseModel::class);
         $nonTortureCaseMock->is_torture_case = false;
         $nonTortureTimeline->case = $nonTortureCaseMock;
 

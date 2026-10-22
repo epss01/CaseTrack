@@ -126,7 +126,7 @@ class CaseImportTest extends TestCase
     {
         $supervisor = User::factory()->supervisor()->create();
         $investigator = User::factory()->investigator()->create(['username' => 'jdc']);
-        $existing = \App\Models\CaseModel::factory()->assignedTo($investigator)->create(['docket_no' => 'CHR-2026-0001']);
+        $existing = CaseModel::factory()->assignedTo($investigator)->create(['docket_no' => 'CHR-2026-0001']);
         $existing->timeline()->create(['date_of_docket' => '2026-01-01']);
 
         $file = $this->csv([

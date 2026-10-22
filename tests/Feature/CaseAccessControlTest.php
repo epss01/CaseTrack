@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\CaseModel;
 use App\Models\Role;
 use App\Models\User;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -173,7 +174,7 @@ class CaseAccessControlTest extends TestCase
 
     public function test_role_names_are_the_three_the_office_uses(): void
     {
-        $this->seed(\Database\Seeders\RoleSeeder::class);
+        $this->seed(RoleSeeder::class);
 
         $this->assertSame(
             [Role::ADMIN, Role::INVESTIGATOR, Role::SUPERVISOR],

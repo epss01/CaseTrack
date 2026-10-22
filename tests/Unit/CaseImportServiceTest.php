@@ -3,7 +3,6 @@
 namespace Tests\Unit;
 
 use App\Http\Controllers\ReportController;
-use App\Models\Role;
 use App\Models\User;
 use App\Services\CaseImportService;
 use Illuminate\Foundation\Testing\RefreshDatabase;

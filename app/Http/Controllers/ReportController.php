@@ -8,6 +8,7 @@ use App\Models\CaseModel;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\CaseDeadlineService;
+use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
 
@@ -31,7 +32,7 @@ class ReportController extends Controller
      * The same rows the CSV carries, so the page is a preview of the download
      * rather than a second report that could disagree with it.
      *
-     * @return \Illuminate\Contracts\Support\Renderable
+     * @return Renderable
      */
     public function index(ReportFilterRequest $request, CaseDeadlineService $deadlines)
     {
@@ -94,7 +95,7 @@ class ReportController extends Controller
      * and the export too, which is the reasoning /alerts and /workload were
      * built on.
      *
-     * @return \Illuminate\Contracts\Support\Renderable
+     * @return Renderable
      */
     public function show(CaseModel $case, CaseDeadlineService $deadlines)
     {

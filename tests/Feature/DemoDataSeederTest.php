@@ -8,6 +8,7 @@ use App\Models\User;
 use Carbon\CarbonImmutable;
 use Database\Factories\CaseTimelineFactory;
 use Database\Seeders\DemoDataSeeder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -16,7 +17,7 @@ class DemoDataSeederTest extends TestCase
     use RefreshDatabase;
 
     /**
-     * @return \Illuminate\Database\Eloquent\Collection<int, CaseModel>
+     * @return Collection<int, CaseModel>
      */
     protected function demoCases()
     {
