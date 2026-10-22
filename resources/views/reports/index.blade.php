@@ -34,12 +34,17 @@
                         </div>
                     </div>
 
-                    {{-- A link rather than a second submit button: the filters are
-                         already in the URL, so the download is the same request
-                         with a different ending. --}}
-                    <a href="{{ route('reports.export', $filters) }}" class="btn btn-sm btn-outline-light">
-                        {{ __('Download CSV') }}
-                    </a>
+                    <div class="d-flex gap-2">
+                        <a href="{{ route('reports.analytics') }}" class="btn btn-sm btn-outline-light">
+                            {{ __('View analytics') }}
+                        </a>
+
+                        {{-- The filters are already in the URL, so the download
+                             is the same request with a different ending. --}}
+                        <a href="{{ route('reports.export', $filters) }}" class="btn btn-sm btn-outline-light">
+                            {{ __('Download CSV') }}
+                        </a>
+                    </div>
                 </div>
 
                 <div class="identity-bar__divider"></div>

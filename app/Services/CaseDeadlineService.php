@@ -250,6 +250,70 @@ class CaseDeadlineService
     }
 
     /**
+     * The date a case counts as resolved: the day its FIR was filed.
+     *
+     * The FIR is the last document a case files (see statusesFor()), so it is the
+     * one resolution date every imported and seeded case can carry. Null means
+     * "not resolved, or resolved with no date recorded" — callers that need to
+     * tell those apart check the case status.
+     */
+    public function resolvedOn(?CaseTimeline $timeline): ?CarbonImmutable
+    {
+        return $timeline?->date_fir_submitted === null
+            ? null
+            : CarbonImmutable::parse($timeline->date_fir_submitted)->startOfDay();
+    }
+
+    /**
+     * Docketed inside the period, both ends inclusive. A case with no
+     * timeline cannot be placed in any period, so it is never incoming.
+     */
+    public function isIncomingIn(?CaseTimeline $timeline, CarbonImmutable $from, CarbonImmutable $to): bool
+    {
+        if ($timeline?->date_of_docket === null) {
+            return false;
+        }
+
+        return CarbonImmutable::parse($timeline->date_of_docket)->startOfDay()
+            ->betweenIncluded($from->startOfDay(), $to->startOfDay());
+    }
+
+    public function isResolvedIn(?CaseTimeline $timeline, CarbonImmutable $from, CarbonImmutable $to): bool
+    {
+        return $this->resolvedOn($timeline)?->betweenIncluded($from->startOfDay(), $to->startOfDay()) ?? false;
+    }
+
+    /**
+     * Open on the given day: docketed on or before it, and not yet resolved
+     * (or resolved only after it). This is what makes backlog carried in from
+     * an earlier period count as pending.
+     */
+    public function isPendingAt(?CaseTimeline $timeline, CarbonImmutable $asOf): bool
+    {
+        if ($timeline?->date_of_docket === null) {
+            return false;
+        }
+
+        $asOf = $asOf->startOfDay();
+
+        if (CarbonImmutable::parse($timeline->date_of_docket)->startOfDay()->greaterThan($asOf)) {
+            return false;
+        }
+
+        $resolved = $this->resolvedOn($timeline);
+
+        return $resolved === null || $resolved->greaterThan($asOf);
+    }
+
+    /**
+     * Calendar days in a period, both ends counted.
+     */
+    public static function daysInPeriod(CarbonImmutable $from, CarbonImmutable $to): int
+    {
+        return (int) $from->startOfDay()->diffInDays($to->startOfDay()) + 1;
+    }
+
+    /**
      * One milestone's state, in the order the rules are applied.
      *
      * Submitted first: a discharged milestone is done, however long ago its

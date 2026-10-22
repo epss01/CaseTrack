@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AlertController;
+use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\CaseController;
 use App\Http\Controllers\CaseImportController;
@@ -82,6 +83,7 @@ Route::middleware(['auth', 'role:Investigator,Supervisor'])->group(function () {
     // export is registered first so it is matched as its own path rather than
     // read as a report identifier.
     Route::get('reports/export', [ReportController::class, 'export'])->name('reports.export');
+    Route::get('reports/analytics', [AnalyticsController::class, 'index'])->name('reports.analytics');
     Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
 
     // The one report that resolves a single case, so the one gated by
