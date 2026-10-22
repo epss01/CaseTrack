@@ -13,6 +13,7 @@ use Tests\TestCase;
  *
  * public/build is gitignored, so compiled CSS and JS exist only on machines
  * that have built them. A *missing* build already fails loudly — Laravel's
+ *
  * @vite throws "Vite manifest not found" on the first page load. A *stale*
  * build does not: the page renders with the previous build's CSS, so a styling
  * change that landed in the branch simply does not appear, and nothing says

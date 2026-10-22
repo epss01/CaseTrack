@@ -1,5 +1,8 @@
 <?php
 
+use App\Console\Commands\MakeAdminCommand;
+use App\Http\Middleware\EnsureAccountIsActive;
+use App\Http\Middleware\EnsureUserHasRole;
 use App\Models\AuditLog;
 use App\Models\CaseModel;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -21,11 +24,11 @@ return Application::configure(basePath: dirname(__DIR__))
     // app/Console/Commands is not auto-discovered without this. Needed the
     // moment the first custom Artisan command (make:admin) was added.
     ->withCommands([
-        \App\Console\Commands\MakeAdminCommand::class,
+        MakeAdminCommand::class,
     ])
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
-            'role' => \App\Http\Middleware\EnsureUserHasRole::class,
+            'role' => EnsureUserHasRole::class,
         ]);
 
         // Catches a session that outlives its account's standing: a login
@@ -33,7 +36,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // session from starting, so without this an already-authenticated
         // user deactivated mid-session (or rejected after somehow logging
         // in) would keep working until they logged out on their own.
-        $middleware->web(append: [\App\Http\Middleware\EnsureAccountIsActive::class]);
+        $middleware->web(append: [EnsureAccountIsActive::class]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         // Makes a denied request visible in the trail instead of leaving

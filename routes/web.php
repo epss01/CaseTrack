@@ -6,6 +6,7 @@ use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\CaseController;
 use App\Http\Controllers\CaseImportController;
 use App\Http\Controllers\CaseTimelineController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\RegistrationApprovalController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserAccountController;
@@ -21,7 +22,7 @@ Route::get('/', function () {
 // verification flows are disabled. Password confirmation is still registered.
 Auth::routes(['reset' => false, 'verify' => false]);
 
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+Route::get('/home', [HomeController::class, 'index'])->name('home');
 
 // Bulk case intake (CSV/XLSX) — Supervisor-only, unlike the general case
 // routes below: import creates cases and assigns investigators, and reads as

@@ -3,10 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\In;
+use Illuminate\Validation\Rules\NotIn;
 
 class CaseModel extends Model
 {
@@ -95,9 +98,9 @@ class CaseModel extends Model
      * timeline row yet — load the timeline relation before reading this or
      * it N+1s per case.
      */
-    protected function docketPhase(): \Illuminate\Database\Eloquent\Casts\Attribute
+    protected function docketPhase(): Attribute
     {
-        return \Illuminate\Database\Eloquent\Casts\Attribute::make(
+        return Attribute::make(
             get: function () {
                 $docketedOn = $this->timeline?->date_of_docket;
 
@@ -136,7 +139,7 @@ class CaseModel extends Model
      * those states still has to be editable — resubmitting its own status must
      * pass, or its title could never be corrected again.
      *
-     * @return list<string|\Illuminate\Validation\Rules\In|\Illuminate\Validation\Rules\NotIn>
+     * @return list<string|In|NotIn>
      */
     public static function statusRulesFor(self $case): array
     {

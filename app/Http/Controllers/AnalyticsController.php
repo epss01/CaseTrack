@@ -8,6 +8,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Services\CaseAnalyticsService;
 use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Support\Arr;
 
 class AnalyticsController extends Controller
@@ -15,7 +16,7 @@ class AnalyticsController extends Controller
     /**
      * CEPEJ Clearance Rate and Disposition Time for the visible caseload.
      *
-     * @return \Illuminate\Contracts\Support\Renderable
+     * @return Renderable
      */
     public function index(ReportFilterRequest $request, CaseAnalyticsService $analytics)
     {

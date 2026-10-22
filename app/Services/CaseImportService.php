@@ -7,6 +7,7 @@ use App\Models\CaseModel;
 use App\Models\CaseTimeline;
 use App\Models\Role;
 use App\Models\User;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Validator as ValidatorFacade;
 use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -413,8 +414,8 @@ class CaseImportService
      * unambiguous key), then an exact "First Last" match. Two accounts
      * sharing a full name is reported rather than guessed at.
      *
-     * @param  \Illuminate\Support\Collection<string, int>  $usersByUsername
-     * @param  \Illuminate\Support\Collection<string, \Illuminate\Support\Collection<int, User>>  $usersByFullName
+     * @param  Collection<string, int>  $usersByUsername
+     * @param  Collection<string, Collection<int, User>>  $usersByFullName
      * @return array{0: ?int, 1: ?string}
      */
     private function resolveInvestigator(?string $text, $usersByUsername, $usersByFullName): array
@@ -469,9 +470,9 @@ class CaseImportService
 
     /**
      * @return string the normalized "Y-m-d" date, or the original value
-     *                 unchanged if it could not be parsed — left for the
-     *                 "date" validation rule to reject with a clear message
-     *                 rather than silently disappearing.
+     *                unchanged if it could not be parsed — left for the
+     *                "date" validation rule to reject with a clear message
+     *                rather than silently disappearing.
      */
     private function normalizeDate(mixed $value): string
     {

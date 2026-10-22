@@ -3,11 +3,12 @@
 namespace Database\Factories;
 
 use App\Models\CaseModel;
+use App\Models\Respondent;
 use Database\Factories\Support\PhilippineNames;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Respondent>
+ * @extends Factory<Respondent>
  */
 class RespondentFactory extends Factory
 {

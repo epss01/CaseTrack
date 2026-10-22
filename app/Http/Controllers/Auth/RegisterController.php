@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\View\View;
 
 class RegisterController extends Controller
 {
@@ -55,7 +56,7 @@ class RegisterController extends Controller
      * may pick between. Admin is deliberately not offered here — see
      * Role::selectableRoleRule().
      *
-     * @return \Illuminate\View\View
+     * @return View
      */
     public function showRegistrationForm()
     {
