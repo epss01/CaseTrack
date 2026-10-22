@@ -1,0 +1,283 @@
+# Claude Code Prompt: Activate the 60-Day (RORP) Statutory Milestone
+
+---
+
+## Context you must load before writing any code
+
+Read these, in this order, before touching anything:
+
+1. `CLAUDE.md` (project root) — governance rules, especially anything about date math
+   and `case_timelines` columns.
+2. `.claude/hooks/guard-writes.php` — the enforced rule that no file under `app/` may
+   name a `case_timelines` column *and* call `addDays`/`subDays`/`diffIn*`/`Carbon::`/
+   `strtotime` outside `App\Services\CaseDeadlineService`. Your changes must not trip this.
+3. `app/Services/CaseDeadlineService.php` in full — read every docblock, not just the code.
+   Pay special attention to the docblock above `SIXTY_DAY_ENABLED`.
+4. `app/Models/CaseTimeline.php` and `app/Models/CaseModel.php` in full.
+5. `database/migrations/2026_08_19_120000_add_is_torture_case_to_cases_table.php`.
+6. `tests/Unit/CaseDeadlineServiceTest.php` and `tests/Feature/DeadlineAlertsPageTest.php`
+   — specifically every test that currently asserts behavior *while the flag is off*
+   (search both files for `SIXTY_DAY_ENABLED`). These tests encode the safety contract
+   you must not break.
+7. If present in the repo or Obsidian vault: `wiki/project/chr-open-questions.md` and
+   `wiki/project/database-schema.md` — check whether CHR has since answered anything
+   about the 60th-day RORP-filed column or a 30-day extension-request mechanism.
+
+## The precondition you are implementing against
+
+`CaseDeadlineService::SIXTY_DAY_ENABLED` is `false` because three things were required
+before it could safely be `true`:
+
+1. **`cases.is_torture_case` exists** — done (2026-08-19 migration). It is nullable:
+   `true`, `false`, or `null` ("not determined," for cases docketed before this field
+   existed).
+2. **An extension-request/grant field** — NOT done, and its exact shape is not
+   specified anywhere in the codebase or docs available to you. Do not invent one.
+   See "Stop-and-ask condition" below.
+3. **A column recording that a 60th-day RORP was actually filed** — NOT done. Right
+   now only `date_fir_submitted` can discharge the 60-day milestone, via the
+   "FIR discharges everything" rule in `CaseDeadlineService::statusesFor()`. That is
+   not sufficient in isolation for the RORP-specific milestone.
+
+**Do not simply set `SIXTY_DAY_ENABLED = true`.** Doing so today would apply the
+torture-case rule to every active case in the office, including the ones where
+`is_torture_case` is `null`. That is the exact failure mode the flag exists to
+prevent, and it is explicitly called out as worse than leaving the milestone hidden.
+
+## What you are actually building, in order
+
+### Step 1 — Migration: the missing discharge column
+
+Create a new migration adding a nullable `date` column to `case_timelines` for when
+the 60th-day RORP was actually submitted. Follow the existing naming and comment
+conventions in `case_timelines` migrations (see
+`database/migrations/2026_07_24_144751_create_case_timelines_table.php` for style).
+
+Suggested column name: `date_submission_60th_day_rorp`. If you find a better name
+already implied elsewhere in the codebase or vault, use that instead and note why in
+the migration's docblock. The column must:
+- Be nullable (most cases will never set it — it applies to torture cases only).
+- Sit near `submission_60th_day` in the table for readability (use `->after(...)`).
+- Have a docblock comment explaining it mirrors `date_submission_rop` and
+  `date_fir_submitted` as the *actual* discharging event for the 60-day *deadline*.
+
+### Step 2 — Model updates
+
+In `app/Models/CaseTimeline.php`:
+- Add the new column to `$fillable` and to the `casts()` date list.
+- Add it to `chronologyRules()` with the same `after_or_equal:date_of_docket` rule
+  the other milestone dates use.
+
+### Step 3 — `CaseDeadlineService` changes
+
+In `app/Services/CaseDeadlineService.php`, make these changes carefully — this file
+is the single source of truth for deadline logic and is covered by the write-guard
+hook, so you are the only file allowed to do date arithmetic here:
+
+1. Change the `SIXTIETH_DAY` entry in the private `MILESTONES` array so
+   `'discharged_by'` points at the new column instead of `null`.
+2. `visibleMilestones()` currently gates the 60th day purely on
+   `SIXTY_DAY_ENABLED`. Change this so the 60th-day milestone is visible **only when
+   both** `SIXTY_DAY_ENABLED` is true **and** the specific case is a torture case.
+   Because `visibleMilestones()` has no per-case context today (it's static and
+   milestone-keyed, not case-keyed), you will need to either:
+   - Add case-awareness to `statusesFor()` so it can additionally suppress the
+     60th-day entry when `$timeline->case->is_torture_case !== true` (note: strict
+     `true`, not truthy — `null` and `false` must both suppress it), or
+   - Restructure so the torture-case check happens once inside `statusesFor()`
+     before the milestone loop.
+   Whichever approach you take, preserve the existing guarantee: `visibleMilestones()`
+   remains the only thing any caller can use to discover what's shown, and there must
+   be no second path into a controller or view that bypasses this check. Update the
+   method's docblock to describe the new two-part gate (flag AND case type).
+3. You will need `CaseTimeline` to resolve back to its parent `CaseModel` to read
+   `is_torture_case`. Check whether `statusesFor()` currently receives a `CaseTimeline`
+   with its `case` relation loaded from callers (`AlertController`, `ReportController`,
+   `CaseController::show`, etc.) — if not, either eager-load it at each call site or
+   pass `is_torture_case` as an explicit parameter instead of reaching through a
+   relation that may not be loaded (avoid introducing an N+1 query — check every
+   caller of `statusesFor()` and `caseStatusFor()`).
+4. Update every docblock in this file that currently states the 60-day milestone is
+   "computed but never surfaced" — that description will no longer be accurate once
+   this ships, and the class docblocks are treated as authoritative documentation
+   throughout this project (they're quoted verbatim in the Obsidian vault reference
+   docs). Do not leave stale claims in place.
+5. **Leave `SIXTY_DAY_ENABLED` set to `false` for now.** You will flip it only in the
+   final step, after tests pass and after the stop-and-ask condition below is resolved.
+
+### Step 4 — Update `visibleMilestones()`'s test coverage assumptions
+
+`tests/Unit/CaseDeadlineServiceTest.php` has tests gated on `SIXTY_DAY_ENABLED` via
+`markTestSkipped()`. Once the flag flips these tests will start actually running —
+read them now and make sure your implementation will make them pass, don't wait
+until the end to find out. Add new tests for the behavior that didn't exist before:
+- A torture case (`is_torture_case === true`) past its 60th day with no RORP filed
+  is `STATUS_OVERDUE` on that milestone.
+- A torture case within the 14-day warning window on the 60th day is `STATUS_DUE_SOON`.
+- A torture case with the new column set is `STATUS_SUBMITTED` on that milestone,
+  regardless of how overdue the deadline itself is.
+- A **non-torture case** (`is_torture_case === false`) never shows the 60-day
+  milestone, even far past it with nothing filed — confirm this with the flag on.
+- A case with `is_torture_case === null` ("not determined") behaves identically to
+  a non-torture case: the 60-day milestone stays hidden. This is the single most
+  important test in this whole change — write it explicitly and name it so its
+  intent is unmistakable, e.g.
+  `test_a_case_with_undetermined_torture_status_never_shows_the_sixtieth_day`.
+- `caseStatusFor()` correctly folds an overdue 60th day into the worst-outstanding
+  status for a torture case, and correctly ignores it for a non-torture case.
+
+### Step 5 — Downstream surfaces
+
+Search the codebase for every place that currently assumes the 60th day is
+invisible and update or add tests to match the new behavior once enabled:
+
+- `tests/Feature/DeadlineAlertsPageTest.php` —
+  `test_a_case_well_past_its_sixtieth_day_shows_no_trace_of_that_milestone` and
+  similar are written to `markTestSkipped()` once the flag is on; make sure a new
+  test exists that confirms a torture case's overdue 60th day *does* now appear on
+  `/alerts` with the correct label, and that a non-torture / undetermined case still
+  shows no trace of it.
+- `tests/Feature/ReportExportTest.php` —
+  `test_the_sixtieth_day_appears_nowhere_in_the_export` has the same skip pattern.
+  Add the mirrored "torture case's 60th day appears in the export, non-torture
+  case's does not" coverage, and update `ReportController::columns()` only if you
+  determine the report should surface it — check with the "what changes were
+  actually asked for" note below before adding new columns.
+- `tests/Feature/CaseReportTest.php` — `test_the_sixtieth_day_appears_nowhere` has
+  the same pattern; mirror it the same way.
+- `resources/views/cases/timeline.blade.php` already has a "Submission (60th Day)"
+  field for `submission_60th_day` (the *deadline*, not the actual submission date).
+  Decide whether the new "actual RORP filed" date also needs a form field here so
+  investigators can record it — almost certainly yes, since without a way to *set*
+  the new column, the milestone can never be discharged and every torture case will
+  eventually show permanently overdue. Add the input following the existing pattern
+  in that file (label, optional marker, old()/timeline value fallback, error
+  handling) and add a corresponding field to `UpdateCaseTimelineRequest::rules()`
+  and `::attributes()`.
+- `resources/views/cases/show.blade.php` — the `$timelineFields` array should
+  probably include the new date the same way it includes the other timeline dates.
+  Confirm and add it.
+- `DemoDataSeeder` — re-read its docblock on the 60th day (it currently seeds
+  DEMO-VIII-*-0009 near its 60th day specifically for this future work, and has a
+  torture-case fixture: "Alleged torture of suspect in custody, Borongan"). Decide
+  whether that seeder needs updating so the demo data actually exercises the new
+  rule once enabled (e.g., does that torture case fixture need
+  `is_torture_case => true` set explicitly, and does one seeded case need the new
+  RORP-filed column populated to show a `STATUS_SUBMITTED` 60-day example). Do not
+  change the documented bucket counts (4 overdue / 4 due soon / 4 on track / 3
+  closed) unless the new milestone genuinely moves a case's classification — if it
+  does, update `DemoDataSeederTest::test_the_timeline_spread_covers_every_alert_bucket`
+  to match and explain why in a comment.
+
+### Stop-and-ask condition — do not skip this
+
+Before you flip `SIXTY_DAY_ENABLED` to `true` anywhere, re-check requirement #2 from
+the precondition section: "an extension-request/grant field." Nothing in the files
+you were told to read defines what this should look like. There are two readings:
+
+- **(a)** It refers to a 30-day ROP extension mechanism unrelated to the 60-day
+  torture-case rule itself (the CHR-answers text mentions "a thirty-day extension
+  may be requested" in the context of the ordinary ROP deadline, not the torture-case
+  timeline) — in which case it may be out of scope for *this* change entirely, and
+  the docblock's "AND" is stricter than the actual business requirement.
+- **(b)** It refers to some analogous extension mechanism specific to the 60-day
+  RORP deadline that has never been built and isn't described anywhere you have
+  access to.
+
+**Do not guess and silently build something for reading (b).** Instead:
+1. Implement everything in Steps 1–5 above (this is safe and correct regardless of
+   which reading is right, since none of it depends on an extension mechanism).
+2. Leave `SIXTY_DAY_ENABLED = false`.
+3. Stop, and report back to me directly with:
+   - A summary of what you built and why it's safe to ship as-is.
+   - The exact ambiguity above, in your own words, so I can either confirm reading
+     (a) — in which case you'll flip the flag in a follow-up — or tell you what CHR
+     actually meant so you can build it properly.
+   - Add a `ponytail: SIXTY_DAY_ENABLED remains false pending clarification on the
+     "extension-request/grant field" requirement — see [this session's summary] —
+     flip once resolved.` comment directly above the `SIXTY_DAY_ENABLED` constant so
+     this isn't lost.
+
+If I explicitly tell you in this same session to proceed with reading (a) and flip
+the flag now, then and only then: change `SIXTY_DAY_ENABLED` to `true`, remove the
+now-obsolete `ponytail:` comment, and re-run the full suite one more time before
+finishing.
+
+## Branching, commits, and process — follow project convention exactly
+
+- You are working from `develop`. Cut a feature branch:
+  `git checkout develop && git pull && git checkout -b feature/sixty-day-milestone-activation`.
+  Confirm with me before running any push.
+- One task per prompt discipline still applies even though this is a multi-step
+  change — treat Steps 1–5 as one cohesive unit of work (it doesn't ship correctly
+  in pieces) but keep commits small and reviewable within the branch: e.g. one
+  commit for the migration + model, one for the service logic, one for tests, one
+  for views/forms, one for seeder/demo updates.
+- Show me the exact `git` commands before running any of them, per project
+  convention — never commit directly to `develop` or `main`.
+- Before opening the PR / asking me to review, run the **full** test suite, not just
+  the files you touched: `php artisan test`. If you're on Windows/XAMPP per this
+  project's setup notes, use the Herd Lite PHP binary path documented in `README.md`
+  (`C:/Users/admin/.config/herd-lite/bin/php.exe artisan test`), not XAMPP's bundled
+  PHP.
+- Confirm `AssetsAreBuiltTest` still passes — if you touched any Blade view, that
+  test doesn't require a rebuild (Blade isn't compiled), but if you touch anything
+  under `resources/sass` or `resources/js` for this work (you shouldn't need to),
+  run `npm run build` first.
+
+## Tooling and skills to use while doing this work
+
+- Use the **laravel-boost** plugin's Laravel-specific tooling for the migration and
+  any artisan-driven steps (e.g. confirming migration ordering, running
+  `migrate:fresh` against the test/dev DB to sanity check schema before writing
+  tests against it).
+- Use the **php-lsp** plugin for any refactor inside `CaseDeadlineService.php` —
+  this is a small, dense, heavily-documented class and a language-server-backed
+  refactor is safer than a blind text edit given how many call sites depend on its
+  exact return shapes.
+- Use the **ponytail** plugin/skill for any inline technical-debt markers you leave
+  behind (per this project's existing `ponytail:` comment convention — see
+  `HomeController.php` and `AlertController.php` for the established style: a
+  comment naming what's incomplete and what would need to change to close the gap).
+  Use it for the stop-and-ask marker above, and for anything else you defer.
+- Use the **andrej-karpathy-skills** plugin's applicable skills for a clarity/style
+  pass on `CaseDeadlineService.php` specifically once your logic changes are in —
+  this file is unit-tested with no database and is meant to read as a clean,
+  minimal, well-commented reference implementation; if your change adds nested
+  conditionals or duplicated logic, simplify before finishing.
+- Use the **code-review** and **pr-review-toolkit** plugins to self-review your own
+  diff before presenting it to me — specifically check for: N+1 queries introduced
+  by loading `case->is_torture_case`, any date arithmetic that leaked outside
+  `CaseDeadlineService` (would be caught by the write-guard hook, but verify before
+  the hook does), and any place `visibleMilestones()`'s new signature broke a caller
+  silently rather than loudly.
+- Use the **security-guidance** plugin to specifically re-check that the new date
+  field and its display don't leak the 60th-day milestone to non-torture cases
+  through any code path you didn't explicitly test (this is the entire point of the
+  flag, so treat it as a security-relevant boundary, not just a feature toggle).
+- Use **claude-md-management** to update `CLAUDE.md` if any of its stated
+  invariants change (e.g. if the "60th-day is computed but never surfaced" language
+  appears there too — it's referenced in multiple wiki docs verbatim, so check for
+  it there as well and flag any wiki page you can't directly edit).
+- Use **commit-commands** for well-formed commit messages once I've approved the
+  diff.
+
+## Definition of done
+
+- [ ] Migration adds the RORP-filed column with a clear docblock.
+- [ ] `CaseTimeline` model updated (fillable, casts, chronology rules).
+- [ ] `CaseDeadlineService` scopes the 60th-day milestone to
+      `is_torture_case === true` AND `SIXTY_DAY_ENABLED`, with no second entry point
+      that bypasses `visibleMilestones()`.
+- [ ] No N+1 introduced reading `is_torture_case` from callers of `statusesFor()`.
+- [ ] All previously-skipped tests now run and pass; new tests explicitly cover the
+      `null` and `false` torture-case cases showing nothing.
+- [ ] Set Timeline form can record the new date; case profile matrix displays it.
+- [ ] `DemoDataSeeder` reviewed and updated if needed, with its test updated to match.
+- [ ] `SIXTY_DAY_ENABLED` is left `false` unless I've explicitly told you to flip it
+      in this session, with a `ponytail:` comment explaining why if it's still off.
+- [ ] Full `php artisan test` suite passes.
+- [ ] Docblocks in `CaseDeadlineService.php` and any stale wiki/CLAUDE.md language no
+      longer claim the milestone is "never surfaced."
+- [ ] You've reported back with the stop-and-ask summary before I decide whether to
+      flip the flag.

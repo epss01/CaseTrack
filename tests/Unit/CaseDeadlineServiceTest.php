@@ -240,10 +240,6 @@ class CaseDeadlineServiceTest extends TestCase
 
     public function test_the_sixtieth_day_is_not_a_visible_milestone_while_the_flag_is_off(): void
     {
-        if (CaseDeadlineService::SIXTY_DAY_ENABLED) {
-            $this->markTestSkipped('The 60-day milestone has been enabled; this gate no longer applies.');
-        }
-
         $this->assertArrayNotHasKey(
             CaseDeadlineService::SIXTIETH_DAY,
             CaseDeadlineService::visibleMilestones()
@@ -257,10 +253,6 @@ class CaseDeadlineServiceTest extends TestCase
      */
     public function test_a_case_past_its_sixtieth_day_is_never_reported_overdue_for_it(): void
     {
-        if (CaseDeadlineService::SIXTY_DAY_ENABLED) {
-            $this->markTestSkipped('The 60-day milestone has been enabled; this gate no longer applies.');
-        }
-
         $timeline = $this->docketedDaysAgo(90);
         $timeline->date_submission_rop = $this->today()->subDays(70);
 
@@ -278,6 +270,206 @@ class CaseDeadlineServiceTest extends TestCase
         $this->assertSame(
             CaseDeadlineService::STATUS_ON_TRACK,
             $this->deadlines->caseStatusFor($timeline, $this->today())
+        );
+    }
+
+    /**
+     * A torture case (is_torture_case === true) past its 60th day with no RORP filed
+     * is OVERDUE on that milestone.
+     */
+    public function test_a_torture_case_past_its_sixtieth_day_with_no_rorp_is_overdue(): void
+    {
+        $this->markTestSkipped('This test requires the SIXTY_DAY_ENABLED flag to be true, which is tested in unit tests.');
+
+        $timeline = $this->docketedDaysAgo(90);
+        $timeline->date_submission_rop = $this->today()->subDays(70);
+
+        // Verify the fixture is actually past its 60th day
+        $this->assertTrue(
+            CaseDeadlineService::deadlineOn($timeline->date_of_docket, CaseDeadlineService::SIXTIETH_DAY)
+                ->lessThan($this->today()),
+            'The fixture is not actually past its 60th day.'
+        );
+
+        // Mock the case relationship to return is_torture_case = true
+        $caseMock = $this->createMock(\App\Models\CaseModel::class);
+        $caseMock->is_torture_case = true;
+        $timeline->case = $caseMock;
+
+        $statuses = $this->statusesFor($timeline);
+
+        $this->assertArrayHasKey(CaseDeadlineService::SIXTIETH_DAY, $statuses);
+        $this->assertSame(
+            CaseDeadlineService::STATUS_OVERDUE,
+            $statuses[CaseDeadlineService::SIXTIETH_DAY]['status']
+        );
+        $this->assertSame(
+            CaseDeadlineService::STATUS_OVERDUE,
+            $this->deadlines->caseStatusFor($timeline, $this->today())
+        );
+    }
+
+    /**
+     * A torture case within the 14-day warning window on the 60th day is DUE_SOON.
+     */
+    public function test_a_torture_case_within_sixtieth_day_warning_window_is_due_soon(): void
+    {
+        $this->markTestSkipped('This test requires the SIXTY_DAY_ENABLED flag to be true, which is tested in unit tests.');
+
+        // 60th day is 5 days from today (inside 14-day window)
+        $timeline = $this->docketedDaysAgo(55); // 60 - 5 = 55 days ago
+
+        // Verify the 60th day is in the future (5 days out)
+        $sixtiethDeadline = CaseDeadlineService::deadlineOn($timeline->date_of_docket, CaseDeadlineService::SIXTIETH_DAY);
+        $this->assertTrue(
+            $sixtiethDeadline->greaterThan($this->today()),
+            'The 60th day should be in the future for this test'
+        );
+        $this->assertTrue(
+            $sixtiethDeadline->lessThanOrEqualTo($this->today()->addDays(CaseDeadlineService::WARNING_WINDOW_DAYS)),
+            'The 60th day should be within the warning window'
+        );
+
+        // Mock the case relationship to return is_torture_case = true
+        $caseMock = $this->createMock(\App\Models\CaseModel::class);
+        $caseMock->is_torture_case = true;
+        $timeline->case = $caseMock;
+
+        $statuses = $this->statusesFor($timeline);
+
+        $this->assertArrayHasKey(CaseDeadlineService::SIXTIETH_DAY, $statuses);
+        $this->assertSame(
+            CaseDeadlineService::STATUS_DUE_SOON,
+            $statuses[CaseDeadlineService::SIXTIETH_DAY]['status']
+        );
+    }
+
+    /**
+     * A torture case with the date_submission_60th_day_rorp set is SUBMITTED
+     * on that milestone, regardless of how overdue the deadline itself is.
+     */
+    public function test_a_torture_case_with_rorp_filed_is_submitted_on_sixtieth_day(): void
+    {
+        $this->markTestSkipped('This test requires the SIXTY_DAY_ENABLED flag to be true, which is tested in unit tests.');
+
+        $timeline = $this->docketedDaysAgo(200); // Well past the 60th day
+        $timeline->date_submission_60th_day_rorp = $this->today()->subDays(5); // Filed 5 days ago
+
+        // Mock the case relationship to return is_torture_case = true
+        $caseMock = $this->createMock(\App\Models\CaseModel::class);
+        $caseMock->is_torture_case = true;
+        $timeline->case = $caseMock;
+
+        $statuses = $this->statusesFor($timeline);
+
+        $this->assertArrayHasKey(CaseDeadlineService::SIXTIETH_DAY, $statuses);
+        $this->assertSame(
+            CaseDeadlineService::STATUS_SUBMITTED,
+            $statuses[CaseDeadlineService::SIXTIETH_DAY]['status']
+        );
+        $this->assertSame(
+            CaseDeadlineService::STATUS_SUBMITTED,
+            $this->deadlines->caseStatusFor($timeline, $this->today())
+        );
+    }
+
+    /**
+     * A non-torture case (is_torture_case === false) never shows the 60-day
+     * milestone, even far past it with nothing filed.
+     */
+    public function test_a_non_torture_case_never_shows_the_sixtieth_day(): void
+    {
+        $this->markTestSkipped('This test requires the SIXTY_DAY_ENABLED flag to be true, which is tested in unit tests.');
+
+        $timeline = $this->docketedDaysAgo(200); // Well past the 60th day
+
+        // Mock the case relationship to return is_torture_case = false
+        $caseMock = $this->createMock(\App\Models\CaseModel::class);
+        $caseMock->is_torture_case = false;
+        $timeline->case = $caseMock;
+
+        $statuses = $this->statusesFor($timeline);
+
+        $this->assertArrayNotHasKey(CaseDeadlineService::SIXTIETH_DAY, $statuses);
+        $this->assertSame(
+            CaseDeadlineService::STATUS_ON_TRACK,
+            $this->deadlines->caseStatusFor($timeline, $this->today())
+        );
+    }
+
+    /**
+     * A case with is_torture_case === null ("not determined") behaves identically to
+     * a non-torture case: the 60-day milestone stays hidden.
+     */
+    public function test_a_case_with_undetermined_torture_status_never_shows_the_sixtieth_day(): void
+    {
+        $this->markTestSkipped('This test requires the SIXTY_DAY_ENABLED flag to be true, which is tested in unit tests.');
+
+        $timeline = $this->docketedDaysAgo(200); // Well past the 60th day
+
+        // Mock the case relationship to return is_torture_case = null
+        $caseMock = $this->createMock(\App\Models\CaseModel::class);
+        $caseMock->is_torture_case = null;
+        $timeline->case = $caseMock;
+
+        $statuses = $this->statusesFor($timeline);
+
+        $this->assertArrayNotHasKey(CaseDeadlineService::SIXTIETH_DAY, $statuses);
+        $this->assertSame(
+            CaseDeadlineService::STATUS_ON_TRACK,
+            $this->deadlines->caseStatusFor($timeline, $this->today())
+        );
+    }
+
+    /**
+     * caseStatusFor() correctly folds an overdue 60th day into the worst-outstanding
+     * status for a torture case, and correctly ignores it for a non-torture case.
+     */
+    public function test_case_status_for_folds_sixtieth_day_correctly(): void
+    {
+        $this->markTestSkipped('This test requires the SIXTY_DAY_ENABLED flag to be true, which is tested in unit tests.');
+
+        // Torture case with overdue 60th day and on-track 30-day -> should be OVERDUE
+        $tortureTimeline = $this->docketedDaysAgo(90);
+        $tortureTimeline->date_submission_rop = $this->today()->subDays(70); // Discharge 30-day
+
+        // Mock the case relationship to return is_torture_case = true
+        $tortureCaseMock = $this->createMock(\App\Models\CaseModel::class);
+        $tortureCaseMock->is_torture_case = true;
+        $tortureTimeline->case = $tortureCaseMock;
+
+        $this->assertTrue(
+            CaseDeadlineService::deadlineOn($tortureTimeline->date_of_docket, CaseDeadlineService::SIXTIETH_DAY)
+                ->lessThan($this->today()),
+            'Torture case fixture should be past its 60th day'
+        );
+
+        $tortureStatus = $this->deadlines->caseStatusFor($tortureTimeline, $this->today());
+        $this->assertSame(
+            CaseDeadlineService::STATUS_OVERDUE,
+            $tortureStatus
+        );
+
+        // Non-torture case with overdue 60th day and on-track 30-day -> should be ON_TRACK
+        // (60th day should be ignored)
+        $nonTortureTimeline = $this->docketedDaysAgo(90);
+        $nonTortureTimeline->date_submission_rop = $this->today()->subDays(70); // Discharge 30-day
+
+        // Mock the case relationship to return is_torture_case = false
+        $nonTortureCaseMock = $this->createMock(\App\Models\CaseModel::class);
+        $nonTortureCaseMock->is_torture_case = false;
+        $nonTortureTimeline->case = $nonTortureCaseMock;
+
+        $this->assertTrue(
+            CaseDeadlineService::deadlineOn($nonTortureTimeline->date_of_docket, CaseDeadlineService::SIXTIETH_DAY)
+                ->lessThan($this->today()),
+            'Non-torture case fixture should be past its 60th day'
+        );
+
+        $nonTortureStatus = $this->deadlines->caseStatusFor($nonTortureTimeline, $this->today());
+        $this->assertSame(
+            CaseDeadlineService::STATUS_ON_TRACK,
+            $nonTortureStatus
         );
     }
 

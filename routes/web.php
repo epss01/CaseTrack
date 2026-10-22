@@ -9,6 +9,7 @@ use App\Http\Controllers\RegistrationApprovalController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserAccountController;
 use App\Http\Controllers\WorkloadController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
