@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   test:
-    name: Laravel tests and formatting
+    name: Build, test, and format
     runs-on: ubuntu-latest
 
     steps:
@@ -33,25 +33,6 @@ jobs:
       - name: Install PHP dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
 
-      - name: Configure Laravel
-        run: |
-          cp .env.example .env
-          php artisan key:generate
-
-      - name: Run Laravel tests
-        run: php artisan test
-
-      - name: Check PHP formatting
-        run: vendor/bin/pint --test
-
-  frontend:
-    name: Frontend build
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v7
-
       - name: Set up Node.js
         uses: actions/setup-node@v7
         with:
@@ -63,3 +44,14 @@ jobs:
 
       - name: Build frontend assets
         run: npm run build
+
+      - name: Configure Laravel
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Run Laravel tests
+        run: php artisan test
+
+      - name: Check PHP formatting
+        run: vendor/bin/pint --test
