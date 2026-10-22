@@ -1,10 +1,4 @@
 {
-  "permissions": {
-    "additionalDirectories": [
-      "C:/Users/admin/Downloads/Capstone_CaseTrack/CaseTrack_Vault/CaseTrack/wiki",
-      "C:/Users/admin/Downloads/Capstone_CaseTrack/CaseTrack_Vault/CaseTrack/raw/sessions"
-    ]
-  },
   "autoMode": {
     "environment": [
       "$defaults",

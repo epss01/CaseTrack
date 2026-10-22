@@ -33,11 +33,12 @@ space to delete.
 git checkout main
 git merge --no-ff develop
 git rm CLAUDE.md
+git rm AGENTS.md
 git rm -r .claude/
 git commit -m "chore: remove dev-only tooling files for deployment checkpoint"
 git tag v0.X-checkpoint-name
 git push origin main --tags
 ```
 
-`main` must never contain `CLAUDE.md` or `.claude/` — they're project-internal tooling with no
-place in a deployed or submitted artifact.
+`main` must never contain `CLAUDE.md`, `AGENTS.md`, or `.claude/` — they're project-internal
+tooling with no place in a deployed or submitted artifact.
