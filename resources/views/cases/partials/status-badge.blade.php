@@ -6,7 +6,7 @@
     Shared by the dashboard and the case list so the same field cannot render as a
     badge on one page and plain text on the other, one click apart.
 
-    Colour comes from CaseModel::STATUS_COLOURS, the same ratified five-value map
+    Colour comes from CaseModel::STATUS_COLOURS, the same ratified four-value map
     that drives partials/status-distribution.blade.php's bar and legend — a status
     used to collapse to one blue badge here while showing four colours on the
     dashboard, one click away. Anything outside the five still renders (status is

@@ -70,7 +70,6 @@ class HomeController extends Controller
         return view('dashboard', [
             'cases' => $cases,
             'activeCount' => $cases->count(),
-            'pendingClosureCount' => $byStatus[CaseModel::STATUS_PENDING_CLOSURE] ?? 0,
             'closedCount' => $byStatus[CaseModel::STATUS_CLOSED] ?? 0,
             'totalCount' => $byStatus->sum(),
             // The active mix only, so the bar and the table below it describe
@@ -80,12 +79,10 @@ class HomeController extends Controller
     }
 
     /**
-     * The office-wide caseload, and the closures waiting on a decision.
+     * The office-wide caseload.
      *
      * Deliberately office-wide: no scopeVisibleTo(), no scoping to the
-     * supervisor's own cases. A supervisor confirms or rejects any closure, not
-     * only ones on cases they happen to hold, so a scoped query would hide the
-     * work this page exists to surface. The office-wide read is safe because
+     * supervisor's own cases. The office-wide read is safe because
      * this branch is only reachable by a supervisor and /home takes no route
      * parameter — there is nothing to substitute for another office.
      *
@@ -98,7 +95,7 @@ class HomeController extends Controller
      */
     private function supervisorDashboard()
     {
-        // One grouped query covers all four figures. SoftDeletes scopes it for
+        // One grouped query covers all three figures. SoftDeletes scopes it for
         // free, so a deleted case is absent from every one of them.
         $byStatus = CaseModel::query()
             ->selectRaw('status, count(*) as total')
@@ -110,29 +107,12 @@ class HomeController extends Controller
         // separately loaded collection.
         //
         // Excluding one status from an already-grouped count is cheaper than a
-        // second query, but the definition matches scopeActive() exactly —
-        // everything but Closed — so a Pending Closure case counts as active
-        // here for the same reason it does toward its investigator's WCS.
+        // second query, but the definition matches scopeActive() exactly:
+        // everything but Closed.
         $activeByStatus = $byStatus->except([CaseModel::STATUS_CLOSED]);
 
-        // The queue this page is for. Unpaginated: it is bounded by how many
-        // closures the office has open at once, not by the size of the archive,
-        // and a decision queue that hides its tail is worse than a long one.
-        //
-        // ponytail: nothing enforces that bound — a docket-heavy month puts an
-        // arbitrarily long table on the page a supervisor is meant to clear
-        // quickly. Paginate at 15 to match CaseController::index() if it ever
-        // stops fitting a screen.
-        $pendingCases = CaseModel::query()
-            ->where('status', CaseModel::STATUS_PENDING_CLOSURE)
-            ->with('investigator')
-            ->latest('docket_no')
-            ->get();
-
         return view('supervisor-dashboard', [
-            'pendingCases' => $pendingCases,
             'activeCount' => $activeByStatus->sum(),
-            'pendingClosureCount' => $byStatus[CaseModel::STATUS_PENDING_CLOSURE] ?? 0,
             'closedCount' => $byStatus[CaseModel::STATUS_CLOSED] ?? 0,
             'totalCount' => $byStatus->sum(),
             'activeByStatus' => $activeByStatus,

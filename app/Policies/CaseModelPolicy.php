@@ -80,30 +80,15 @@ class CaseModelPolicy
     }
 
     /**
-     * Determine whether the user may ask for a case to be closed.
+     * Determine whether the user may close or reopen a case.
      *
-     * The Maker half of maker-checker: casework, so it follows view()/update()
-     * — the assigned investigator, or any supervisor. Proposing changes
-     * nothing on its own, which is why it is not restricted further.
+     * Closure is the assigned investigator's decision. Supervisors retain
+     * ordinary edit access for leave/turnover coverage, but only monitor the
+     * closure state.
      */
-    public function proposeClosure(User $user, CaseModel $case): bool
+    public function changeClosure(User $user, CaseModel $case): bool
     {
-        return $user->isSupervisor() || $this->isAssignedTo($user, $case);
-    }
-
-    /**
-     * Determine whether the user may confirm or reject a proposed closure.
-     *
-     * The Checker half: supervisor-only, including on a case a supervisor
-     * proposed themselves. This is the check that stops an investigator
-     * approving their own request — the whole point of the workflow.
-     *
-     * Confirm and reject are one permission rather than two, because they are
-     * the same decision by the same role reaching opposite conclusions.
-     */
-    public function resolveClosure(User $user, CaseModel $case): bool
-    {
-        return $user->isSupervisor();
+        return $this->isAssignedTo($user, $case);
     }
 
     /**

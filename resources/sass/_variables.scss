@@ -30,10 +30,8 @@ $table-border-color: #eef2f7;
 $casetrack-navy: #102f4f;
 $casetrack-navy-light: #1a4470;
 
-// Status accents. Amber is reserved for Pending Closure, the one status that
-// means "waiting on someone else"; slate is Closed. Every other status draws
-// from the blue ramp in _casetrack.scss, so no free-text status value gets
-// treated as a ratified vocabulary term.
+// Status accents. Amber marks a deadline due soon; slate is Closed. Active
+// case statuses draw from the blue ramp in _casetrack.scss.
 // #b45309 measured 4.51:1 on the tint below — technically a pass, but a margin of
 // 0.01 does not survive gamma differences between monitors on small bold text.
 // This darker step gives amber the same headroom the blue and slate pairs have.

@@ -40,11 +40,13 @@ class AuditLog extends Model
      */
     public const ACTION_TIMELINE_UPDATE = 'TIMELINE_UPDATE';
 
-    /**
-     * The two halves of maker-checker on case closure, kept apart on purpose:
-     * a trail that cannot tell a request from an approval cannot answer who
-     * asked for a case to be closed, only that it was.
-     */
+    /** A case closed directly by its assigned investigator. */
+    public const ACTION_CASE_CLOSED = 'CASE_CLOSED';
+
+    /** A closed case reopened directly by its assigned investigator. */
+    public const ACTION_CASE_REOPENED = 'CASE_REOPENED';
+
+    /** Legacy maker-checker actions retained for historical audit rows. */
     public const ACTION_CLOSURE_PROPOSED = 'CLOSURE_PROPOSED';
 
     public const ACTION_CLOSURE_CONFIRMED = 'CLOSURE_CONFIRMED';
@@ -174,6 +176,8 @@ class AuditLog extends Model
         self::ACTION_CREATE,
         self::ACTION_EDIT,
         self::ACTION_TIMELINE_UPDATE,
+        self::ACTION_CASE_CLOSED,
+        self::ACTION_CASE_REOPENED,
         self::ACTION_CLOSURE_PROPOSED,
         self::ACTION_CLOSURE_CONFIRMED,
         self::ACTION_CLOSURE_REJECTED,

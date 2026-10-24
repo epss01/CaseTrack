@@ -66,16 +66,29 @@ class AuditLogViewerTest extends TestCase
         $admin = User::factory()->admin()->create();
         $user = User::factory()->investigator()->create();
         AuditLog::record($user, null, AuditLog::ACTION_LOGIN);
-        AuditLog::record($user, null, AuditLog::ACTION_ACCESS_DENIED);
+        AuditLog::record($user, null, AuditLog::ACTION_CASE_CLOSED);
 
         // Same reasoning as the acting-user filter test: the action <select>
         // lists every action as an option, so assert on the rows, not the
         // page text.
         $this->actingAs($admin)
-            ->get(route('admin.audit-logs.index', ['action' => AuditLog::ACTION_LOGIN]))
+            ->get(route('admin.audit-logs.index', ['action' => AuditLog::ACTION_CASE_CLOSED]))
             ->assertOk()
             ->assertViewHas('logs', fn ($logs) => $logs->total() === 1
-                && $logs->first()->action_performed === AuditLog::ACTION_LOGIN);
+                && $logs->first()->action_performed === AuditLog::ACTION_CASE_CLOSED);
+    }
+
+    public function test_legacy_closure_actions_remain_valid_historical_filters(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $user = User::factory()->investigator()->create();
+        AuditLog::record($user, null, AuditLog::ACTION_CLOSURE_CONFIRMED);
+
+        $this->actingAs($admin)
+            ->get(route('admin.audit-logs.index', ['action' => AuditLog::ACTION_CLOSURE_CONFIRMED]))
+            ->assertOk()
+            ->assertViewHas('logs', fn ($logs) => $logs->total() === 1
+                && $logs->first()->action_performed === AuditLog::ACTION_CLOSURE_CONFIRMED);
     }
 
     public function test_an_unknown_action_value_is_rejected(): void

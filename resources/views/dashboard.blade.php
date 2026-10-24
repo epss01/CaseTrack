@@ -20,7 +20,7 @@
                 </div>
             @endif
 
-            {{-- The investigator, and their caseload in four figures. --}}
+            {{-- The investigator, and their caseload in three figures. --}}
             <div class="identity-bar mb-3">
                 <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
                     <div class="d-flex align-items-center gap-3">
@@ -56,24 +56,13 @@
 
                 <div class="identity-bar__divider"></div>
 
-                <div class="row row-cols-2 row-cols-lg-4 g-3">
+                <div class="row row-cols-1 row-cols-md-3 g-3">
                     <div class="col">
                         <div class="stat-tile">
                             <span class="stat-tile__icon">@include('partials.icon', ['name' => 'folder'])</span>
                             <span>
                                 <span class="stat-tile__label">{{ __('Active cases') }}</span>
                                 <span class="stat-tile__value">{{ $activeCount }}</span>
-                            </span>
-                        </div>
-                    </div>
-
-                    <div class="col">
-                        <div class="stat-tile">
-                            <span class="stat-tile__icon">@include('partials.icon', ['name' => 'clock'])</span>
-                            <span>
-                                <span class="stat-tile__label">{{ __('Awaiting approval') }}</span>
-                                <span class="stat-tile__value">{{ $pendingClosureCount }}</span>
-                                <span class="stat-tile__note">{{ __('of your active cases') }}</span>
                             </span>
                         </div>
                     </div>
@@ -142,18 +131,11 @@
                                 </thead>
                                 <tbody>
                                     @foreach ($cases as $case)
-                                        <tr @class([
-                                            'row-pending table-warning' => $case->status === CaseModel::STATUS_PENDING_CLOSURE,
-                                        ])>
+                                        <tr>
                                             {{-- nowrap: the wrapper already scrolls, so letting a
                                                  docket number break across four lines on a phone
                                                  costs legibility and buys nothing. --}}
-                                            <td class="text-nowrap">
-                                                @if ($case->status === CaseModel::STATUS_PENDING_CLOSURE)
-                                                    <span class="row-flag row-flag--amber">@include('partials.icon', ['name' => 'clock'])</span>
-                                                @endif
-                                                {{ $case->docket_no }}
-                                            </td>
+                                            <td class="text-nowrap">{{ $case->docket_no }}</td>
                                             <td>{{ $case->case_title }}</td>
                                             <td>@include('cases.partials.status-badge', ['status' => $case->status])</td>
                                             <td>
