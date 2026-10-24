@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 use App\Http\Controllers\ReportController;
+use App\Models\CaseModel;
 use App\Models\User;
 use App\Services\CaseImportService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -162,6 +163,25 @@ class CaseImportServiceTest extends TestCase
         $this->assertCount(2, $result['ready'][0]['victims']);
         $this->assertCount(1, $result['ready'][0]['respondents']);
         $this->assertSame([], $result['errors']);
+    }
+
+    public function test_import_accepts_closed_and_rejects_pending_closure(): void
+    {
+        User::factory()->investigator()->create(['username' => 'jdc']);
+        $path = $this->writeCsv([
+            ['Docket No.', 'Title', 'Status', 'Date of Docket', 'Investigator', 'Incident Details', 'Victim Name', 'Victim Status', 'Victim Sector', 'Respondent Name'],
+            ['DK-CLOSED', 'Historical Case', CaseModel::STATUS_CLOSED, '2026-01-01', 'jdc', 'Details.', 'Victim One', 'Alive', 'Adult', 'Respondent One'],
+            ['DK-PENDING', 'Obsolete Status', 'Pending Closure', '2026-01-02', 'jdc', 'Details.', 'Victim Two', 'Alive', 'Adult', 'Respondent Two'],
+        ]);
+
+        $importer = new CaseImportService;
+        $result = $importer->validate($importer->parse($path));
+
+        $this->assertCount(1, $result['ready']);
+        $this->assertSame(CaseModel::STATUS_CLOSED, $result['ready'][0]['status']);
+        $this->assertCount(1, $result['errors']);
+        $this->assertSame('DK-PENDING', $result['errors'][0]['docket_no']);
+        $this->assertStringContainsString('Status', $result['errors'][0]['messages'][0]);
     }
 
     public function test_rows_sharing_a_docket_no_but_disagreeing_on_a_case_field_are_rejected(): void

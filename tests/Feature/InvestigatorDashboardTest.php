@@ -45,18 +45,12 @@ class InvestigatorDashboardTest extends TestCase
             ->assertDontSee($theirCase->docket_no);
     }
 
-    public function test_the_summary_counts_the_active_caseload_and_pending_closures(): void
+    public function test_the_summary_counts_active_closed_and_total_cases(): void
     {
         $investigator = User::factory()->investigator()->create();
 
         CaseModel::factory()->count(2)->assignedTo($investigator)->create([
             'status' => CaseModel::STATUS_DOCKETED,
-        ]);
-
-        // Pending Closure is still active, so this case counts in both figures.
-        CaseModel::factory()->assignedTo($investigator)->create([
-            'status' => CaseModel::STATUS_PENDING_CLOSURE,
-            'status_before_closure' => CaseModel::STATUS_DOCKETED,
         ]);
 
         CaseModel::factory()->assignedTo($investigator)->create([
@@ -69,10 +63,11 @@ class InvestigatorDashboardTest extends TestCase
         $this->actingAs($investigator)
             ->get('/home')
             ->assertOk()
-            ->assertSeeInOrder(['Active cases', '3'])
-            ->assertSeeInOrder(['Awaiting approval', '1'])
+            ->assertSeeInOrder(['Active cases', '2'])
             ->assertSeeInOrder(['Closed', '1'])
-            ->assertSeeInOrder(['Total assigned', '4']);
+            ->assertSeeInOrder(['Total assigned', '3'])
+            ->assertDontSee('Awaiting approval')
+            ->assertSee('row-cols-1 row-cols-md-3', false);
     }
 
     public function test_an_investigator_with_no_active_cases_sees_the_empty_state(): void
@@ -154,7 +149,7 @@ class InvestigatorDashboardTest extends TestCase
             ->get('/home')
             ->assertOk()
             ->assertSee('You are logged in!')
-            ->assertDontSee('Awaiting approval');
+            ->assertDontSee('My Caseload');
     }
 
     public function test_guests_are_redirected_to_the_login_screen(): void

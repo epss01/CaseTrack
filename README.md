@@ -169,9 +169,9 @@ routes are read at request time and never need a rebuild.
 Beyond the `laravel/ui` scaffold, the app is organized by feature:
 
 - `app/Http/Controllers/Auth/` — login, registration, and password-confirmation controllers from `laravel/ui` (email-based reset/verify are disabled — the schema has no email column)
-- `app/Http/Controllers/` — `CaseController`, `CaseTimelineController` (case intake, editing, closure, timelines); `ReportController`, `AlertController` (case listings, CSV export, deadline alerts); `WorkloadController` (workload capacity ranking, performance ratings); `RegistrationApprovalController`, `UserAccountController`, `AuditLogController` (Admin-only: registration approval, account management, audit log viewer); `HomeController` (routes to the right dashboard by role)
+- `app/Http/Controllers/` — `CaseController`, `CaseTimelineController` (case intake, editing, direct investigator closure/reopening, timelines); `ReportController`, `AlertController` (case listings, CSV export, deadline alerts); `WorkloadController` (workload capacity ranking, performance ratings); `RegistrationApprovalController`, `UserAccountController`, `AuditLogController` (Admin-only: registration approval, account management, audit log viewer); `HomeController` (routes to the right dashboard by role)
 - `app/Models/` — `CaseModel` (not `Case`, a reserved word), `User`, `Role`, `AuditLog`, `CaseTimeline`, `Victim`, `Respondent`, `Complainant`
-- `app/Policies/CaseModelPolicy.php` — per-case authorization (view/update/delete/reassign/closure), wired via `authorizeResource()`
+- `app/Policies/CaseModelPolicy.php` — per-case authorization (view/update/delete/reassign and assigned-investigator-only closure changes), wired via `authorizeResource()`
 - `app/Http/Middleware/` — `EnsureUserHasRole` (route-level role gate), `EnsureAccountIsActive` (ends a session if its account is deactivated or unapproved mid-session)
 - `app/Services/CaseDeadlineService.php` — the only place that does date arithmetic on statutory case-timeline deadlines
 - `app/Console/Commands/` — `make:admin` (the only way to provision an Admin account — no route, no view), `users:rotate-password`

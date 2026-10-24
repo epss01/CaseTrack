@@ -100,6 +100,7 @@ Use `User::factory()->investigator()` / `->supervisor()` and
 
 ## Before you finish
 
-- Does the action change case data? Then it also needs an audit entry — see
-  the `maker-checker` skill and `AuditLog::record()`.
+- Does the action change case data? Then it also needs an audit entry. Closure
+  changes additionally require `changeClosure()` against the locked case and
+  a dedicated close/reopen action through `AuditLog::record()`.
 - Run `php artisan test`. The Stop hook will block the turn if it fails.

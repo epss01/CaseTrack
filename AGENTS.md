@@ -78,8 +78,9 @@ the session note for later application.
   `Case`; it maps to `cases`.
 - Cases are soft-deleted, never hard-deleted. A case may have zero or more
   victims, respondents, and complainants, and exactly one case timeline.
-- There is no ratified case-status vocabulary beyond the existing constants.
-  Flag uncertainty instead of inventing statuses or fields.
+- The ratified case-status vocabulary is `Docketed`, `Under investigation`,
+  `For review`, and `Closed`. Flag requests for any additional status instead
+  of inventing one.
 - WCS is `sum(complexity_weight * (2 - performance_rating))` over active
   cases. Complexity is a human-entered value from 1-5; performance rating is
   human-entered from 0.1-1.0. WCS suggests an assignment; it never assigns
@@ -87,13 +88,10 @@ the session note for later application.
 - Statutory deadlines, alerts, dashboard aggregates, and WCS must remain
   deterministic. The 60th-day torture-case rule is blocked by the missing
   case-type field; flag it rather than inventing a workaround.
-- Case closure is maker-checker: an investigator or supervisor may propose,
-  but only a supervisor may confirm or reject. Use `status_before_closure` to
-  restore the prior status on rejection. Do not add an approvals table or
-  state-machine library without an explicit decision.
-- A pending-closure case still counts as active for WCS until it is closed.
-  The open questions about supervisor self-approval and rejection reasons are
-  process decisions; do not change them silently.
+- Only the assigned investigator may close or reopen a case through the
+  ordinary case edit form. Supervisors may edit non-closure fields office-wide
+  but cannot change a case across the `Closed` boundary. Closed cases do not
+  count as active for WCS.
 
 ## Implementation rules
 

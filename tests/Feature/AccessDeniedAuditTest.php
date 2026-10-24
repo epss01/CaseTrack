@@ -81,13 +81,21 @@ class AccessDeniedAuditTest extends TestCase
             ->assertForbidden();
 
         $this->actingAs($prober)
-            ->put("/cases/{$case->id}/closure")
+            ->put(route('cases.update', $case), [
+                'case_title' => $case->case_title,
+                'incident_details' => $case->incident_details,
+                'status' => CaseModel::STATUS_CLOSED,
+                'complexity_weight' => $case->complexity_weight,
+                'updated_at' => $case->updated_at->format('Y-m-d H:i:s'),
+            ])
             ->assertForbidden();
 
         $case->refresh();
         $this->assertSame($owner->id, $case->investigator_id);
         $this->assertNotSoftDeleted($case);
         $this->assertSame('Under investigation', $case->status);
+
+        $this->assertDatabaseMissing('audit_logs', ['action_performed' => AuditLog::ACTION_CASE_CLOSED]);
 
         $this->assertSame(3, AuditLog::where('user_id', $prober->id)
             ->where('case_id', $case->id)

@@ -93,7 +93,7 @@ class CaseAccessControlTest extends TestCase
     public function test_a_supervisor_can_view_and_edit_any_case_in_the_office(): void
     {
         $supervisor = User::factory()->supervisor()->create();
-        $case = CaseModel::factory()->create();
+        $case = CaseModel::factory()->create(['status' => CaseModel::STATUS_UNDER_INVESTIGATION]);
 
         $this->actingAs($supervisor)
             ->get(route('cases.show', $case))

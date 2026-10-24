@@ -54,17 +54,6 @@ Route::middleware(['auth', 'role:Investigator,Supervisor'])->group(function () {
     Route::put('cases/{case}/reassign', [CaseController::class, 'reassign'])
         ->name('cases.reassign.update');
 
-    // Maker-checker on case closure: the assigned investigator proposes, a
-    // supervisor decides. CaseModelPolicy::proposeClosure()/resolveClosure()
-    // split the two halves; the decision runs through a confirmation page for
-    // the same reason deletion does.
-    Route::put('cases/{case}/closure', [CaseController::class, 'proposeClosure'])
-        ->name('cases.closure.propose');
-    Route::get('cases/{case}/closure', [CaseController::class, 'closureReview'])
-        ->name('cases.closure.review');
-    Route::put('cases/{case}/closure/resolve', [CaseController::class, 'resolveClosure'])
-        ->name('cases.closure.resolve');
-
     // The timeline milestones are filled in after intake, as they happen.
     Route::get('cases/{case}/timeline/edit', [CaseTimelineController::class, 'edit'])
         ->name('cases.timeline.edit');

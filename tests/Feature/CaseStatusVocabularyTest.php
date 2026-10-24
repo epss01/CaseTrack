@@ -9,14 +9,14 @@ use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 /**
- * CHR-Answers-2026-08-01: the ratified five-value status vocabulary (item 2)
+ * The ratified four-value status vocabulary
  * and the derived New/Pending docket phase (item 8).
  */
 class CaseStatusVocabularyTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_the_edit_form_offers_all_five_statuses_for_an_ordinary_case(): void
+    public function test_the_assigned_investigator_is_offered_all_four_statuses(): void
     {
         $investigator = User::factory()->investigator()->create();
         $case = CaseModel::factory()->assignedTo($investigator)->create(['status' => CaseModel::STATUS_DOCKETED]);
@@ -26,7 +26,8 @@ class CaseStatusVocabularyTest extends TestCase
             ->assertOk()
             ->assertSee(CaseModel::STATUS_DOCKETED)
             ->assertSee(CaseModel::STATUS_UNDER_INVESTIGATION)
-            ->assertSee(CaseModel::STATUS_FOR_REVIEW);
+            ->assertSee(CaseModel::STATUS_FOR_REVIEW)
+            ->assertSee(CaseModel::STATUS_CLOSED);
     }
 
     public function test_the_two_new_statuses_are_selectable_and_persist(): void
@@ -45,6 +46,24 @@ class CaseStatusVocabularyTest extends TestCase
             ->assertSessionHasNoErrors();
 
         $this->assertSame(CaseModel::STATUS_UNDER_INVESTIGATION, $case->fresh()->status);
+    }
+
+    public function test_pending_closure_is_not_an_accepted_status(): void
+    {
+        $investigator = User::factory()->investigator()->create();
+        $case = CaseModel::factory()->assignedTo($investigator)->create(['status' => CaseModel::STATUS_DOCKETED]);
+
+        $this->actingAs($investigator)
+            ->put(route('cases.update', $case), [
+                'case_title' => $case->case_title,
+                'incident_details' => $case->incident_details,
+                'status' => 'Pending Closure',
+                'complexity_weight' => $case->complexity_weight,
+                'updated_at' => $case->updated_at->format('Y-m-d H:i:s'),
+            ])
+            ->assertSessionHasErrors('status');
+
+        $this->assertSame(CaseModel::STATUS_DOCKETED, $case->fresh()->status);
     }
 
     /**

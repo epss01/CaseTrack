@@ -18,7 +18,7 @@
     /*
      * A colour per status, stable everywhere.
      *
-     * The five-value vocabulary is ratified (CHR-Answers-2026-08-01, item 2)
+     * The four-value vocabulary is ratified
      * and its colours now live on CaseModel::STATUS_COLOURS, shared with
      * cases/partials/status-badge.blade.php so a status can't render one way
      * here and another way one click away. Anything outside those five
@@ -40,7 +40,7 @@
      * the legend read as an arbitrary list rather than a lifecycle.
      *
      * Sorting by position in $fixed does not ratify a status vocabulary: it
-     * orders the five values already circulating and sends anything else to the
+     * orders the four active values and sends anything else to the
      * end, exactly as $colourFor already handles an unlisted status. A new
      * status still renders, still gets a stable colour, and simply sorts last.
      */
