@@ -21,10 +21,7 @@ if (! empty($input['stop_hook_active']) || ! file_exists($pending)) {
 unlink($pending);
 chdir($root);
 
-// Bare "php" resolves via PATH, which on this project is not the php this
-// suite is meant to run under (CLAUDE.md, Stack: XAMPP's bundled PHP "cannot
-// run artisan at all" / "never fall back to the XAMPP one"). The working
-// binary's path is machine-specific, so it isn't hardcoded here — it's read
+// The runtime path is machine-specific, so it isn't hardcoded here — it's read
 // from .claude/launch.json (gitignored, per-teammate, already required setup
 // per the same doc) the same way the Browser pane dev server resolves it.
 // Bare "php" is only the fallback for a machine that hasn't set that file up.

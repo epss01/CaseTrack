@@ -20,17 +20,16 @@ Make sure these are installed before setting up the project:
 
 | Tool | Version |
 |---|---|
-| PHP | **8.4+** |
+| PHP | **8.4.27+** |
 | Composer | 2.x |
 | Node.js | 18+ (LTS recommended) |
 | npm | 9+ |
 | MariaDB | 10.4+ (bundled with XAMPP) |
 
-**PHP 8.4 is a hard requirement, not a recommendation** — `composer.json` declares
+**PHP 8.4.27 is the security floor, not a recommendation** — `composer.json` declares
 `"php": "^8.4"` and `vendor/composer/platform_check.php` aborts with a 500 on anything below
-`8.4.0`. XAMPP's bundled PHP 8.2.12 therefore cannot run `artisan` at all, so if you use XAMPP
-for the database you still need a separate PHP. If `php -v` reports below 8.4, install a newer
-one rather than working around it.
+`8.4.0`, while PHP releases below 8.4.27 are affected by CVE-2026-109618 and
+CVE-2026-109619. If `php -v` reports below 8.4.27, upgrade it rather than working around it.
 
 ## Setup Instructions (fresh clone)
 
@@ -197,7 +196,7 @@ php artisan users:rotate-password <username> --actor=<you>
 
 ## Running with Docker
 
-An optional, additive alternative to the setup above — app (`php:8.4-cli`) + database
+An optional, additive alternative to the setup above — app (`php:8.4.27-cli`) + database
 (`mariadb:10.4`, matching the version above) in containers. This doesn't replace the host
 workflow; both work side by side against their own separate databases.
 
@@ -226,7 +225,7 @@ A couple of things that will otherwise cost you time:
 
 ## Switching back to XAMPP (from Docker)
 
-The reverse direction of the section above — hop back to the host XAMPP + Herd Lite setup that
+The reverse direction of the section above — hop back to the host XAMPP setup that
 `## Setup Instructions` assumes by default, without hand-editing `.env`:
 
 ```bash
@@ -239,15 +238,13 @@ A couple of things that will otherwise cost you time:
 - **Start MariaDB first** — XAMPP Control Panel, or `C:\xampp\mysql_start.bat`. `.env.xampp`
   points at **port 3307** (XAMPP's bundled MariaDB), not Docker's 3308 or the standalone MySQL 8
   on 3306.
-- **Use Herd Lite's PHP, not XAMPP's bundled one.** XAMPP's bundled PHP (8.2.12) can't run
-  `artisan` at all — this project needs 8.4+. The working binary is Herd Lite, at
-  `C:\Users\admin\.config\herd-lite\bin\php.exe`, and it's **not on PATH**, so invoke it by
-  absolute path:
+- **Use a patched PHP runtime.** This machine's XAMPP PHP was upgraded to 8.4.27 at
+  `C:\xampp\php\php.exe` and is on `PATH`, so invoke it normally:
 
   ```bash
-  "C:/Users/admin/.config/herd-lite/bin/php.exe" artisan serve
+  php artisan serve
   ```
 
-  Composer lives beside it at `...\herd-lite\bin\composer.phar`, same rule.
+  Other machines must provide PHP 8.4.27 or newer and Composer 2.
 - No asset rebuild needed for this switch — `public/build` doesn't depend on which `.env` is
   active.

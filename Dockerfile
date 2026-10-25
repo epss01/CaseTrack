@@ -1,5 +1,5 @@
 # Dev-only image. No production/FPM variant — see CaseTrack Docker setup notes.
-FROM php:8.4-cli
+FROM php:8.4.27-cli
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         unzip \

@@ -24,7 +24,7 @@
       "### User-specific",
       "**Primary use of Claude Code**: software development (Laravel/PHP capstone web app — CaseTrack)",
       "**Trusted repo**: C:\\Users\\admin\\Downloads\\Capstone_CaseTrack\\CaseTrack (working directory) and its origin remote, https://github.com/epss01/CaseTrack.git. Repo is PUBLIC: only this repo's own work belongs there — confidential/case-simulation data, real CHR records, or content ported in from elsewhere is not cleared for commit/push here. CLAUDE.md and .claude/ must never reach main (stripped at promotion per CONTRIBUTING.md).",
-      "**Org-specific CLIs**: None configured — project-specific: php must be invoked via absolute path C:/Users/admin/.config/herd-lite/bin/php.exe (not on PATH); composer via C:/Users/admin/.config/herd-lite/bin/composer.phar"
+      "**Org-specific CLIs**: None configured — project-specific: PHP 8.4.27 is installed at C:/xampp/php/php.exe and available as php on PATH; Composer 2 remains a separate prerequisite"
     ],
     "soft_deny": [
       "$defaults",
