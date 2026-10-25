@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ReassignCaseRequest;
 use App\Http\Requests\StoreCaseRequest;
+use App\Http\Requests\UpdateCaseRequest;
 use App\Models\AuditLog;
 use App\Models\CaseModel;
 use App\Models\Role;
@@ -140,31 +141,24 @@ class CaseController extends Controller
      * own cases stay exactly as unconditional as before — CaseModelPolicy is
      * untouched.
      */
-    public function update(Request $request, CaseModel $case)
+    public function update(UpdateCaseRequest $request, CaseModel $case)
     {
-        $onBehalf = $request->user()->isSupervisor() && $case->investigator_id !== $request->user()->id;
+        $validated = $request->validated();
 
-        $validated = $request->validate([
-            'case_title' => ['required', 'string', 'max:255'],
-            'incident_details' => ['required', 'string'],
-            'source_info' => ['nullable', 'string', 'max:255'],
-            'status' => CaseModel::statusRulesFor($case),
-            'complexity_weight' => CaseModel::complexityWeightRules(),
-            'updated_at' => ['required', 'string'],
-            'reason' => $onBehalf ? ['required', 'string', 'max:500'] : ['nullable', 'string', 'max:500'],
-        ]);
-
-        DB::transaction(function () use ($request, $case, $validated, $onBehalf) {
+        DB::transaction(function () use ($request, $case, $validated) {
             // Optimistic lock: lockForUpdate() so the compare-then-write can't
             // race a concurrent save between the read and the write below.
             $fresh = CaseModel::whereKey($case->getKey())->lockForUpdate()->firstOrFail();
 
-            if ($fresh->updated_at->format('Y-m-d H:i:s') !== $validated['updated_at']) {
+            $this->authorize('update', $fresh);
+
+            if ($fresh->lock_version !== $validated['lock_version']) {
                 throw ValidationException::withMessages([
-                    'updated_at' => __('This case was updated by someone else while you were editing. Reload the page to see the latest version before saving again.'),
+                    'lock_version' => __('This case was updated by someone else while you were editing. Reload the page to see the latest version before saving again.'),
                 ]);
             }
 
+            $onBehalf = $request->user()->isSupervisor() && $fresh->investigator_id !== $request->user()->id;
             $closureAction = null;
 
             if ($fresh->status !== $validated['status']
@@ -175,16 +169,18 @@ class CaseController extends Controller
                     : AuditLog::ACTION_CASE_REOPENED;
             }
 
-            $case->update(collect($validated)->except(['updated_at', 'reason'])->all());
+            $fresh->fill(collect($validated)->except(['lock_version', 'reason'])->all());
+            $fresh->lock_version++;
+            $fresh->save();
 
             if ($onBehalf) {
-                AuditLog::record($request->user(), $case, AuditLog::ACTION_EDIT_ON_BEHALF, notes: $validated['reason']);
+                AuditLog::record($request->user(), $fresh, AuditLog::ACTION_EDIT_ON_BEHALF, notes: $validated['reason']);
             } else {
-                AuditLog::record($request->user(), $case, AuditLog::ACTION_EDIT);
+                AuditLog::record($request->user(), $fresh, AuditLog::ACTION_EDIT);
             }
 
             if ($closureAction !== null) {
-                AuditLog::record($request->user(), $case, $closureAction);
+                AuditLog::record($request->user(), $fresh, $closureAction);
             }
         });
 
@@ -246,9 +242,15 @@ class CaseController extends Controller
         $this->authorize('reassign', $case);
 
         DB::transaction(function () use ($request, $case) {
-            $case->update($request->validated());
+            $fresh = CaseModel::whereKey($case->getKey())->lockForUpdate()->firstOrFail();
 
-            AuditLog::record($request->user(), $case, AuditLog::ACTION_UPDATE);
+            $this->authorize('reassign', $fresh);
+
+            $fresh->fill($request->validated());
+            $fresh->lock_version++;
+            $fresh->save();
+
+            AuditLog::record($request->user(), $fresh, AuditLog::ACTION_UPDATE);
         });
 
         return redirect()

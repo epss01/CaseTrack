@@ -26,7 +26,7 @@ class CaseSupervisorEditReasonTest extends TestCase
             'incident_details' => $case->incident_details,
             'status' => $case->status,
             'complexity_weight' => $case->complexity_weight,
-            'updated_at' => $case->updated_at->format('Y-m-d H:i:s'),
+            'lock_version' => $case->lock_version,
         ], $overrides);
     }
 

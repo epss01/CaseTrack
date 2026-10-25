@@ -41,7 +41,7 @@ class CaseStatusVocabularyTest extends TestCase
                 'incident_details' => $case->incident_details,
                 'status' => CaseModel::STATUS_UNDER_INVESTIGATION,
                 'complexity_weight' => $case->complexity_weight,
-                'updated_at' => $case->updated_at->format('Y-m-d H:i:s'),
+                'lock_version' => $case->lock_version,
             ])
             ->assertSessionHasNoErrors();
 
@@ -59,7 +59,7 @@ class CaseStatusVocabularyTest extends TestCase
                 'incident_details' => $case->incident_details,
                 'status' => 'Pending Closure',
                 'complexity_weight' => $case->complexity_weight,
-                'updated_at' => $case->updated_at->format('Y-m-d H:i:s'),
+                'lock_version' => $case->lock_version,
             ])
             ->assertSessionHasErrors('status');
 

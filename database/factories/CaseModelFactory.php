@@ -33,6 +33,7 @@ class CaseModelFactory extends Factory
                 CaseModel::STATUS_CLOSED,
             ]),
             'complexity_weight' => fake()->numberBetween(1, 5),
+            'lock_version' => 0,
         ];
     }
 
