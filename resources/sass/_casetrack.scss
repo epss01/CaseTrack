@@ -169,8 +169,6 @@
     line-height: 1.2;
 }
 
-// Awaiting approval is a subset of the active count, never an addition to it.
-//
 // .72 rather than a fainter tint: at .55 this measured 4.45:1 against the
 // gradient at the leftmost tile position — a real 1.4.3 failure at 375px, where
 // the bar is narrowest and the ground darkest. Font size carries the hierarchy
@@ -218,9 +216,8 @@
     background-color: $casetrack-red-bg;
 }
 
-// The stat tile promises N cases await approval (or, on /alerts, N are
-// overdue); without something in the table those rows have nothing to
-// distinguish them and the promise goes unmet. The row tint itself is
+// The alerts stat tile promises N overdue cases; without something in the
+// table those rows have nothing to distinguish them. The row tint itself is
 // Bootstrap's .table-warning, applied in the markup alongside .row-pending —
 // striping sets --bs-table-bg-type through a higher-specificity selector
 // (.table-striped > tbody > tr:nth-of-type(odd) > *), so that tint already
@@ -230,10 +227,8 @@
 // recognizable "AI-generated UI" tell there is, per the design detector, and
 // it was wrong in one more way besides: hardcoded to amber, so /alerts'
 // Overdue rows (a red-meaning state) got an amber edge. A row-flag icon in
-// the same cell replaces it, reusing the exact glyph each page's own stat
-// tile already uses for that count (clock for Pending Closure, alert-triangle
-// for Overdue) instead of inventing a second visual language, and colored to
-// match the state it actually names.
+// the same cell replaces it, reusing the alert-triangle glyph the stat tile
+// uses instead of inventing a second visual language.
 .row-flag {
     display: inline-flex;
     margin-right: 0.35rem;
@@ -242,10 +237,6 @@
     svg {
         width: 0.85rem;
         height: 0.85rem;
-    }
-
-    &--amber {
-        color: $casetrack-amber;
     }
 
     &--red {

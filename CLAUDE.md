@@ -124,12 +124,11 @@ in the vault for the full as-designed vs. as-built comparison.
   `protected $table = 'cases'`. Fields: `docket_no` (unique), `case_title`,
   `incident_details`, `source_info` (nullable), `investigator_id` FK → `users.id`,
   `status` (NOT NULL, set server-side to `CaseModel::STATUS_DOCKETED` at intake),
-  `status_before_closure` (nullable — see Maker-checker below), `complexity_weight` (int),
+  `complexity_weight` (int),
   `deleted_at` (soft deletes).
-  `status` is free text with three named constants (`STATUS_DOCKETED`,
-  `STATUS_PENDING_CLOSURE`, `STATUS_CLOSED`); `'Under investigation'` and `'For review'`
-  are also in circulation via the factory and `DemoDataSeeder` but are **not** constants.
-  There is no ratified status vocabulary yet — flag it rather than inventing one.
+  `status` uses the four named constants `STATUS_DOCKETED`,
+  `STATUS_UNDER_INVESTIGATION`, `STATUS_FOR_REVIEW`, and `STATUS_CLOSED`.
+  This is the ratified vocabulary; flag requests for any additional value.
 - `victims`, `respondents` — `case_id` FK (cascade on delete), `name`, `age` (nullable),
   `status`, `sector`.
 - `complainants` — `case_id` FK (cascade on delete), `name`.
@@ -162,35 +161,20 @@ Lower relative WCS = suggested for a new assignment. **WCS suggests; it never as
 the supervisor still chooses. Both `C_j` and `P_i` are human-entered judgment calls, not
 derived from history; that's a build decision, not something the source doc specifies.
 
-## Maker-checker on case closure (built)
-Investigator = Maker, Supervisor = Checker. Closure is the only action behind it — the one
-high-risk action the manuscript names (Use Case Fig. 3-3, Activity Fig. 3-4).
+## Direct investigator-controlled case closure (built)
 
-```
-Docketed / Under investigation / For review
-        │ (Maker: PUT cases/{case}/closure)
-        ▼
-  Pending Closure ──(Checker confirms)──▶ Closed
-        │
-        └────────(Checker rejects)──────▶ back to status_before_closure
-```
-
-- No approvals table and no state-machine library: the pending state is a value in
-  `cases.status`, because that column was already unconstrained.
-- `status_before_closure` holds where the case sat when closure was proposed, so a
-  rejection reverts exactly rather than flattening every case to `Docketed`. Set on
-  propose, cleared on either resolution, null at all other times.
-- `CaseModelPolicy::proposeClosure()` (assigned investigator or supervisor) and
-  `resolveClosure()` (supervisor only). Confirm and reject share one policy method —
-  same decision, same role, opposite conclusions.
-- `CaseModel::statusRulesFor($case)` keeps the ordinary edit form out of the closure
-  states, so status can't be typed straight to `Closed`. It still lets a case resubmit
-  its *own* current status, or an already-closed case could never be edited again.
-- **`scopeActive()` excludes only `STATUS_CLOSED`, so a Pending Closure case still counts
-  toward its investigator's WCS.** Deliberate: it isn't closed until the Checker says so.
-- **Open for CHR:** a Supervisor passes `proposeClosure()` too, so nothing stops one
-  proposing and then confirming their own closure. Rejections also carry no reason field.
-  Both are process questions, not code gaps — don't "fix" either without asking.
+- Closing and reopening happen through the ordinary case edit form; there are no separate
+  proposal, review, or resolution routes.
+- `CaseModelPolicy::changeClosure()` permits only the currently assigned investigator.
+  Supervisors retain office-wide editing but cannot move a case across the `Closed` boundary.
+- `CaseModel::statusRulesFor()` accepts exactly Docketed, Under investigation, For review,
+  and Closed. The rendered selector narrows those choices by policy without relying on the
+  UI as the authorization boundary.
+- `CaseController::update()` performs the optimistic-lock check first, then authorizes any
+  transition into or out of Closed against the locked record. It writes both the ordinary
+  edit audit and `ACTION_CASE_CLOSED` or `ACTION_CASE_REOPENED` in the same transaction.
+- `scopeActive()` excludes only Closed, so a case leaves WCS immediately when its assigned
+  investigator closes it and returns when reopened to any of the three active statuses.
 
 ## Roles / access rules
 - **Investigator** — sees and manages only their own assigned cases.
@@ -322,24 +306,22 @@ column for this reason. Flag this rather than inventing a workaround.
   `AuditLog::record($user, $case, $action, $target = null)` (`$case` may be null for actions
   not scoped to one case, like a rating change; `$target` is the user acted *on*, when there
   is one), called **inside** the action's `DB::transaction()`.
-  **Every state-changing site now does this** (nine case-data sites closed 2026-07-30, six
-  more added 2026-07-31 for registration/account actions, four more added 2026-08-01 for
-  authentication/authorization events, one more added 2026-08-19 for the login lockout —
-  twenty total, nineteen constants): intake
+  **Every state-changing site now does this**: intake
   (`ACTION_CREATE`), ordinary edits (`ACTION_EDIT`), Set Timeline
-  (`ACTION_TIMELINE_UPDATE`), delete, reassign, performance-rating changes, all three
-  closure steps (`ACTION_CLOSURE_PROPOSED` / `_CONFIRMED` / `_REJECTED`), registration
+  (`ACTION_TIMELINE_UPDATE`), delete, reassign, performance-rating changes, case closure
+  and reopening (`ACTION_CASE_CLOSED` / `ACTION_CASE_REOPENED`), registration
   approve/reject (`ACTION_REGISTRATION_APPROVED` / `_REJECTED`), account management
   (`ACTION_ACCOUNT_ACTIVATED` / `_DEACTIVATED` / `_ROLE_CHANGED` / `_PASSWORD_RESET`), a
   successful login (`ACTION_LOGIN`), a new account coming into existence
   (`ACTION_ACCOUNT_CREATED` — self-registration and `make:admin`), a denied request
   (`ACTION_ACCESS_DENIED`, see below), and a login lockout against a real account
-  (`ACTION_LOGIN_LOCKOUT`, see below).
+  (`ACTION_LOGIN_LOCKOUT`, see below). The three older `ACTION_CLOSURE_*` constants remain
+  in the filter vocabulary only so historical rows stay readable.
   **The constant carries the whole meaning** — `audit_logs` has no diff column and no
-  field list, so an act the constant doesn't name is unrecoverable from the trail. Hence a
-  distinct constant per closure step (a trail that can't tell a request from an approval
-  can't say who asked for a case to be closed), and hence `ACTION_EDIT` rather than reusing
-  `ACTION_UPDATE`. Note the historical split: **`ACTION_UPDATE` means a reassignment**
+  field list, so an act the constant doesn't name is unrecoverable from the trail. Hence
+  distinct close and reopen constants alongside the ordinary edit audit, and hence
+  `ACTION_EDIT` rather than reusing `ACTION_UPDATE`. Note the historical split:
+  **`ACTION_UPDATE` means a reassignment**
   (and, with a null `case_id`, a rating change) — it predates `ACTION_EDIT` and was left
   where it was rather than renamed. Don't collapse the two.
   One deliberate exception to "state-changing": `ACTION_EXPORTED` records a **read** — the

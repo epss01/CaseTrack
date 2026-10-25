@@ -81,7 +81,7 @@ White at a fixed set of opacity steps, each tied to a role rather than picked pe
 - **on-navy-divider** (15%): the rule between the identity block and the stat tiles.
 
 ### Named Rules
-**The Status-Color Rule.** Status meaning is carried entirely by four soft tint pairs (blue / amber / slate / red), never by a solid Bootstrap `.text-bg-*` badge — those "shout" next to the navy identity bar. Amber means "waiting on someone else" (Pending Closure); it is not reused for "Due soon" on the deadline-alerts page, which gets its own red so two different urgency signals never collide on the same color.
+**The Status-Color Rule.** Status meaning is carried by soft tint pairs, never by a solid Bootstrap `.text-bg-*` badge — those "shout" next to the navy identity bar. Active case states use blue and Closed uses slate. Amber remains available for due-soon alert/report states, while red denotes overdue or danger conditions.
 
 ## Typography
 
@@ -119,7 +119,7 @@ Radius is bumped up from Bootstrap's default `0.375rem` across the board — `sm
 ## Components
 
 ### Buttons
-Bootstrap defaults (`.btn-primary`, `.btn-outline-*`) with the deeper primary blue swapped in; no custom button component exists. State-changing forms (logout, closure actions) use real `<form method="POST">` submit buttons rather than link-styled anchors, so a JS failure degrades to a working form instead of a 405.
+Bootstrap defaults (`.btn-primary`, `.btn-outline-*`) with the deeper primary blue swapped in; no custom button component exists. State-changing actions use real `<form method="POST">` submit buttons rather than link-styled anchors, so a JS failure degrades to a working form instead of a 405.
 
 ### Navbar
 White background, subtle shadow, brand mark is a 1.75rem rounded square with a navy→blue gradient and the "CT" initials rather than a logo image. Active nav link gets a tinted background (`rgba(primary, 0.08)`) plus the link's own color — Bootstrap ships no active-state treatment at all, so this was added deliberately. Nav items are role-gated inline (Blade `@if`/`@can`), not hidden by CSS — an unauthorized link never renders rather than being hidden-but-present.
@@ -128,10 +128,10 @@ White background, subtle shadow, brand mark is a 1.75rem rounded square with a n
 The dashboard's signature component: navy gradient card, eyebrow label ("INVESTIGATOR DASHBOARD" style) above a large name, a role pill, an avatar built from initials (no avatar-photo column exists or is planned), and inline stat tiles. Heading order deliberately leads with the page's purpose and follows with whose data it is — "Dashboard" first, name second — not the reverse.
 
 ### Stat Tiles
-Icon-in-a-translucent-square + label/value pair, used inside the identity bar. Supporting text sits at `rgba(255,255,255,0.72)` opacity except where a specific note (e.g., "N awaiting approval") needed to clear a measured 4.5:1 contrast floor at the narrowest viewport — there font-size carries the hierarchy instead of opacity.
+Icon-in-a-translucent-square + label/value pair, used inside the identity bar. Supporting text sits at `rgba(255,255,255,0.72)` opacity. The investigator and supervisor dashboards each use three balanced tiles, stacking at narrow widths and switching to three columns from the medium breakpoint.
 
 ### Status Tags
-Soft-tint pill badges (see Colors → Named Rules), never Bootstrap's solid `.text-bg-*` badges. A pending-approval table row additionally gets a 3px amber left-border accent layered on top of Bootstrap's own `.table-warning` striping (must be applied via CSS variable override, not a competing box-shadow, or it silently loses to striping's higher specificity).
+Soft-tint pill badges (see Colors → Named Rules), never Bootstrap's solid `.text-bg-*` badges. Deadline and report rows may use the shared `.row-pending` amber tint; case tables do not add a closure-specific row flag.
 
 ### Data Tables
 Horizontally-scrolling wrapper, one shared `.table-data` treatment across every case-list-style table (dashboard, cases, reports, alerts, workload). See Layout for the column-width rules. A combined deadline-and-submission fact renders in one cell (`.cell-sub` for the secondary line) rather than two columns, since splitting them cost width to re-say one fact.
@@ -149,6 +149,6 @@ A 5-segment bar (`.weight-meter`) replacing a bare digit for `complexity_weight`
 
 ### Don't:
 - **Don't** introduce a second shadow value, a hover-elevation effect, or any glow/gradient-text treatment — this system is deliberately flat and restrained (Operate mode, not Persuade).
-- **Don't** reuse amber for a second meaning on the same page as an existing amber signal (see the Status-Color Rule) — deadline-alerts' "Overdue" needed its own red specifically to avoid this collision.
+- **Don't** use amber for active case status; reserve it for due-soon alert/report states and use red for overdue or danger conditions.
 - **Don't** revert to Bootstrap's stock `#0d6efd` blue or default `0.375rem` radius; both were deliberately overridden and reverting reads as "consumer-web" against this product's brief.
 - **Don't** add a display/heading font distinct from Nunito, or a decorative illustration/hero treatment — no such elements exist anywhere in the product today.

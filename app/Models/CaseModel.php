@@ -9,7 +9,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\In;
-use Illuminate\Validation\Rules\NotIn;
 
 class CaseModel extends Model
 {
@@ -32,16 +31,6 @@ class CaseModel extends Model
     public const STATUS_CLOSED = 'Closed';
 
     /**
-     * A closure the assigned investigator has asked for but no supervisor has
-     * decided on yet.
-     *
-     * Deliberately not excluded by scopeActive(): the case is not closed until
-     * the supervisor says so, so it keeps counting toward its investigator's
-     * Workload Capacity Score for as long as it sits here.
-     */
-    public const STATUS_PENDING_CLOSURE = 'Pending Closure';
-
-    /**
      * A case actively being worked, prior to review.
      */
     public const STATUS_UNDER_INVESTIGATION = 'Under investigation';
@@ -52,7 +41,7 @@ class CaseModel extends Model
     public const STATUS_FOR_REVIEW = 'For review';
 
     /**
-     * The ratified five-value status vocabulary (CHR-Answers-2026-08-01),
+     * The ratified four-value status vocabulary,
      * each mapped to the colour it renders as everywhere a status is shown.
      *
      * Listed in the order a case moves through them — this array also drives
@@ -64,7 +53,6 @@ class CaseModel extends Model
         self::STATUS_DOCKETED => '#1d4ed8',
         self::STATUS_UNDER_INVESTIGATION => '#3b82f6',
         self::STATUS_FOR_REVIEW => '#93c5fd',
-        self::STATUS_PENDING_CLOSURE => '#b45309',
         self::STATUS_CLOSED => '#94a3b8',
     ];
 
@@ -77,7 +65,6 @@ class CaseModel extends Model
         'source_info',
         'investigator_id',
         'status',
-        'status_before_closure',
         'complexity_weight',
         'is_torture_case',
     ];
@@ -128,31 +115,13 @@ class CaseModel extends Model
     }
 
     /**
-     * Validation rules for the status field on the ordinary edit form.
+     * Validation rules for the ratified status vocabulary.
      *
-     * Status is otherwise free text, but the two closure states are not the
-     * edit form's to hand out: closing a case runs through the maker-checker
-     * workflow, and letting anyone type "Closed" into a text box would make
-     * that workflow decorative.
-     *
-     * The rules depend on the case because a case already sitting in one of
-     * those states still has to be editable — resubmitting its own status must
-     * pass, or its title could never be corrected again.
-     *
-     * @return list<string|In|NotIn>
+     * @return list<string|In>
      */
     public static function statusRulesFor(self $case): array
     {
-        // Awaiting a supervisor's decision: the status is the workflow's to
-        // move, not the form's. Anything else would be an unaudited way to
-        // withdraw a proposal.
-        if ($case->status === self::STATUS_PENDING_CLOSURE) {
-            return ['required', Rule::in([self::STATUS_PENDING_CLOSURE])];
-        }
-
-        return ['required', 'string', 'max:255', Rule::notIn(
-            array_diff([self::STATUS_PENDING_CLOSURE, self::STATUS_CLOSED], [$case->status])
-        )];
+        return ['required', 'string', 'max:255', Rule::in(array_keys(self::STATUS_COLOURS))];
     }
 
     /**

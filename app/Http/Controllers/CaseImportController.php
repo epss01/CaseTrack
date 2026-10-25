@@ -21,8 +21,7 @@ use Illuminate\Support\Facades\Storage;
  * Three steps, no per-case decision anywhere in them for a policy class to
  * make: upload, a dry-run preview nothing is written from, and a commit that
  * re-validates before writing. Matches the app's existing bias toward
- * confirmation before an irreversible action (maker-checker closure, the
- * delete confirmation page).
+ * confirmation before an irreversible action (the delete confirmation page).
  */
 class CaseImportController extends Controller
 {
