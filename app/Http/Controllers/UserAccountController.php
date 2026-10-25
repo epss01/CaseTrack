@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateAccountRoleRequest;
 use App\Models\AuditLog;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\AccountCredentialService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -73,18 +74,11 @@ class UserAccountController extends Controller
             ->with('status', __('Role updated for :name.', ['name' => $user->full_name]));
     }
 
-    public function updatePassword(UpdateAccountPasswordRequest $request, User $user)
+    public function updatePassword(UpdateAccountPasswordRequest $request, User $user, AccountCredentialService $credentials)
     {
         abort_if($user->is($request->user()), 403);
 
-        DB::transaction(function () use ($request, $user) {
-            // The model's `hashed` cast makes this idempotent-safe the same
-            // way RegisterController::create() relies on — assign the plain
-            // value, Eloquent hashes it on save.
-            $user->update(['password' => $request->validated('password')]);
-
-            AuditLog::record($request->user(), null, AuditLog::ACTION_ACCOUNT_PASSWORD_RESET, $user);
-        });
+        $credentials->resetPassword($request->user(), $user, $request->validated('password'));
 
         return redirect()
             ->route('admin.users.index')

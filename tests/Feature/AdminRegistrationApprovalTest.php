@@ -159,6 +159,73 @@ class AdminRegistrationApprovalTest extends TestCase
         ]);
     }
 
+    public function test_an_admin_cannot_decide_their_own_registration(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)
+            ->put(route('admin.registrations.approve', $admin))
+            ->assertForbidden();
+
+        $this->actingAs($admin)
+            ->put(route('admin.registrations.reject', $admin))
+            ->assertForbidden();
+
+        $this->assertSame(User::REGISTRATION_APPROVED, $admin->fresh()->registration_status);
+        $this->assertDatabaseMissing('audit_logs', ['action_performed' => AuditLog::ACTION_REGISTRATION_APPROVED]);
+        $this->assertDatabaseMissing('audit_logs', ['action_performed' => AuditLog::ACTION_REGISTRATION_REJECTED]);
+    }
+
+    public function test_non_pending_registration_decisions_return_conflict_without_mutation(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $approved = User::factory()->investigator()->create();
+        $rejected = User::factory()->investigator()->create([
+            'registration_status' => User::REGISTRATION_REJECTED,
+        ]);
+
+        $this->actingAs($admin)
+            ->put(route('admin.registrations.reject', $approved))
+            ->assertConflict();
+
+        $this->actingAs($admin)
+            ->put(route('admin.registrations.approve', $rejected))
+            ->assertConflict();
+
+        $this->assertSame(User::REGISTRATION_APPROVED, $approved->fresh()->registration_status);
+        $this->assertSame(User::REGISTRATION_REJECTED, $rejected->fresh()->registration_status);
+        $this->assertDatabaseMissing('audit_logs', ['action_performed' => AuditLog::ACTION_REGISTRATION_APPROVED]);
+        $this->assertDatabaseMissing('audit_logs', ['action_performed' => AuditLog::ACTION_REGISTRATION_REJECTED]);
+    }
+
+    public function test_only_the_first_registration_decision_transitions_and_audits(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $pending = User::factory()->investigator()->create([
+            'registration_status' => User::REGISTRATION_PENDING,
+        ]);
+
+        $this->actingAs($admin)
+            ->put(route('admin.registrations.approve', $pending))
+            ->assertRedirect(route('admin.registrations.index'));
+
+        $this->actingAs($admin)
+            ->put(route('admin.registrations.approve', $pending))
+            ->assertConflict();
+
+        $this->actingAs($admin)
+            ->put(route('admin.registrations.reject', $pending))
+            ->assertConflict();
+
+        $this->assertSame(User::REGISTRATION_APPROVED, $pending->fresh()->registration_status);
+        $this->assertSame(1, AuditLog::where('target_user_id', $pending->id)
+            ->whereIn('action_performed', [
+                AuditLog::ACTION_REGISTRATION_APPROVED,
+                AuditLog::ACTION_REGISTRATION_REJECTED,
+            ])
+            ->count());
+    }
+
     public function test_the_register_route_is_rate_limited(): void
     {
         $role = Role::firstOrCreate(['role_name' => Role::INVESTIGATOR]);

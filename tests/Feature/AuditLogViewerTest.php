@@ -91,6 +91,19 @@ class AuditLogViewerTest extends TestCase
                 && $logs->first()->action_performed === AuditLog::ACTION_CLOSURE_CONFIRMED);
     }
 
+    public function test_legacy_update_actions_remain_valid_historical_filters(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $user = User::factory()->investigator()->create();
+        AuditLog::record($user, null, AuditLog::ACTION_UPDATE);
+
+        $this->actingAs($admin)
+            ->get(route('admin.audit-logs.index', ['action' => AuditLog::ACTION_UPDATE]))
+            ->assertOk()
+            ->assertViewHas('logs', fn ($logs) => $logs->total() === 1
+                && $logs->first()->action_performed === AuditLog::ACTION_UPDATE);
+    }
+
     public function test_an_unknown_action_value_is_rejected(): void
     {
         $admin = User::factory()->admin()->create();

@@ -197,7 +197,7 @@ class WorkloadPageTest extends TestCase
             'user_id' => $supervisor->id,
             'target_user_id' => $investigator->id,
             'case_id' => null,
-            'action_performed' => AuditLog::ACTION_UPDATE,
+            'action_performed' => AuditLog::ACTION_PERFORMANCE_RATING_UPDATED,
         ]);
     }
 
