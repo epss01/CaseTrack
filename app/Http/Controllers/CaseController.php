@@ -250,7 +250,7 @@ class CaseController extends Controller
             $fresh->lock_version++;
             $fresh->save();
 
-            AuditLog::record($request->user(), $fresh, AuditLog::ACTION_UPDATE);
+            AuditLog::record($request->user(), $case, AuditLog::ACTION_UPDATE);
         });
 
         return redirect()
