@@ -3,7 +3,7 @@
     "configurations": [
         {
             "name": "casetrack",
-            "runtimeExecutable": "REPLACE-WITH-ABSOLUTE-PATH-TO/herd-lite/bin/php.exe",
+            "runtimeExecutable": "REPLACE-WITH-PATCHED-PHP-8.4.27+-EXECUTABLE",
             "runtimeArgs": ["artisan", "serve", "--port=8123"],
             "port": 8123
         }

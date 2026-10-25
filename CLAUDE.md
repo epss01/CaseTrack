@@ -6,21 +6,18 @@ Capstone project (CHR Region VIII use case). Standalone internal web app — NOT
 NOT an AI/chatbot system. Deterministic, rule-based deadline tracking only.
 
 ## Stack
-- Backend: PHP, Laravel 11 (`v11.55.0` locked). **Requires PHP 8.4** — `composer.json`
+- Backend: PHP, Laravel 11 (`v11.55.0` locked). **Requires PHP 8.4.27 or newer** — `composer.json`
   declares `"php": "^8.4"` and `vendor/composer/platform_check.php` hard-fails anything
   below 8.4.0. (Until 2026-07-29 the constraint said `^8.2` while the lock resolved
-  against 8.4; the two now agree.) **XAMPP's bundled PHP (8.2.12, at `C:\xampp\php\php.exe`) cannot run
-  `artisan` at all.** The working binary is Herd Lite:
-  `C:\Users\admin\.config\herd-lite\bin\php.exe`. **It is NOT on PATH** — verified
-  2026-07-28, `Get-Command php` in PowerShell and `php -v` in bash both come back empty.
-  Always invoke it by absolute path; never fall back to the XAMPP one. E.g.:
+  against 8.4; the two now agree.) The local XAMPP runtime was upgraded on
+  2026-10-25 to PHP 8.4.27 at `C:\xampp\php\php.exe` and is on `PATH`. This
+  patch level is the security floor: earlier 8.4 releases are affected by
+  CVE-2026-109618 and CVE-2026-109619. Invoke it normally, for example:
 
   ```
-  "C:/Users/admin/.config/herd-lite/bin/php.exe" artisan test
+  php artisan test
   ```
 
-  Adding `%USERPROFILE%\.config\herd-lite\bin` to PATH would remove the need for this,
-  but nothing in the repo depends on that being done.
 - Database: MariaDB 10.4 (XAMPP's bundled database, not a separate MySQL install — verified
   2026-08-06, `SELECT VERSION()` on port 3307 returns `10.4.32-MariaDB`; README and this file
   previously said "MySQL" here, which was wrong), port 3307 — a separate standalone MySQL 8
@@ -29,13 +26,10 @@ NOT an AI/chatbot system. Deterministic, rule-based deadline tracking only.
   browser is hitting the real MariaDB database. (`DB_CONNECTION=mysql` in `.env` is still
   correct — Laravel's MySQL driver speaks MariaDB's wire protocol natively.)
 - Frontend: HTML5, CSS3, JavaScript, Bootstrap 5 (`laravel/ui` preset, not Breeze/Tailwind)
-- Local dev: XAMPP for MariaDB, Herd Lite for PHP. A Docker alternative (`docker compose up`,
-  `mariadb:10.4` + `php:8.4-cli`) also exists as of 2026-08-06 — see README's "Running with
+- Local dev: XAMPP for MariaDB and PHP. A Docker alternative (`docker compose up`,
+  `mariadb:10.4` + `php:8.4.27-cli`) also exists as of 2026-08-06 — see README's "Running with
   Docker" section. Additive only; doesn't replace this host setup.
-- Composer lives beside the PHP binary and is likewise **not on PATH**:
-  `C:\Users\admin\.config\herd-lite\bin\composer.phar`, invoked through the same
-  absolute PHP path. (The `composer.phar` under `AppData\Roaming\Composer` is
-  Composer's own global install dir, not the launcher — don't use it.)
+- Composer 2 remains a separate prerequisite; use the machine's configured Composer 2 launcher.
 
 ### Dependency security — two advisories accepted, not patched (2026-07-29)
 `composer audit` reports three advisories against `laravel/framework` v11.55.0, which are
@@ -101,7 +95,7 @@ binary, because the launcher spawns it directly with no shell, so `${env:USERPRO
 and `~` are passed through literally rather than expanded (tested 2026-07-28). The file
 is therefore **gitignored**, with `.claude/launch.json.example` committed in its place.
 To set up: copy the example to `.claude/launch.json` and replace `runtimeExecutable`
-with your own absolute path to `herd-lite/bin/php.exe`.
+with your own absolute path to a patched PHP 8.4.27-or-newer executable.
 
 ## Core entities (as built — these are the real table/model names)
 The manuscript (Chapter III, Tables 3-4–3-10) uses `auth_user` / `casetrack_*` names.

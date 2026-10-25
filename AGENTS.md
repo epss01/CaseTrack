@@ -19,7 +19,7 @@ Then follow links to the relevant page(s) if one exists. Treat the wiki as
 authoritative project context—do not re-derive decisions that are already
 documented there.
 
-The `wiki/` portion of the vault is read-only for project work. If it is
+The `wiki/` portion of the vault is read-only for project work, not unless explicitly told to update it. If it is
 missing or out of date on something just built, report it instead of updating
 it directly.
 
@@ -44,10 +44,9 @@ the session note for later application.
 - CaseTrack is a standalone internal investigation case assignment,
   monitoring, and reporting system. It is deterministic and rule-based; it is
   not an AI/chatbot system.
-- Backend: PHP 8.4 and Laravel 11. Use Herd Lite's PHP binary at
-  `C:/Users/admin/.config/herd-lite/bin/php.exe`; XAMPP's PHP 8.2 binary cannot
-  run this project. Composer is invoked through that PHP binary using
-  `C:/Users/admin/.config/herd-lite/bin/composer.phar`.
+- Backend: PHP 8.4 and Laravel 11. The local XAMPP runtime is PHP 8.4.27 at
+  `C:/xampp/php/php.exe` and is on `PATH`. Do not use an 8.4 release below
+  8.4.27 because it is affected by CVE-2026-109618 and CVE-2026-109619.
 - Database: MariaDB 10.4 on port 3307 for browser-driven development. Tests
   use in-memory SQLite. The Laravel `mysql` driver is correct for MariaDB.
 - Frontend: HTML5, CSS3, JavaScript, Bootstrap 5 via `laravel/ui`; do not
@@ -119,10 +118,10 @@ the session note for later application.
 ## Development workflow
 
 - Work in small, single-feature increments.
-- After generating code, run the Laravel test suite using the PHP 8.4 binary:
+- After generating code, run the Laravel test suite using the patched PHP binary:
 
   ```text
-  C:/Users/admin/.config/herd-lite/bin/php.exe artisan test
+  php artisan test
   ```
 
 - After changes under `resources/sass/` or `resources/js/`, run `npm run build`.
