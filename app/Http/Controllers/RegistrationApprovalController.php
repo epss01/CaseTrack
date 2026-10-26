@@ -31,14 +31,20 @@ class RegistrationApprovalController extends Controller
      */
     public function approve(Request $request, User $user)
     {
+        abort_if($user->is($request->user()), 403);
+
         DB::transaction(function () use ($request, $user) {
-            $user->update([
+            $locked = User::whereKey($user->getKey())->lockForUpdate()->firstOrFail();
+
+            abort_unless($locked->registration_status === User::REGISTRATION_PENDING, 409);
+
+            $locked->update([
                 'registration_status' => User::REGISTRATION_APPROVED,
                 'approved_by' => $request->user()->id,
                 'approved_at' => now(),
             ]);
 
-            AuditLog::record($request->user(), null, AuditLog::ACTION_REGISTRATION_APPROVED, $user);
+            AuditLog::record($request->user(), null, AuditLog::ACTION_REGISTRATION_APPROVED, $locked);
         });
 
         return redirect()
@@ -52,10 +58,16 @@ class RegistrationApprovalController extends Controller
      */
     public function reject(Request $request, User $user)
     {
-        DB::transaction(function () use ($request, $user) {
-            $user->update(['registration_status' => User::REGISTRATION_REJECTED]);
+        abort_if($user->is($request->user()), 403);
 
-            AuditLog::record($request->user(), null, AuditLog::ACTION_REGISTRATION_REJECTED, $user);
+        DB::transaction(function () use ($request, $user) {
+            $locked = User::whereKey($user->getKey())->lockForUpdate()->firstOrFail();
+
+            abort_unless($locked->registration_status === User::REGISTRATION_PENDING, 409);
+
+            $locked->update(['registration_status' => User::REGISTRATION_REJECTED]);
+
+            AuditLog::record($request->user(), null, AuditLog::ACTION_REGISTRATION_REJECTED, $locked);
         });
 
         return redirect()

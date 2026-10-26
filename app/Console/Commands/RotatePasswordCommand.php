@@ -2,10 +2,9 @@
 
 namespace App\Console\Commands;
 
-use App\Models\AuditLog;
 use App\Models\User;
+use App\Services\AccountCredentialService;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
@@ -31,7 +30,7 @@ class RotatePasswordCommand extends Command
 
     protected $description = 'Generate a new random password for one or more accounts, ending their sessions';
 
-    public function handle(): int
+    public function handle(AccountCredentialService $credentials): int
     {
         $actorUsername = $this->option('actor');
 
@@ -77,15 +76,7 @@ class RotatePasswordCommand extends Command
         foreach ($users as $user) {
             $newPassword = Str::password(20);
 
-            DB::transaction(function () use ($user, $newPassword, $actor) {
-                $user->password = $newPassword;
-                $user->setRememberToken(Str::random(60));
-                $user->save();
-
-                DB::table('sessions')->where('user_id', $user->id)->delete();
-
-                AuditLog::record($actor, null, AuditLog::ACTION_ACCOUNT_PASSWORD_RESET, $user);
-            });
+            $credentials->resetPassword($actor, $user, $newPassword);
 
             $rows[] = [$user->username, $newPassword];
         }

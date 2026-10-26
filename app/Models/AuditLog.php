@@ -13,6 +13,7 @@ class AuditLog extends Model
     /**
      * Actions worth tracing back to the user who performed them.
      */
+    /** Legacy value retained so historical rows remain filterable. */
     public const ACTION_UPDATE = 'UPDATE';
 
     public const ACTION_DELETE = 'DELETE';
@@ -25,12 +26,17 @@ class AuditLog extends Model
     /**
      * A field edit through the ordinary edit form.
      *
-     * Kept apart from ACTION_UPDATE, which predates it and still marks a
-     * reassignment (and a performance-rating change, with a null case_id) — a
-     * trail that cannot tell "the title was corrected" from "the case changed
-     * hands" cannot say who moved a case.
+     * Kept apart from ACTION_CASE_REASSIGNED — a trail that cannot tell "the
+     * title was corrected" from "the case changed hands" cannot say who moved
+     * a case.
      */
     public const ACTION_EDIT = 'EDIT';
+
+    /** A supervisor moved a case to another investigator. */
+    public const ACTION_CASE_REASSIGNED = 'CASE_REASSIGNED';
+
+    /** A supervisor changed the rating used by WCS. */
+    public const ACTION_PERFORMANCE_RATING_UPDATED = 'PERFORMANCE_RATING_UPDATED';
 
     /**
      * A statutory milestone date set or moved via Set Timeline.
@@ -69,10 +75,8 @@ class AuditLog extends Model
      * same precedent as the rating-change and export entries — none of them
      * are scoped to a case.
      *
-     * Each of these now carries target_user_id — who the action was taken
-     * on, not just who took it. See ACTION_UPDATE for the one site (case
-     * reassignment) that still doesn't: out of scope for the audit-events
-     * pass that added the column, flagged as a follow-up.
+     * Each of these carries target_user_id — who the action was taken on, not
+     * just who took it. Case reassignment remains case-scoped instead.
      */
     public const ACTION_REGISTRATION_APPROVED = 'REGISTRATION_APPROVED';
 
@@ -87,9 +91,8 @@ class AuditLog extends Model
     /**
      * A password reset performed outside the ordinary account flows (e.g. an
      * operator running users:rotate-password from the shell) or through the
-     * account-management screen. Carries a null case_id, same precedent as
-     * the rating-change and export entries, and target_user_id — see the
-     * note above ACTION_REGISTRATION_APPROVED.
+     * account-management screen. Both paths revoke database sessions and the
+     * remember-me token. Carries a null case_id and target_user_id.
      */
     public const ACTION_ACCOUNT_PASSWORD_RESET = 'ACCOUNT_PASSWORD_RESET';
 
@@ -167,6 +170,7 @@ class AuditLog extends Model
      * Every action constant, in one place. RoleActions::ALL precedent — for
      * the audit log viewer's filter dropdown and its Rule::in(), so the
      * viewer's vocabulary can't silently drift from what record() accepts.
+     * ACTION_UPDATE remains here only for historical rows; no writer emits it.
      *
      * @var list<string>
      */
@@ -175,6 +179,8 @@ class AuditLog extends Model
         self::ACTION_DELETE,
         self::ACTION_CREATE,
         self::ACTION_EDIT,
+        self::ACTION_CASE_REASSIGNED,
+        self::ACTION_PERFORMANCE_RATING_UPDATED,
         self::ACTION_TIMELINE_UPDATE,
         self::ACTION_CASE_CLOSED,
         self::ACTION_CASE_REOPENED,
