@@ -157,7 +157,7 @@ class CaseSupervisorActionsTest extends TestCase
         $this->assertDatabaseHas('audit_logs', [
             'user_id' => $supervisor->id,
             'case_id' => $case->id,
-            'action_performed' => AuditLog::ACTION_UPDATE,
+            'action_performed' => AuditLog::ACTION_CASE_REASSIGNED,
         ]);
     }
 
@@ -232,7 +232,7 @@ class CaseSupervisorActionsTest extends TestCase
         $case->refresh();
 
         $this->assertSame($investigator->id, $case->investigator_id);
-        $this->assertDatabaseMissing('audit_logs', ['action_performed' => AuditLog::ACTION_UPDATE]);
+        $this->assertDatabaseMissing('audit_logs', ['action_performed' => AuditLog::ACTION_CASE_REASSIGNED]);
         $this->assertSame(2, AuditLog::where('user_id', $investigator->id)
             ->where('case_id', $case->id)
             ->where('action_performed', AuditLog::ACTION_ACCESS_DENIED)
@@ -290,7 +290,7 @@ class CaseSupervisorActionsTest extends TestCase
 
     /**
      * The two acts stay apart in the trail. Collapsing ACTION_EDIT back into
-     * ACTION_UPDATE would leave "the title was corrected" and "the case
+     * ACTION_CASE_REASSIGNED would leave "the title was corrected" and "the case
      * changed hands" reading identically.
      */
     public function test_an_edit_and_a_reassignment_are_not_the_same_entry(): void
@@ -306,7 +306,7 @@ class CaseSupervisorActionsTest extends TestCase
             ])
             ->assertSessionHasNoErrors();
 
-        $this->assertDatabaseHas('audit_logs', ['action_performed' => AuditLog::ACTION_UPDATE]);
+        $this->assertDatabaseHas('audit_logs', ['action_performed' => AuditLog::ACTION_CASE_REASSIGNED]);
         $this->assertDatabaseMissing('audit_logs', ['action_performed' => AuditLog::ACTION_EDIT]);
     }
 

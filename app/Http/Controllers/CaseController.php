@@ -131,8 +131,7 @@ class CaseController extends Controller
      * lives in reassign() below. Closure and reopening use this same edit
      * workflow, with their additional authorization enforced below.
      *
-     * Audited as ACTION_EDIT rather than ACTION_UPDATE, which reassign() has
-     * already taken.
+     * Audited as ACTION_EDIT rather than ACTION_CASE_REASSIGNED.
      *
      * A supervisor editing a case they are not the assigned investigator on
      * must state why (CHR-Answers-2026-08-01, item 6): no hard technical
@@ -250,7 +249,7 @@ class CaseController extends Controller
             $fresh->lock_version++;
             $fresh->save();
 
-            AuditLog::record($request->user(), $case, AuditLog::ACTION_UPDATE);
+            AuditLog::record($request->user(), $case, AuditLog::ACTION_CASE_REASSIGNED);
         });
 
         return redirect()

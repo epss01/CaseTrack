@@ -206,7 +206,10 @@ compromised account short of a direct database edit.
   account lands `registration_status = 'pending'` (also the column's own default, so a row
   inserted any other way still can't authenticate) and is logged straight back out —
   `RegisterController::registered()` undoes the login `RegistersUsers::register()` performs
-  by default. `POST /register` carries `throttle:5,1`.
+  by default. `POST /register` carries `throttle:5,1`. Approval and rejection lock the
+  target row and only transition `pending` registrations; repeated or conflicting decisions
+  return HTTP 409 without another mutation or audit entry. An admin targeting their own
+  registration receives HTTP 403.
 - **Login gate.** `LoginController::credentials()` adds `registration_status => approved`
   and `is_active => true` as query constraints (`EloquentUserProvider::retrieveByCredentials()`
   treats every non-password key that way), so a pending/rejected/deactivated account fails
@@ -248,22 +251,24 @@ compromised account short of a direct database edit.
   Admin row is never role-changeable), and admin-performed password reset (admin types the
   new password directly; relies on the model's `hashed` cast auto-hashing on `update()`, the
   same mechanism `RegisterController::create()`'s explicit `Hash::make()` is idempotent
-  against). Every mutating action refuses to target the acting admin's own account
+  against). Password resets share `AccountCredentialService` with `users:rotate-password`;
+  the password change, remember-token rotation, database-session deletion, and audit entry
+  are one transaction per target account. Every mutating action refuses to target the
+  acting admin's own account
   (`abort_if($user->is($request->user()), 403)`) — no self-lockout, no self-promotion.
 - **Deactivation is a soft flag, never deletion** — `audit_logs.user_id` is `NOT NULL` with
   no `onDelete` clause (RESTRICT by omission; unlike `audit_logs.case_id`, which is
   `nullOnDelete`), so a user with any audit history can't be hard-deleted regardless. Demonstrated
   live during this build: deleting a just-provisioned admin account failed at the database
   until its own audit rows were removed first.
-- **New `AuditLog` constants**, same add-only convention as every other action: `ACTION_REGISTRATION_APPROVED`,
+- **AuditLog action constants** follow an add-only convention: `ACTION_REGISTRATION_APPROVED`,
   `ACTION_REGISTRATION_REJECTED`, `ACTION_ACCOUNT_ACTIVATED`, `ACTION_ACCOUNT_DEACTIVATED`,
-  `ACTION_ACCOUNT_ROLE_CHANGED`, `ACTION_ACCOUNT_PASSWORD_RESET` — all `case_id => null`
+  `ACTION_ACCOUNT_ROLE_CHANGED`, `ACTION_ACCOUNT_PASSWORD_RESET`, and
+  `ACTION_PERFORMANCE_RATING_UPDATED` — all `case_id => null`
   (same precedent as the rating-change and export entries), each written inside the same
-  `DB::transaction()` as its mutation. **Known limitation, inherited not introduced:**
-  `audit_logs` has no target-user column, so these name the *admin who acted*, not who was
-  acted on — the same open gap already logged against the rating-change entry. Distinct
-  activated/deactivated constants at least keep the direction recoverable from the constant
-  alone.
+  `DB::transaction()` as its mutation. `ACTION_CASE_REASSIGNED` is case-scoped. Legacy
+  `ACTION_UPDATE` remains in `AuditLog::ACTIONS` only so existing rows can still be viewed
+  and filtered; new mutations do not emit it.
 - **Open, not yet reconciled:** the vault (`wiki/project/admin-role-scoping.md`) has one
   password-reset decision still on the table between "admin performs the reset directly"
   (built) and "user requests, admin approves" — flagged back to JP to reconcile, not
@@ -316,10 +321,10 @@ column for this reason. Flag this rather than inventing a workaround.
   **The constant carries the whole meaning** — `audit_logs` has no diff column and no
   field list, so an act the constant doesn't name is unrecoverable from the trail. Hence
   distinct close and reopen constants alongside the ordinary edit audit, and hence
-  `ACTION_EDIT` rather than reusing `ACTION_UPDATE`. Note the historical split:
-  **`ACTION_UPDATE` means a reassignment**
-  (and, with a null `case_id`, a rating change) — it predates `ACTION_EDIT` and was left
-  where it was rather than renamed. Don't collapse the two.
+  `ACTION_EDIT` rather than reusing the legacy `ACTION_UPDATE`. Reassignment emits
+  `ACTION_CASE_REASSIGNED`; a performance-rating change emits
+  `ACTION_PERFORMANCE_RATING_UPDATED`. `ACTION_UPDATE` is retained only as a historical
+  filter value. Don't collapse these actions.
   One deliberate exception to "state-changing": `ACTION_EXPORTED` records a **read** — the
   CSV download at `/reports/export`, which takes case data out of the system. It has a null
   `case_id` (an export spans a filtered set) and no `DB::transaction()`, being a lone insert
@@ -355,7 +360,7 @@ column for this reason. Flag this rather than inventing a workaround.
   entry used to name only the actor. Populated at all seven of those sites plus the three new
   actor-is-target sites (self-registration, `make:admin`, and `users:rotate-password`, whose
   existing `--actor=` flag was already solving a different problem — an operator acting *on*
-  someone else). **Still not populated:** the reassignment site (`ACTION_UPDATE` in
+  someone else). **Still not populated:** the reassignment site (`ACTION_CASE_REASSIGNED` in
   `CaseController::reassign`) — its target is arguably the incoming investigator, but that
   row already carries a `case_id` that makes it independently readable, and reassignment
   itself is out of scope for the pass that added the column. One-line follow-up, not urgent.

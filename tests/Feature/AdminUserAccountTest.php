@@ -6,6 +6,8 @@ use App\Models\AuditLog;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 /**
@@ -171,10 +173,21 @@ class AdminUserAccountTest extends TestCase
         $this->assertTrue($admin->fresh()->is_active);
     }
 
-    public function test_password_reset_actually_changes_the_credential(): void
+    public function test_password_reset_changes_the_credential_and_revokes_existing_logins(): void
     {
         $admin = User::factory()->admin()->create();
-        $investigator = User::factory()->investigator()->create(['username' => 'reset-me', 'password' => 'password']);
+        $investigator = User::factory()->investigator()->create([
+            'username' => 'reset-me',
+            'password' => 'password',
+            'remember_token' => 'old-remember-token',
+        ]);
+
+        DB::table('sessions')->insert([
+            'id' => 'target-session',
+            'user_id' => $investigator->id,
+            'payload' => 'x',
+            'last_activity' => time(),
+        ]);
 
         $this->actingAs($admin)
             ->put(route('admin.users.password', $investigator), [
@@ -182,6 +195,12 @@ class AdminUserAccountTest extends TestCase
                 'password_confirmation' => 'brand-new-password',
             ])
             ->assertRedirect(route('admin.users.index'));
+
+        $investigator->refresh();
+
+        $this->assertTrue(Hash::check('brand-new-password', $investigator->password));
+        $this->assertNotSame('old-remember-token', $investigator->remember_token);
+        $this->assertDatabaseMissing('sessions', ['user_id' => $investigator->id]);
 
         $this->post('/logout');
 
@@ -199,5 +218,8 @@ class AdminUserAccountTest extends TestCase
             'case_id' => null,
             'action_performed' => AuditLog::ACTION_ACCOUNT_PASSWORD_RESET,
         ]);
+        $this->assertSame(1, AuditLog::where('action_performed', AuditLog::ACTION_ACCOUNT_PASSWORD_RESET)
+            ->where('target_user_id', $investigator->id)
+            ->count());
     }
 }
