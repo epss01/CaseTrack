@@ -11,9 +11,9 @@
                     <form method="POST" action="{{ route('cases.update', $case) }}">
                         @csrf
                         @method('PUT')
-                        <input type="hidden" name="updated_at" value="{{ old('updated_at', $case->updated_at->format('Y-m-d H:i:s')) }}">
+                        <input type="hidden" name="lock_version" value="{{ old('lock_version', $case->lock_version) }}">
 
-                        @error('updated_at')
+                        @error('lock_version')
                             <div class="alert alert-warning" role="alert">
                                 {{ $message }}
                             </div>

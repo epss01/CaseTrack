@@ -74,6 +74,7 @@ class CaseModel extends Model
         return [
             'investigator_id' => 'integer',
             'complexity_weight' => 'integer',
+            'lock_version' => 'integer',
             'is_torture_case' => 'boolean',
         ];
     }

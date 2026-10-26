@@ -118,7 +118,8 @@ in the vault for the full as-designed vs. as-built comparison.
   `protected $table = 'cases'`. Fields: `docket_no` (unique), `case_title`,
   `incident_details`, `source_info` (nullable), `investigator_id` FK → `users.id`,
   `status` (NOT NULL, set server-side to `CaseModel::STATUS_DOCKETED` at intake),
-  `complexity_weight` (int),
+  `complexity_weight` (int), `lock_version` (unsigned int, default 0, cast to integer but
+  deliberately not mass assignable),
   `deleted_at` (soft deletes).
   `status` uses the four named constants `STATUS_DOCKETED`,
   `STATUS_UNDER_INVESTIGATION`, `STATUS_FOR_REVIEW`, and `STATUS_CLOSED`.
@@ -164,9 +165,10 @@ derived from history; that's a build decision, not something the source doc spec
 - `CaseModel::statusRulesFor()` accepts exactly Docketed, Under investigation, For review,
   and Closed. The rendered selector narrows those choices by policy without relying on the
   UI as the authorization boundary.
-- `CaseController::update()` performs the optimistic-lock check first, then authorizes any
-  transition into or out of Closed against the locked record. It writes both the ordinary
-  edit audit and `ACTION_CASE_CLOSED` or `ACTION_CASE_REOPENED` in the same transaction.
+- `CaseController::update()` reloads and row-locks the case, re-authorizes ordinary editing,
+  compares the submitted `lock_version`, then authorizes any transition into or out of Closed
+  against that same locked record. Successful edits and reassignments each increment the
+  version once. The edit and all applicable audit entries are in the same transaction.
 - `scopeActive()` excludes only Closed, so a case leaves WCS immediately when its assigned
   investigator closes it and returns when reopened to any of the three active statuses.
 

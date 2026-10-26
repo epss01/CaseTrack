@@ -22,7 +22,7 @@ class CaseDirectClosureTest extends TestCase
             'source_info' => $case->source_info,
             'status' => $case->status,
             'complexity_weight' => $case->complexity_weight,
-            'updated_at' => $case->updated_at->format('Y-m-d H:i:s'),
+            'lock_version' => $case->lock_version,
         ], $overrides);
     }
 
@@ -265,18 +265,17 @@ class CaseDirectClosureTest extends TestCase
     {
         $investigator = User::factory()->investigator()->create();
         $case = CaseModel::factory()->assignedTo($investigator)->create(['status' => CaseModel::STATUS_FOR_REVIEW]);
-        $staleStamp = $case->updated_at->format('Y-m-d H:i:s');
+        $staleVersion = $case->lock_version;
 
-        $this->travel(1)->seconds();
-        $case->update(['case_title' => 'Updated elsewhere']);
+        $case->increment('lock_version');
 
         $this->actingAs($investigator)
             ->put(route('cases.update', $case), $this->payload($case, [
                 'case_title' => 'Stale closure',
                 'status' => CaseModel::STATUS_CLOSED,
-                'updated_at' => $staleStamp,
+                'lock_version' => $staleVersion,
             ]))
-            ->assertSessionHasErrors('updated_at');
+            ->assertSessionHasErrors('lock_version');
 
         $this->assertSame(CaseModel::STATUS_FOR_REVIEW, $case->fresh()->status);
         $this->assertDatabaseMissing('audit_logs', ['case_id' => $case->id]);
