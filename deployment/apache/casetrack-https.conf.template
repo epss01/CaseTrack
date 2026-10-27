@@ -1,0 +1,49 @@
+# CaseTrack HTTPS deployment package
+# Generated for {{HOSTNAME}}. Include after the existing default virtual hosts.
+# Listeners, PHP integration and modules are supplied by the host configuration.
+<VirtualHost *:{{HTTP_PORT}}>
+    ServerName {{HOSTNAME}}
+    DocumentRoot "{{PUBLIC_PATH}}"
+    RewriteEngine On
+    RewriteCond %{HTTP_HOST} !^{{HOST_REGEX}}(?::{{HTTP_PORT}})?$ [NC]
+    RewriteRule ^ - [R=404,L]
+    RewriteRule ^ https://{{HTTPS_AUTHORITY}}%{REQUEST_URI} [R=301,L,NE]
+</VirtualHost>
+
+<VirtualHost *:{{HTTPS_PORT}}>
+    ServerName {{HOSTNAME}}
+    DocumentRoot "{{PUBLIC_PATH}}"
+    DirectoryIndex index.php
+    SSLEngine on
+    SSLProtocol -all +TLSv1.2 +TLSv1.3
+    SSLCipherSuite ECDHE+AESGCM:ECDHE+CHACHA20
+    SSLCertificateFile "{{CERTIFICATE_PATH}}"
+    SSLCertificateKeyFile "{{PRIVATE_KEY_PATH}}"
+
+    RewriteEngine On
+    RewriteCond %{HTTP_HOST} !^{{HOST_REGEX}}(?::{{HTTPS_PORT}})?$ [NC]
+    RewriteRule ^ - [R=404,L]
+    <IfModule proxy_module>
+        ProxyPassInherit Off
+    </IfModule>
+
+    # Regex sections run after ordinary Directory grants, including XAMPP aliases.
+    <DirectoryMatch "(?i)^(?!{{PUBLIC_REGEX}}(?:/|$)).*">
+        Require all denied
+    </DirectoryMatch>
+    <Directory "{{PUBLIC_PATH}}">
+        Options +FollowSymLinks -Indexes -Includes -ExecCGI -MultiViews
+        AllowOverride FileInfo Options=Indexes,MultiViews
+        Require all granted
+    </Directory>
+    <FilesMatch "^\.">
+        Require all denied
+    </FilesMatch>
+    # Inherited Location handlers otherwise take precedence over Directory rules.
+    <LocationMatch "(?i)^/(?:server-status|server-info|phpmyadmin|webalizer|php-cgi)(?:/|$)">
+        SetHandler None
+        Require all denied
+    </LocationMatch>
+    ErrorDocument 403 "Forbidden"
+    ErrorDocument 404 "Not found"
+</VirtualHost>

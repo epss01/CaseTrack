@@ -10,6 +10,14 @@
 .env
 .env.backup
 .env.production
+/.env.production.*
+!/.env.production.example
+/deployment/generated/
+/deployment/test-output/
+/deployment/**/*.key
+/deployment/**/*.pem
+/deployment/**/*.crt
+/deployment/**/*.bak
 .phpactor.json
 .phpunit.result.cache
 Homestead.json
