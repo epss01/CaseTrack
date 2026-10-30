@@ -13,6 +13,18 @@ class CaseEditOptimisticLockTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_a_browser_form_can_save_with_a_string_version_token(): void
+    {
+        $owner = User::factory()->investigator()->create();
+        $case = CaseModel::factory()->assignedTo($owner)->create(['status' => CaseModel::STATUS_DOCKETED]);
+        $payload = $this->payload($case, $case->lock_version, ['case_title' => 'Browser edit']);
+        $payload['lock_version'] = (string) $case->lock_version;
+
+        $this->actingAs($owner)->put(route('cases.update', $case), $payload)->assertSessionHasNoErrors();
+        $this->assertSame('Browser edit', $case->fresh()->case_title);
+        $this->assertSame(1, $case->fresh()->lock_version);
+    }
+
     /** @return array<string, mixed> */
     private function payload(CaseModel $case, int $lockVersion, array $overrides = []): array
     {

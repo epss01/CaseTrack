@@ -24,15 +24,13 @@ Auth::routes(['reset' => false, 'verify' => false]);
 
 Route::get('/home', [HomeController::class, 'index'])->name('home');
 
-// Bulk case intake (CSV/XLSX) — Supervisor-only, unlike the general case
-// routes below: import creates cases and assigns investigators, and reads as
-// bulk data entry rather than ordinary casework (CLAUDE.md, Registration
-// approval and account management / Roles). Registered before
+// Bulk case intake (CSV/XLSX). Investigators import into their own caseload;
+// Supervisors may assign imported cases to eligible investigators. Registered before
 // Route::resource('cases', ...) below: GET cases/import is the same
 // two-segment shape as GET cases/{case} (show), and Laravel matches route
 // definitions in registration order, so the wildcard would otherwise swallow
 // "import" as a case id first.
-Route::middleware(['auth', 'role:Supervisor'])->prefix('cases')->name('cases.')->group(function () {
+Route::middleware(['auth', 'role:Investigator,Supervisor'])->prefix('cases')->name('cases.')->group(function () {
     Route::get('import', [CaseImportController::class, 'create'])->name('import.create');
     Route::post('import/preview', [CaseImportController::class, 'preview'])->name('import.preview');
     Route::post('import', [CaseImportController::class, 'store'])->name('import.store');
@@ -41,6 +39,8 @@ Route::middleware(['auth', 'role:Supervisor'])->prefix('cases')->name('cases.')-
 // The middleware keeps anyone without a case-handling role out entirely;
 // CaseModelPolicy then decides which individual cases are reachable.
 Route::middleware(['auth', 'role:Investigator,Supervisor'])->group(function () {
+    Route::put('cases/{case}/closure', [CaseController::class, 'changeClosure'])
+        ->name('cases.closure.update');
     Route::resource('cases', CaseController::class)
         ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
 

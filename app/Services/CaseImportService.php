@@ -221,8 +221,10 @@ class CaseImportService
      * @param  list<array<string, mixed>>  $rows
      * @return array{ready: list<array<string, mixed>>, errors: list<array{docket_no: ?string, lines: list<int>, messages: list<string>}>, defaulted_weight: int}
      */
-    public function validate(array $rows): array
+    public function validate(array $rows, User $actor): array
     {
+        abort_unless($actor->can('create', CaseModel::class), 403);
+
         $groups = [];
         $errors = [];
 
@@ -255,9 +257,18 @@ class CaseImportService
                 continue;
             }
 
-            [$investigatorId, $investigatorError] = $this->resolveInvestigator(
-                $fields['investigator'] ?? null, $usersByUsername, $usersByFullName
-            );
+            if ($actor->isInvestigator() && blank($fields['investigator'] ?? null)) {
+                $investigatorId = $actor->id;
+                $investigatorError = null;
+            } else {
+                [$investigatorId, $investigatorError] = $this->resolveInvestigator(
+                    $fields['investigator'] ?? null, $usersByUsername, $usersByFullName
+                );
+            }
+
+            if ($actor->isInvestigator() && $investigatorId !== null && $investigatorId !== $actor->id) {
+                $investigatorError = __('You can only import cases assigned to you. Use your username or leave Investigator blank.');
+            }
 
             $complexityWeight = $fields['complexity_weight'] ?? null;
             $defaulted = ! is_numeric($complexityWeight) || (int) $complexityWeight < 1 || (int) $complexityWeight > 5;

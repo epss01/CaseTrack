@@ -11,11 +11,11 @@
 <div class="container-fluid container-wide">
     <div class="row justify-content-center">
         <div class="col-12">
+            <div class="page-heading"><h1>{{ __('Import preview') }}</h1></div>
 
             <div class="card mb-3">
-                <div class="card-header">{{ __('Import Preview') }}</div>
-
                 <div class="card-body">
+                    @include('cases.import.assignment-note')
                     <p class="mb-2">
                         {{ __(':file — :ready case(s) ready to create, :errors row(s) rejected.', [
                             'file' => $fileName,

@@ -10,10 +10,6 @@
     {{-- Every page shared one title, so browser tabs were indistinguishable. --}}
     <title>@hasSection('title')@yield('title') &middot; @endif{{ config('app.name', 'Laravel') }}</title>
 
-    <!-- Fonts -->
-    <link rel="dns-prefetch" href="//fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=Nunito" rel="stylesheet">
-
     <!-- Scripts -->
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
 </head>
@@ -28,20 +24,27 @@
              .container centre a col-md-8/10/11 card that reaches neither
              cap, so there is no edge on them for the navbar to disagree
              with — including the auth screens, whose form is unchanged. --}}
-        <nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm">
+        <nav class="navbar navbar-expand-xl navbar-dark workspace-nav" aria-label="{{ __('Main navigation') }}">
             <div class="container-fluid container-wide">
                 <a class="navbar-brand" href="{{ url('/') }}">
                     <span class="brand-mark" aria-hidden="true">CT</span>
                     {{ config('app.name', 'Laravel') }}
                 </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="{{ __('Toggle navigation') }}">
-                    <span class="navbar-toggler-icon"></span>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false">
+                    {{ __('Menu') }} <span class="navbar-toggler-icon" aria-hidden="true"></span>
                 </button>
 
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
                     <!-- Left Side Of Navbar -->
                     <ul class="navbar-nav me-auto">
                         @auth
+                            @if (Auth::user()->isAdmin())
+                                <li class="nav-item">
+                                    <a class="nav-link @if (request()->routeIs('home')) active @endif"
+                                       @if (request()->routeIs('home')) aria-current="page" @endif
+                                       href="{{ route('home') }}">{{ __('Dashboard') }}</a>
+                                </li>
+                            @endif
                             {{-- Both case-handling roles get a dashboard at /home now:
                                  the investigator's own caseload, or the office-wide one.
                                  Anyone else lands on the plain page and has no use for
@@ -91,12 +94,6 @@
                                        href="{{ route('workload.index') }}">{{ __('Workload') }}</a>
                                 </li>
 
-                                {{-- Bulk case intake, Supervisor-only — see routes/web.php. --}}
-                                <li class="nav-item">
-                                    <a class="nav-link @if (request()->routeIs('cases.import.*')) active @endif"
-                                       @if (request()->routeIs('cases.import.*')) aria-current="page" @endif
-                                       href="{{ route('cases.import.create') }}">{{ __('Import Cases') }}</a>
-                                </li>
                             @endif
 
                             @if (Auth::user()->isAdmin())
@@ -136,11 +133,17 @@
                             @endif
                         @else
                             <li class="nav-item dropdown">
-                                <a id="navbarDropdown" class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
-                                    {{ Auth::user()->full_name }}
-                                </a>
+                                <button id="navbarDropdown" class="nav-link dropdown-toggle account-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <span>{{ Auth::user()->full_name }}</span>
+                                    <span class="account-role">{{ Auth::user()->role?->role_name }}</span>
+                                </button>
 
                                 <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                                    <div class="px-3 py-2 account-identity">
+                                        <strong class="d-block">{{ Auth::user()->full_name }}</strong>
+                                        <span class="text-muted">{{ Auth::user()->role?->role_name }}</span>
+                                    </div>
+                                    <hr class="dropdown-divider">
                                     {{-- A real submit button, not an anchor pointing at a
                                          POST-only route: if the script failed to attach, the
                                          scaffold's version navigated to /logout and 405'd. --}}

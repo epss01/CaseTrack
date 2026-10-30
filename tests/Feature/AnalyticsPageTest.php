@@ -23,6 +23,21 @@ class AnalyticsPageTest extends TestCase
 
     private const PERIOD = ['from' => '2026-01-01', 'to' => '2026-06-30'];
 
+    public function test_resolution_bar_uses_the_same_scale_when_resolutions_exceed_intake(): void
+    {
+        $owner = User::factory()->investigator()->create();
+        $this->caseFor($owner, '2026-02-01');
+        for ($i = 0; $i < 4; $i++) {
+            $this->caseFor($owner, '2025-12-01', '2026-03-01', CaseModel::STATUS_CLOSED);
+        }
+        $this->actingAs($owner)->get(route('reports.analytics', self::PERIOD))
+            ->assertOk()
+            ->assertSee('style="width: 25%"', false)
+            ->assertSee('style="width: 100%"', false)
+            ->assertSeeInOrder(['Clearance Rate', '400.0%'])
+            ->assertSee('Resolved means the Final Investigation Report (FIR) was submitted.');
+    }
+
     // ------------------------------------------------------------ access
 
     public function test_a_guest_is_sent_to_the_login_page(): void
@@ -56,9 +71,9 @@ class AnalyticsPageTest extends TestCase
         $this->actingAs($investigator)
             ->get(route('reports.analytics', self::PERIOD))
             ->assertOk()
-            ->assertSeeInOrder([__('Incoming'), '1'])
-            ->assertSeeInOrder([__('Resolved'), '0'])
-            ->assertSeeInOrder([__('Pending at period end'), '1']);
+            ->assertSeeInOrder([__('Cases received'), '1'])
+            ->assertSeeInOrder([__('Cases resolved'), '0'])
+            ->assertSeeInOrder([__('Backlog at period end'), '1']);
     }
 
     public function test_a_supervisor_sees_the_whole_office(): void
@@ -71,9 +86,9 @@ class AnalyticsPageTest extends TestCase
         $this->actingAs($supervisor)
             ->get(route('reports.analytics', self::PERIOD))
             ->assertOk()
-            ->assertSeeInOrder([__('Incoming'), '2'])
-            ->assertSeeInOrder([__('Resolved'), '1'])
-            ->assertSeeInOrder([__('Pending at period end'), '1'])
+            ->assertSeeInOrder([__('Cases received'), '2'])
+            ->assertSeeInOrder([__('Cases resolved'), '1'])
+            ->assertSeeInOrder([__('Backlog at period end'), '1'])
             ->assertSeeInOrder([__('Clearance Rate'), '50.0%'])
             ->assertSeeInOrder([__('Disposition Time'), __(':n days', ['n' => '181.0'])]);
     }
@@ -89,8 +104,8 @@ class AnalyticsPageTest extends TestCase
         $this->actingAs($investigator)
             ->get(route('reports.analytics', self::PERIOD))
             ->assertOk()
-            ->assertSeeInOrder([__('Incoming'), '0'])
-            ->assertSeeInOrder([__('Resolved'), '1']);
+            ->assertSeeInOrder([__('Cases received'), '0'])
+            ->assertSeeInOrder([__('Cases resolved'), '1']);
     }
 
     public function test_an_open_case_carried_in_from_before_the_period_counts_as_pending(): void
@@ -102,8 +117,8 @@ class AnalyticsPageTest extends TestCase
         $this->actingAs($investigator)
             ->get(route('reports.analytics', self::PERIOD))
             ->assertOk()
-            ->assertSeeInOrder([__('Incoming'), '0'])
-            ->assertSeeInOrder([__('Pending at period end'), '1']);
+            ->assertSeeInOrder([__('Cases received'), '0'])
+            ->assertSeeInOrder([__('Backlog at period end'), '1']);
     }
 
     public function test_undefined_rates_render_as_an_em_dash_not_zero(): void
@@ -113,15 +128,18 @@ class AnalyticsPageTest extends TestCase
         $response = $this->actingAs($investigator)
             ->get(route('reports.analytics', self::PERIOD))
             ->assertOk()
-            ->assertSeeInOrder([__('Clearance Rate'), '—', __('no intake in the period')])
-            ->assertSeeInOrder([__('Disposition Time'), '—', __('nothing resolved in the period')]);
+            ->assertSeeInOrder([__('Clearance Rate'), __('Not available'), __('No cases received in this period.')])
+            ->assertSeeInOrder([__('Disposition Time'), __('Not available'), __('No cases resolved in this period.')]);
+
+        $response->assertSee('No received or resolved cases in this period. Backlog may still remain.')
+            ->assertSee('style="width: 0%"', false);
 
         $this->assertDoesNotMatchRegularExpression(
-            '/Clearance Rate.*?stat-tile__value[^>]*>\s*0(?:\.0)?%/s',
+            '/Clearance Rate.*?h4[^>]*>\s*0(?:\.0)?%/s',
             $response->getContent()
         );
         $this->assertDoesNotMatchRegularExpression(
-            '/Disposition Time.*?stat-tile__value[^>]*>\s*0(?:\.0)?(?:\s+days)?/s',
+            '/Disposition Time.*?h4[^>]*>\s*0(?:\.0)?(?:\s+days)?/s',
             $response->getContent()
         );
     }
@@ -139,7 +157,7 @@ class AnalyticsPageTest extends TestCase
             ->get(route('reports.analytics', self::PERIOD))
             ->assertOk()
             ->assertSee('1 case has no timeline recorded and is not counted.')
-            ->assertSee('1 closed case has no FIR date and is resolved but not counted in any period.');
+            ->assertSee('1 closed case has no FIR date and cannot be placed in a resolution period.');
     }
 
     public function test_caveat_footnotes_are_absent_when_not_relevant(): void
@@ -152,7 +170,7 @@ class AnalyticsPageTest extends TestCase
             ->get(route('reports.analytics', self::PERIOD))
             ->assertOk()
             ->assertDontSee('has no timeline recorded and is not counted')
-            ->assertDontSee('has no FIR date and is resolved but not counted');
+            ->assertDontSee('has no FIR date and cannot be placed');
     }
 
     // ----------------------------------------------------------- filters
@@ -172,9 +190,9 @@ class AnalyticsPageTest extends TestCase
                 'status' => CaseModel::STATUS_DOCKETED,
             ])))
             ->assertOk()
-            ->assertSeeInOrder([__('Incoming'), '1'])
-            ->assertSeeInOrder([__('Resolved'), '0'])
-            ->assertSeeInOrder([__('Pending at period end'), '1']);
+            ->assertSeeInOrder([__('Cases received'), '1'])
+            ->assertSeeInOrder([__('Cases resolved'), '0'])
+            ->assertSeeInOrder([__('Backlog at period end'), '1']);
     }
 
     public function test_an_investigator_cannot_use_the_filter_to_see_a_colleagues_figures(): void
@@ -190,9 +208,9 @@ class AnalyticsPageTest extends TestCase
                 'investigator_id' => $colleague->id,
             ])))
             ->assertOk()
-            ->assertSeeInOrder([__('Incoming'), '0'])
-            ->assertSeeInOrder([__('Resolved'), '0'])
-            ->assertSeeInOrder([__('Pending at period end'), '0']);
+            ->assertSeeInOrder([__('Cases received'), '0'])
+            ->assertSeeInOrder([__('Cases resolved'), '0'])
+            ->assertSeeInOrder([__('Backlog at period end'), '0']);
     }
 
     public function test_only_a_supervisor_is_offered_the_investigator_filter(): void
