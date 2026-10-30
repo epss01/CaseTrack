@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ChangeCaseClosureRequest;
 use App\Http\Requests\ReassignCaseRequest;
 use App\Http\Requests\StoreCaseRequest;
 use App\Http\Requests\UpdateCaseRequest;
@@ -26,7 +27,7 @@ class CaseController extends Controller
      * another investigator's case by URL.
      *
      * It does not cover the custom actions (confirmDelete, reassignForm,
-     * reassign) — those authorize explicitly.
+     * reassign, changeClosure) — those authorize explicitly.
      */
     public function __construct()
     {
@@ -128,8 +129,7 @@ class CaseController extends Controller
      *
      * docket_no and investigator_id are deliberately not editable here:
      * reassigning a case is a supervisory action, not part of casework, and
-     * lives in reassign() below. Closure and reopening use this same edit
-     * workflow, with their additional authorization enforced below.
+     * lives in reassign() below. Closure and reopening use changeClosure().
      *
      * Audited as ACTION_EDIT rather than ACTION_CASE_REASSIGNED.
      *
@@ -151,21 +151,20 @@ class CaseController extends Controller
 
             $this->authorize('update', $fresh);
 
-            if ($fresh->lock_version !== $validated['lock_version']) {
+            if ($fresh->lock_version !== (int) $validated['lock_version']) {
                 throw ValidationException::withMessages([
                     'lock_version' => __('This case was updated by someone else while you were editing. Reload the page to see the latest version before saving again.'),
                 ]);
             }
 
             $onBehalf = $request->user()->isSupervisor() && $fresh->investigator_id !== $request->user()->id;
-            $closureAction = null;
 
             if ($fresh->status !== $validated['status']
                 && ($fresh->status === CaseModel::STATUS_CLOSED || $validated['status'] === CaseModel::STATUS_CLOSED)) {
                 $this->authorize('changeClosure', $fresh);
-                $closureAction = $validated['status'] === CaseModel::STATUS_CLOSED
-                    ? AuditLog::ACTION_CASE_CLOSED
-                    : AuditLog::ACTION_CASE_REOPENED;
+                throw ValidationException::withMessages([
+                    'status' => __('Use Close case or Reopen case on case details to change the closure status.'),
+                ]);
             }
 
             $fresh->fill(collect($validated)->except(['lock_version', 'reason'])->all());
@@ -177,15 +176,48 @@ class CaseController extends Controller
             } else {
                 AuditLog::record($request->user(), $fresh, AuditLog::ACTION_EDIT);
             }
-
-            if ($closureAction !== null) {
-                AuditLog::record($request->user(), $fresh, $closureAction);
-            }
         });
 
         return redirect()
             ->route('cases.show', $case)
             ->with('status', __('Case updated.'));
+    }
+
+    public function changeClosure(ChangeCaseClosureRequest $request, CaseModel $case)
+    {
+        $this->authorize('changeClosure', $case);
+        $validated = $request->validated();
+
+        DB::transaction(function () use ($request, $case, $validated) {
+            $fresh = CaseModel::whereKey($case->getKey())->lockForUpdate()->firstOrFail();
+            $this->authorize('changeClosure', $fresh);
+
+            if ($fresh->lock_version !== (int) $validated['lock_version']) {
+                throw ValidationException::withMessages([
+                    'lock_version' => __('This case has changed. Review the latest case details before trying again.'),
+                ]);
+            }
+
+            $closing = $validated['status'] === CaseModel::STATUS_CLOSED;
+            if (($fresh->status === CaseModel::STATUS_CLOSED) === $closing) {
+                throw ValidationException::withMessages([
+                    'status' => __('Choose an active status when reopening, or use Edit case for ordinary status changes.'),
+                ]);
+            }
+
+            $fresh->status = $validated['status'];
+            $fresh->lock_version++;
+            $fresh->save();
+
+            AuditLog::record($request->user(), $fresh, AuditLog::ACTION_EDIT);
+            AuditLog::record($request->user(), $fresh, $closing
+                ? AuditLog::ACTION_CASE_CLOSED
+                : AuditLog::ACTION_CASE_REOPENED);
+        });
+
+        return to_route('cases.show', $case)->with('status', $validated['status'] === CaseModel::STATUS_CLOSED
+            ? __('Case closed.')
+            : __('Case reopened.'));
     }
 
     /**

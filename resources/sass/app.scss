@@ -1,5 +1,19 @@
 // Fonts
-@import url('https://fonts.bunny.net/css?family=Nunito');
+@font-face {
+    font-family: 'Manrope';
+    src: url('../fonts/manrope.ttf') format('truetype');
+    font-style: normal;
+    font-weight: 200 800;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Source Sans 3';
+    src: url('../fonts/source-sans-3.ttf') format('truetype');
+    font-style: normal;
+    font-weight: 200 900;
+    font-display: swap;
+}
 
 // Variables
 @import 'variables';

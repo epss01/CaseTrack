@@ -157,7 +157,7 @@ class CaseImportServiceTest extends TestCase
         ]);
 
         $importer = new CaseImportService;
-        $result = $importer->validate($importer->parse($path));
+        $result = $importer->validate($importer->parse($path), User::factory()->supervisor()->create());
 
         $this->assertCount(1, $result['ready']);
         $this->assertCount(2, $result['ready'][0]['victims']);
@@ -175,7 +175,7 @@ class CaseImportServiceTest extends TestCase
         ]);
 
         $importer = new CaseImportService;
-        $result = $importer->validate($importer->parse($path));
+        $result = $importer->validate($importer->parse($path), User::factory()->supervisor()->create());
 
         $this->assertCount(1, $result['ready']);
         $this->assertSame(CaseModel::STATUS_CLOSED, $result['ready'][0]['status']);
@@ -195,7 +195,7 @@ class CaseImportServiceTest extends TestCase
         ]);
 
         $importer = new CaseImportService;
-        $result = $importer->validate($importer->parse($path));
+        $result = $importer->validate($importer->parse($path), User::factory()->supervisor()->create());
 
         $this->assertSame([], $result['ready']);
         $this->assertCount(1, $result['errors']);
@@ -210,7 +210,7 @@ class CaseImportServiceTest extends TestCase
         ]);
 
         $importer = new CaseImportService;
-        $result = $importer->validate($importer->parse($path));
+        $result = $importer->validate($importer->parse($path), User::factory()->supervisor()->create());
 
         $this->assertSame([], $result['ready']);
         $this->assertStringContainsString('nobody', $result['errors'][0]['messages'][0]);
@@ -227,7 +227,7 @@ class CaseImportServiceTest extends TestCase
         ]);
 
         $importer = new CaseImportService;
-        $result = $importer->validate($importer->parse($path));
+        $result = $importer->validate($importer->parse($path), User::factory()->supervisor()->create());
 
         $this->assertSame([], $result['ready']);
         $this->assertStringContainsString('more than one account', $result['errors'][0]['messages'][0]);
@@ -243,7 +243,7 @@ class CaseImportServiceTest extends TestCase
         ]);
 
         $importer = new CaseImportService;
-        $result = $importer->validate($importer->parse($path));
+        $result = $importer->validate($importer->parse($path), User::factory()->supervisor()->create());
 
         $this->assertSame(3, $result['ready'][0]['complexity_weight']);
         $this->assertSame(1, $result['defaulted_weight']);
@@ -259,7 +259,7 @@ class CaseImportServiceTest extends TestCase
         ]);
 
         $importer = new CaseImportService;
-        $result = $importer->validate($importer->parse($path));
+        $result = $importer->validate($importer->parse($path), User::factory()->supervisor()->create());
 
         $this->assertSame([], $result['ready']);
         $this->assertNotEmpty($result['errors']);
@@ -275,7 +275,7 @@ class CaseImportServiceTest extends TestCase
         ]);
 
         $importer = new CaseImportService;
-        $result = $importer->validate($importer->parse($path));
+        $result = $importer->validate($importer->parse($path), User::factory()->supervisor()->create());
 
         $this->assertSame([], $result['ready']);
         $this->assertSame([2], $result['errors'][0]['lines']);

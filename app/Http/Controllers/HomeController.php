@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CaseModel;
+use App\Models\User;
 use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Http\Request;
 
@@ -32,6 +33,18 @@ class HomeController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
+
+        if ($user->isAdmin()) {
+            $approved = User::query()->where('registration_status', User::REGISTRATION_APPROVED);
+
+            return view('admin.dashboard', [
+                'pendingCount' => User::where('registration_status', User::REGISTRATION_PENDING)->count(),
+                'activeCount' => (clone $approved)->where('is_active', true)->count(),
+                'inactiveCount' => (clone $approved)->where('is_active', false)->count(),
+                'pending' => User::where('registration_status', User::REGISTRATION_PENDING)
+                    ->with('role')->oldest()->orderBy('id')->limit(5)->get(),
+            ]);
+        }
 
         if ($user->isSupervisor()) {
             return $this->supervisorDashboard();

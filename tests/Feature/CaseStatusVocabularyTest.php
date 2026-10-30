@@ -16,7 +16,7 @@ class CaseStatusVocabularyTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_the_assigned_investigator_is_offered_all_four_statuses(): void
+    public function test_ordinary_edit_offers_only_the_three_active_statuses(): void
     {
         $investigator = User::factory()->investigator()->create();
         $case = CaseModel::factory()->assignedTo($investigator)->create(['status' => CaseModel::STATUS_DOCKETED]);
@@ -27,7 +27,7 @@ class CaseStatusVocabularyTest extends TestCase
             ->assertSee(CaseModel::STATUS_DOCKETED)
             ->assertSee(CaseModel::STATUS_UNDER_INVESTIGATION)
             ->assertSee(CaseModel::STATUS_FOR_REVIEW)
-            ->assertSee(CaseModel::STATUS_CLOSED);
+            ->assertDontSee('<option value="Closed"', false);
     }
 
     public function test_the_two_new_statuses_are_selectable_and_persist(): void

@@ -11,104 +11,23 @@
 <div class="container-fluid container-wide">
     <div class="row justify-content-center">
         <div class="col-12">
-            <div class="identity-bar mb-3">
-                <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
-                    <div>
-                        <h1 class="identity-bar__title">
-                            <span class="identity-bar__eyebrow">{{ __('Analytics') }}</span>
-                            <span class="identity-bar__name">
-                                {{ $officeWide ? __('Office-wide') : __('My cases') }}
-                                <span class="role-pill">{{ $user->role?->role_name }}</span>
-                            </span>
-                        </h1>
-
-                        <div class="identity-bar__meta">
-                            {{ $user->office_region }} &middot;
-                            {{ $periodFrom->translatedFormat('d M Y') }} &ndash; {{ $periodTo->translatedFormat('d M Y') }}
-                            &middot;
-                            {{ trans_choice('{1} :n day|[2,*] :n days', $metrics['period_days'], ['n' => $metrics['period_days']]) }}
-                        </div>
-                    </div>
-
-                    <a href="{{ route('reports.index') }}" class="btn btn-sm btn-outline-light">
-                        {{ __('View reports') }}
-                    </a>
+            @include('reports.partials.navigation')
+            <div class="page-heading">
+                <div>
+                    <h1>{{ __('Analytics') }}</h1>
+                    <p class="text-muted mb-0">{{ $officeWide ? __('Office-wide') : __('My cases') }} · {{ $user->office_region }}</p>
                 </div>
-
-                <div class="identity-bar__divider"></div>
-
-                <div class="row row-cols-2 row-cols-lg-5 g-3">
-                    <div class="col">
-                        <div class="stat-tile">
-                            <span class="stat-tile__icon">@include('partials.icon', ['name' => 'folder'])</span>
-                            <span>
-                                <span class="stat-tile__label">{{ __('Incoming') }}</span>
-                                <span class="stat-tile__value">{{ $metrics['incoming'] }}</span>
-                            </span>
-                        </div>
-                    </div>
-
-                    <div class="col">
-                        <div class="stat-tile">
-                            <span class="stat-tile__icon">@include('partials.icon', ['name' => 'check-circle'])</span>
-                            <span>
-                                <span class="stat-tile__label">{{ __('Resolved') }}</span>
-                                <span class="stat-tile__value">{{ $metrics['resolved'] }}</span>
-                            </span>
-                        </div>
-                    </div>
-
-                    <div class="col">
-                        <div class="stat-tile">
-                            <span class="stat-tile__icon">@include('partials.icon', ['name' => 'clock'])</span>
-                            <span>
-                                <span class="stat-tile__label">{{ __('Pending at period end') }}</span>
-                                <span class="stat-tile__value">{{ $metrics['pending'] }}</span>
-                            </span>
-                        </div>
-                    </div>
-
-                    <div class="col">
-                        <div class="stat-tile">
-                            <span class="stat-tile__icon">@include('partials.icon', ['name' => 'layers'])</span>
-                            <span>
-                                <span class="stat-tile__label">{{ __('Clearance Rate') }}</span>
-                                <span class="stat-tile__value">
-                                    {{ $metrics['clearance_rate'] === null ? '—' : number_format($metrics['clearance_rate'], 1).'%' }}
-                                </span>
-                                @if ($metrics['clearance_rate'] === null)
-                                    <span class="stat-tile__note">{{ __('no intake in the period') }}</span>
-                                @endif
-                            </span>
-                        </div>
-                    </div>
-
-                    <div class="col">
-                        <div class="stat-tile">
-                            <span class="stat-tile__icon">@include('partials.icon', ['name' => 'clock'])</span>
-                            <span>
-                                <span class="stat-tile__label">{{ __('Disposition Time') }}</span>
-                                <span class="stat-tile__value">
-                                    {{ $metrics['disposition_days'] === null ? '—' : __(':n days', ['n' => number_format($metrics['disposition_days'], 1)]) }}
-                                </span>
-                                @if ($metrics['disposition_days'] === null)
-                                    <span class="stat-tile__note">{{ __('nothing resolved in the period') }}</span>
-                                @endif
-                            </span>
-                        </div>
-                    </div>
-                </div>
+                <p class="mb-0 text-muted">
+                    {{ $periodFrom->translatedFormat('d M Y') }} &ndash; {{ $periodTo->translatedFormat('d M Y') }}
+                    · {{ trans_choice('{1} :n day|[2,*] :n days', $metrics['period_days'], ['n' => $metrics['period_days']]) }}
+                </p>
             </div>
 
-            <div class="card mb-3">
-                <div class="card-header">
-                    <h2 class="h6 mb-0">{{ __('Filter') }}</h2>
-                </div>
-
+            <div class="card filter-panel mb-3">
                 <div class="card-body">
                     <form method="GET" action="{{ route('reports.analytics') }}">
-                        <div class="row g-3 align-items-end">
-                            <div class="col-sm-6 col-lg-3">
+                        <div class="filter-fields">
+                            <div class="filter-field">
                                 <label for="from" class="form-label">{{ __('Period from') }}</label>
                                 <input type="date" class="form-control @error('from') is-invalid @enderror"
                                        id="from" name="from" value="{{ $filters['from'] }}">
@@ -117,7 +36,7 @@
                                 @enderror
                             </div>
 
-                            <div class="col-sm-6 col-lg-3">
+                            <div class="filter-field">
                                 <label for="to" class="form-label">{{ __('Period to') }}</label>
                                 <input type="date" class="form-control @error('to') is-invalid @enderror"
                                        id="to" name="to" value="{{ $filters['to'] }}">
@@ -127,7 +46,7 @@
                             </div>
 
                             @if ($officeWide)
-                                <div class="col-sm-6 col-lg-3">
+                                <div class="filter-field">
                                     <label for="investigator_id" class="form-label">{{ __('Investigator') }}</label>
                                     <select class="form-select @error('investigator_id') is-invalid @enderror"
                                             id="investigator_id" name="investigator_id">
@@ -145,7 +64,7 @@
                                 </div>
                             @endif
 
-                            <div class="col-sm-6 col-lg-3">
+                            <div class="filter-field">
                                 <label for="status" class="form-label">{{ __('Status') }}</label>
                                 <input type="text" class="form-control @error('status') is-invalid @enderror"
                                        id="status" name="status" value="{{ $filters['status'] ?? '' }}"
@@ -160,7 +79,7 @@
                                 @enderror
                             </div>
 
-                            <div class="col-12 d-flex gap-2 justify-content-end">
+                            <div class="filter-actions">
                                 <a href="{{ route('reports.analytics') }}" class="btn btn-outline-secondary">
                                     {{ __('Clear') }}
                                 </a>
@@ -171,19 +90,91 @@
                 </div>
             </div>
 
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="h6 mb-0">{{ __('How these figures are calculated') }}</h2>
+            <div class="row g-3 mb-3" aria-label="{{ __('Period totals') }}">
+                @foreach ([
+                    ['label' => __('Cases received'), 'value' => $metrics['incoming'], 'note' => __('Cases docketed in this period.')],
+                    ['label' => __('Cases resolved'), 'value' => $metrics['resolved'], 'note' => __('Cases with an FIR submitted in this period.')],
+                    ['label' => __('Backlog at period end'), 'value' => $metrics['pending'], 'note' => __('Cases pending on the end date.')],
+                ] as $metric)
+                    <div class="col-md-4">
+                        <section class="card h-100">
+                            <div class="card-body">
+                                <h2 class="h6 mb-1">{{ $metric['label'] }}</h2>
+                                <p class="analytics-value mb-1">{{ number_format($metric['value']) }}</p>
+                                <p class="text-muted mb-0">{{ $metric['note'] }}</p>
+                            </div>
+                        </section>
+                    </div>
+                @endforeach
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-lg-8">
+                    <figure class="card h-100 mb-0" aria-labelledby="flow-chart-title" aria-describedby="flow-chart-note">
+                        <div class="card-body">
+                            <h2 id="flow-chart-title">{{ __('Received versus resolved') }}</h2>
+                            <p class="text-muted">{{ __('Cases received and resolved in this period.') }}</p>
+                            @php
+                                $chartMax = max(4, (int) ceil(max($metrics['incoming'], $metrics['resolved']) / 4) * 4);
+                            @endphp
+                            @foreach ([__('Received') => 'incoming', __('Resolved · FIR submitted') => 'resolved'] as $label => $key)
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between gap-3 mb-1">
+                                        <span>{{ $label }}</span>
+                                        <strong>{{ number_format($metrics[$key]) }}</strong>
+                                    </div>
+                                    <div class="analytics-bar-track" aria-hidden="true">
+                                        <div class="analytics-bar {{ $key === 'resolved' ? 'analytics-bar--resolved' : '' }}" style="width: {{ $metrics[$key] / $chartMax * 100 }}%"></div>
+                                    </div>
+                                </div>
+                            @endforeach
+                            <div class="d-flex justify-content-between text-muted small" aria-hidden="true">
+                                @foreach (range(0, 4) as $tick)
+                                    <span>{{ number_format($chartMax * $tick / 4) }}</span>
+                                @endforeach
+                            </div>
+                            @if ($metrics['incoming'] === 0 && $metrics['resolved'] === 0)
+                                <p class="mt-3 mb-0">{{ __('No received or resolved cases in this period. Backlog may still remain.') }}</p>
+                            @endif
+                            <figcaption id="flow-chart-note" class="text-muted mt-3">
+                                {{ __('Backlog is shown separately above.') }}
+                            </figcaption>
+                        </div>
+                    </figure>
                 </div>
+                <div class="col-lg-4">
+                    <section class="card h-100">
+                        <div class="card-body">
+                            <h2>{{ __('Key measures') }}</h2>
+                            <h3 class="h6 mt-3">{{ __('Clearance Rate') }}</h3>
+                            <p class="analytics-value">{{ $metrics['clearance_rate'] === null ? __('Not available') : number_format($metrics['clearance_rate'], 1).'%' }}</p>
+                            <p class="text-muted">{{ $metrics['clearance_rate'] === null
+                                ? __('No cases received in this period.')
+                                : __('Resolved ÷ received. Above 100% means older cases were also resolved.') }}</p>
+                            <h3 class="h6 mt-4">{{ __('Disposition Time') }}</h3>
+                            <p class="analytics-value">{{ $metrics['disposition_days'] === null ? __('Not available') : __(':n days', ['n' => number_format($metrics['disposition_days'], 1)]) }}</p>
+                            <p class="text-muted mb-0">{{ $metrics['disposition_days'] === null
+                                ? __('No cases resolved in this period.')
+                                : __('Backlog expressed in days at this period’s resolution rate. Not a completion forecast.') }}</p>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <div class="card">
                 <div class="card-body">
-                    <p>
-                        <strong>{{ __('Clearance Rate:') }}</strong>
-                        {{ __('cases resolved during the period divided by cases received during the period, multiplied by 100.') }}
-                    </p>
-                    <p class="mb-0">
-                        <strong>{{ __('Disposition Time:') }}</strong>
-                        {{ __('cases pending at the end of the period divided by cases resolved during the period, multiplied by the number of days in the period.') }}
-                    </p>
+                    <p>{{ __('Resolved means the Final Investigation Report (FIR) was submitted. Closing a case does not record its FIR date.') }}</p>
+                    <details class="calculation-details">
+                        <summary>{{ __('How we calculate this') }}</summary>
+                        <p class="mt-2">
+                            <strong>{{ __('Clearance Rate:') }}</strong>
+                            {{ __('cases resolved during the period divided by cases received during the period, multiplied by 100.') }}
+                        </p>
+                        <p class="mb-0">
+                            <strong>{{ __('Disposition Time:') }}</strong>
+                            {{ __('cases pending at the end of the period divided by cases resolved during the period, multiplied by the number of days in the period.') }}
+                        </p>
+                    </details>
 
                     @if ($metrics['untracked'] > 0)
                         <p class="text-muted small mb-0 mt-3">
@@ -198,7 +189,7 @@
                     @if ($metrics['closed_without_date'] > 0)
                         <p class="text-muted small mb-0 mt-3">
                             {{ trans_choice(
-                                '{1} :n closed case has no FIR date and is resolved but not counted in any period.|[2,*] :n closed cases have no FIR date and are resolved but not counted in any period.',
+                                '{1} :n closed case has no FIR date and cannot be placed in a resolution period.|[2,*] :n closed cases have no FIR date and cannot be placed in a resolution period.',
                                 $metrics['closed_without_date'],
                                 ['n' => $metrics['closed_without_date']]
                             ) }}
