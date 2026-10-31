@@ -163,6 +163,40 @@ or `resources/js`, names the file involved, and tells you what to run. It skips 
 Only `resources/sass/**` and `resources/js/**` are compiled. Blade templates, PHP classes and
 routes are read at request time and never need a rebuild.
 
+## Case imports
+
+Import accepts the CHR monitoring XLSX workbook with its existing title and merged
+headers, or a flat CSV/XLSX using the labels shown on the upload page. Only the active
+worksheet is imported. Repeat docket numbers for additional people, or explicitly
+merge the docket cells; unmerged blank docket numbers are rejected.
+
+Supervisors can select a fallback investigator for a blank investigator heading.
+A name already in the workbook must resolve to an eligible account and is never
+overridden by the selector. Investigators can import only their own cases.
+Preview reports incomplete cases before anything is written. Missing case status
+defaults to Docketed, complexity defaults to 3 for review, and torture classification
+remains unknown.
+
+CHR's 30-day extension **request date** and 120th-day ROP **submission date** are
+stored separately from deadlines. They can be viewed and edited on the case timeline;
+neither grants an extension nor marks the FIR submitted. Run `php artisan migrate`
+before using this importer on another installation. Existing CSV export labels
+and deadline calculations are unchanged.
+
+The application accepts files up to **20 MB**. Configure the PHP runtime serving
+the website (not just CLI PHP), then restart that server:
+
+```ini
+upload_max_filesize = 20M
+post_max_size = 24M
+```
+
+Any reverse proxy or web-server request limit must also allow the multipart request.
+Workbook size alone does not predict parsing memory: a highly compressed workbook
+with many populated cells may require splitting into smaller imports. Local testing
+of a 6.3 MB synthetic CHR workbook with 350 rows used 58 MB peak PHP memory and
+0.88 seconds for parsing; this is not a guarantee for every 20 MB workbook.
+
 ## Project Structure
 
 Beyond the `laravel/ui` scaffold, the app is organized by feature:

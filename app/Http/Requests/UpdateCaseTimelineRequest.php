@@ -52,6 +52,8 @@ class UpdateCaseTimelineRequest extends FormRequest
             'submission_120th_day' => array_merge(['nullable', 'date'], $chronology['submission_120th_day']),
             'target_date_fir' => array_merge(['nullable', 'date'], $chronology['target_date_fir']),
             'date_fir_submitted' => array_merge(['nullable', 'date'], $chronology['date_fir_submitted']),
+            'date_extension_30_days_requested' => array_merge(['nullable', 'date'], $chronology['date_extension_30_days_requested']),
+            'date_submission_120th_day_rop' => array_merge(['nullable', 'date'], $chronology['date_submission_120th_day_rop']),
 
             // Despite the column name this records who the report went to,
             // not a date.
@@ -74,6 +76,8 @@ class UpdateCaseTimelineRequest extends FormRequest
             'target_date_fir' => __('target date (FIR)'),
             'date_fir_submitted' => __('date FIR submitted'),
             'date_submitted_to' => __('submitted to'),
+            'date_extension_30_days_requested' => __('30-day extension request date'),
+            'date_submission_120th_day_rop' => __('120th-day ROP submission date'),
         ];
     }
 }

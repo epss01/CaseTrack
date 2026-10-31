@@ -10,6 +10,7 @@ use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Validator as ValidatorFacade;
 use Illuminate\Support\Str;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 
@@ -68,6 +69,10 @@ class CaseImportService
         'Respondent Status' => 'respondent_status',
         'Respondent Sector' => 'respondent_sector',
         'Complainant Name' => 'complainant_name',
+        '30-day Extension Requested' => 'date_extension_30_days_requested',
+        '120th-day ROP Submitted' => 'date_submission_120th_day_rop',
+        '60th-day RORP Submitted' => 'date_submission_60th_day_rorp',
+        'Target Date of FIR' => 'target_date_fir',
     ];
 
     private const REQUIRED_KEYS = ['docket_no', 'case_title', 'date_of_docket'];
@@ -97,6 +102,8 @@ class CaseImportService
         'date_of_docket', 'extension_30_days', 'date_submission_rop',
         'submission_120th_day', 'date_fir_submitted', 'incident_details',
         'source_info', 'date_submitted_to',
+        'date_extension_30_days_requested', 'date_submission_120th_day_rop',
+        'date_submission_60th_day_rorp', 'target_date_fir',
     ];
 
     /**
@@ -108,6 +115,8 @@ class CaseImportService
     private const DATE_KEYS = [
         'date_of_docket', 'date_submission_rop', 'extension_30_days',
         'submission_120th_day', 'date_fir_submitted',
+        'date_extension_30_days_requested', 'date_submission_120th_day_rop',
+        'date_submission_60th_day_rorp', 'target_date_fir',
     ];
 
     /**
@@ -164,8 +173,14 @@ class CaseImportService
     {
         try {
             $reader = IOFactory::createReaderForFile($path);
-            $reader->setReadDataOnly(true);
-            $grid = $reader->load($path)->getActiveSheet()->toArray(null, true, false, false);
+            // XLSX's data-only mode discards the merges that define CHR's headers.
+            $reader->setReadDataOnly(false);
+            $reader->setReadEmptyCells(false);
+            $book = $reader->load($path);
+            $sheet = $book->getActiveSheet();
+            $grid = $sheet->rangeToArray('A1:'.$sheet->getHighestDataColumn().$sheet->getHighestDataRow(), null, true, false, false);
+            $merges = array_map(fn ($range) => Coordinate::rangeBoundaries($range), array_values($sheet->getMergeCells()));
+            $book->disconnectWorksheets();
         } catch (\Throwable $e) {
             throw new \RuntimeException(__('The file could not be read. Confirm it is a valid CSV or XLSX export.'), previous: $e);
         }
@@ -180,11 +195,76 @@ class CaseImportService
             $keyByNormalizedLabel[$this->normalizeLabel($label)] = $key;
         }
 
-        $header = array_shift($grid);
+        $headerIndex = 0;
+        $headerEnd = 0;
+        $investigator = null;
+        $chr = false;
+        foreach (array_slice($grid, 0, 50, true) as $i => $cells) {
+            $labels = array_map(fn ($cell) => $this->normalizeLabel((string) $cell), $cells);
+            if (in_array('docket no.', $labels, true) && in_array('case title', $labels, true)
+                && in_array('victim/s', $labels, true) && in_array('respondent/s', $labels, true)) {
+                $headerIndex = $i;
+                $headerEnd = $i;
+                $chr = true;
+                break;
+            }
+        }
+
+        if ($chr) {
+            // Only explicit header merges are expanded; data blanks are not filled down.
+            foreach ($merges as [[$left, $top], [$right, $bottom]]) {
+                if ($top < $headerIndex + 1 || $top > $headerIndex + 4) {
+                    continue;
+                }
+                $headerEnd = max($headerEnd, $bottom - 1);
+                $value = $grid[$top - 1][$left - 1] ?? null;
+                for ($r = $top - 1; $r < $bottom; $r++) {
+                    for ($c = $left - 1; $c < $right; $c++) {
+                        $grid[$r][$c] = $value;
+                    }
+                }
+            }
+            $aliases = [
+                'case title' => 'case_title', 'complainant' => 'complainant_name',
+                'date/place of incident' => 'incident_details',
+                'date of submission of initial report (rop)' => 'date_submission_rop',
+                'request for 30-days extension (initial report) (rop)' => 'date_extension_30_days_requested',
+                'date of submission 60th day (rorp) (torture cases)' => 'date_submission_60th_day_rorp',
+                'date of submission 120th day (rop)' => 'date_submission_120th_day_rop',
+                'target date of fir' => 'target_date_fir', 'date of fir submitted' => 'date_fir_submitted',
+            ];
+            $keyByNormalizedLabel += $aliases;
+            foreach (array_slice($grid, 0, $headerIndex) as $cells) {
+                foreach ($cells as $c => $value) {
+                    if (preg_match('/^NAME OF INVESTIGATOR\s*:\s*(.*)$/i', trim((string) $value), $match)) {
+                        $investigator = trim($match[1], " _\t\n\r");
+                        if ($investigator === '') {
+                            $investigator = trim((string) ($cells[$c + 1] ?? ''), " _\t\n\r");
+                        }
+                    }
+                }
+            }
+        }
+
+        $header = $grid[$headerIndex];
         $keyByColumn = array_map(
             fn ($label) => $keyByNormalizedLabel[$this->normalizeLabel((string) $label)] ?? null,
             $header
         );
+
+        if ($chr) {
+            foreach ($header as $c => $label) {
+                $group = $this->normalizeLabel((string) $label);
+                for ($r = $headerIndex; $r <= $headerEnd; $r++) {
+                    $label = $this->normalizeLabel((string) ($grid[$r][$c] ?? ''));
+                    if (in_array($group, ['victim/s', 'respondent/s'], true) && in_array($label, ['name', 'age', 'status', 'sector'], true)) {
+                        $keyByColumn[$c] = ($group === 'victim/s' ? 'victim_' : 'respondent_').$label;
+                    } elseif (isset($keyByNormalizedLabel[$label])) {
+                        $keyByColumn[$c] = $keyByNormalizedLabel[$label];
+                    }
+                }
+            }
+        }
 
         $missing = array_diff(self::REQUIRED_KEYS, array_filter($keyByColumn));
         if ($missing !== []) {
@@ -195,8 +275,8 @@ class CaseImportService
         }
 
         $rows = [];
-        foreach ($grid as $i => $cells) {
-            $row = ['_line' => $i + 2];
+        foreach (array_slice($grid, $headerEnd + 1, null, true) as $i => $cells) {
+            $row = ['_line' => $i + 1];
             foreach ($keyByColumn as $column => $key) {
                 if ($key !== null) {
                     $row[$key] = $this->cleanCell($cells[$column] ?? null, $key);
@@ -205,6 +285,18 @@ class CaseImportService
 
             if ($this->isBlankRow($row)) {
                 continue;
+            }
+
+            if ($chr && blank($row['docket_no'] ?? null)) {
+                $column = array_search('docket_no', $keyByColumn, true) + 1;
+                foreach ($merges as [[$left, $top], [$right, $bottom]]) {
+                    if ($left === $column && $right === $column && $top > $headerEnd + 1 && $i + 1 > $top && $i + 1 <= $bottom) {
+                        $row['docket_no'] = $this->cleanCell($grid[$top - 1][$column - 1] ?? null, 'docket_no');
+                    }
+                }
+            }
+            if ($chr && filled($investigator)) {
+                $row['investigator'] = $investigator;
             }
 
             $rows[] = $row;
@@ -221,7 +313,7 @@ class CaseImportService
      * @param  list<array<string, mixed>>  $rows
      * @return array{ready: list<array<string, mixed>>, errors: list<array{docket_no: ?string, lines: list<int>, messages: list<string>}>, defaulted_weight: int}
      */
-    public function validate(array $rows, User $actor): array
+    public function validate(array $rows, User $actor, ?int $fallbackInvestigatorId = null): array
     {
         abort_unless($actor->can('create', CaseModel::class), 403);
 
@@ -248,6 +340,7 @@ class CaseImportService
         $defaultedWeight = 0;
 
         foreach ($groups as $docket => $groupRows) {
+            $docket = (string) $docket;
             $lines = array_column($groupRows, '_line');
             [$fields, $conflicts] = $this->collapseCaseFields($groupRows);
 
@@ -257,7 +350,10 @@ class CaseImportService
                 continue;
             }
 
-            if ($actor->isInvestigator() && blank($fields['investigator'] ?? null)) {
+            if ($actor->isSupervisor() && blank($fields['investigator'] ?? null) && $fallbackInvestigatorId !== null) {
+                $investigatorId = $fallbackInvestigatorId;
+                $investigatorError = null;
+            } elseif ($actor->isInvestigator() && blank($fields['investigator'] ?? null)) {
                 $investigatorId = $actor->id;
                 $investigatorError = null;
             } else {
@@ -290,6 +386,10 @@ class CaseImportService
                 'submission_120th_day' => $fields['submission_120th_day'] ?? null,
                 'date_fir_submitted' => $fields['date_fir_submitted'] ?? null,
                 'date_submitted_to' => $fields['date_submitted_to'] ?? null,
+                'date_extension_30_days_requested' => $fields['date_extension_30_days_requested'] ?? null,
+                'date_submission_120th_day_rop' => $fields['date_submission_120th_day_rop'] ?? null,
+                'date_submission_60th_day_rorp' => $fields['date_submission_60th_day_rorp'] ?? null,
+                'target_date_fir' => $fields['target_date_fir'] ?? null,
                 'complainants' => $complainants,
                 'victims' => $victims,
                 'respondents' => $respondents,
@@ -307,12 +407,12 @@ class CaseImportService
                 $rules['investigator_id'] = ['integer', Role::assignableInvestigatorRule()];
             }
             $rules['status'] = CaseModel::statusRulesFor(new CaseModel);
-            foreach (['date_submission_rop', 'extension_30_days', 'submission_120th_day', 'date_fir_submitted'] as $dateKey) {
+            foreach (array_diff(self::DATE_KEYS, ['date_of_docket']) as $dateKey) {
                 $rules[$dateKey] = array_merge(['nullable', 'date'], CaseTimeline::chronologyRules()[$dateKey]);
             }
             $rules['date_submitted_to'] = ['nullable', 'string', 'max:255'];
 
-            $messages = ValidatorFacade::make($data, $rules, [], self::ATTRIBUTES)->errors()->all();
+            $messages = ValidatorFacade::make($data, $rules, [], self::ATTRIBUTES + array_flip(self::IMPORT_ONLY_COLUMNS))->errors()->all();
 
             if ($investigatorError !== null) {
                 array_unshift($messages, $investigatorError);
@@ -476,7 +576,7 @@ class CaseImportService
             }
         }
 
-        return in_array($key, self::DATE_KEYS, true) ? $this->normalizeDate($value) : $value;
+        return in_array($key, self::DATE_KEYS, true) ? $this->normalizeDate($value) : (string) $value;
     }
 
     /**
