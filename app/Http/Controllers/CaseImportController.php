@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\UploadCaseImportRequest;
 use App\Models\AuditLog;
 use App\Models\CaseModel;
+use App\Models\Role;
 use App\Models\User;
 use App\Services\CaseImportService;
 use Illuminate\Http\Request;
@@ -29,9 +30,14 @@ class CaseImportController extends Controller
         $this->middleware('can:create,App\Models\CaseModel');
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        return view('cases.import.create');
+        return view('cases.import.create', [
+            'investigators' => $request->user()->isSupervisor()
+                ? User::whereRelation('role', 'role_name', Role::INVESTIGATOR)->approved()
+                    ->where('is_active', true)->orderBy('last_name')->orderBy('first_name')->get()
+                : collect(),
+        ]);
     }
 
     /**
@@ -47,10 +53,12 @@ class CaseImportController extends Controller
     public function preview(UploadCaseImportRequest $request, CaseImportService $importer)
     {
         $upload = $request->file('file');
+        session()->forget('case_import');
+        $fallback = $request->filled('investigator_id') ? $request->integer('investigator_id') : null;
         $path = $upload->storeAs('imports', "user-{$request->user()->id}.".strtolower($upload->getClientOriginalExtension()));
 
         try {
-            $result = $importer->validate($importer->parse(Storage::path($path)), $request->user());
+            $result = $importer->validate($importer->parse(Storage::path($path)), $request->user(), $fallback);
         } catch (\RuntimeException $e) {
             Storage::delete($path);
 
@@ -61,6 +69,7 @@ class CaseImportController extends Controller
             'case_import.path' => $path,
             'case_import.original_name' => $upload->getClientOriginalName(),
             'case_import.user_id' => $request->user()->id,
+            'case_import.investigator_id' => $fallback,
         ]);
 
         // Ready rows only carry investigator_id; resolved here so the
@@ -104,8 +113,11 @@ class CaseImportController extends Controller
                 ->withErrors(['file' => __('Nothing to import — upload a file first.')]);
         }
 
+        $fallback = session('case_import.investigator_id');
+        abort_if($fallback !== null && ! $request->user()->isSupervisor(), 403);
+
         try {
-            $result = $importer->validate($importer->parse(Storage::path($path)), $request->user());
+            $result = $importer->validate($importer->parse(Storage::path($path)), $request->user(), $fallback);
         } catch (\RuntimeException $e) {
             Storage::delete($path);
             session()->forget('case_import');
@@ -138,6 +150,10 @@ class CaseImportController extends Controller
                     'submission_120th_day' => $row['submission_120th_day'],
                     'date_fir_submitted' => $row['date_fir_submitted'],
                     'date_submitted_to' => $row['date_submitted_to'],
+                    'date_extension_30_days_requested' => $row['date_extension_30_days_requested'],
+                    'date_submission_120th_day_rop' => $row['date_submission_120th_day_rop'],
+                    'date_submission_60th_day_rorp' => $row['date_submission_60th_day_rorp'],
+                    'target_date_fir' => $row['target_date_fir'],
                 ]);
 
                 AuditLog::record($request->user(), $case, AuditLog::ACTION_CREATE);

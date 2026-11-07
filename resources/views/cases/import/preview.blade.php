@@ -34,6 +34,7 @@
                         </p>
                     @endif
 
+                    <p class="text-muted small">{{ __('Cases without a status start as Docketed. Torture classification remains unknown and needs review after import. Extension request and report submission dates do not change deadlines or mark the FIR submitted.') }}</p>
                     <p class="text-muted small">{{ __('Nothing has been written yet. Confirm below to create the ready cases; rejected rows are not imported and must be fixed in the file and re-uploaded.') }}</p>
 
                     <form method="POST" action="{{ route('cases.import.store') }}" class="d-inline">

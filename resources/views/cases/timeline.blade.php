@@ -10,6 +10,8 @@
         'submission_120th_day' => __('Submission (120th Day)'),
         'target_date_fir' => __('Target Date (FIR)'),
         'date_fir_submitted' => __('Date FIR Submitted'),
+        'date_extension_30_days_requested' => __('30-Day Extension Request Date'),
+        'date_submission_120th_day_rop' => __('120th-Day ROP Submission Date'),
     ];
 @endphp
 
@@ -21,6 +23,7 @@
                 <div class="card-header">{{ __('Set Timeline') }} &mdash; {{ $case->docket_no }}</div>
 
                 <div class="card-body">
+                    <p id="timeline-help" class="text-muted">{{ __('Extension request and 120th-day ROP submission dates record what happened. They do not grant an extension, change a deadline, or mark the FIR submitted.') }}</p>
                     <form method="POST" action="{{ route('cases.timeline.update', $case) }}">
                         @csrf
                         @method('PUT')
@@ -39,11 +42,13 @@
                                            type="date"
                                            class="form-control @error($field) is-invalid @enderror"
                                            name="{{ $field }}"
+                                           aria-describedby="timeline-help @error($field) {{ $field }}-error @enderror"
+                                           @error($field) aria-invalid="true" @enderror
                                            value="{{ old($field, $timeline?->{$field}?->format('Y-m-d')) }}"
                                            @if ($field === 'date_of_docket') required @endif>
 
                                     @error($field)
-                                        <span class="invalid-feedback" role="alert">
+                                        <span id="{{ $field }}-error" class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
                                         </span>
                                     @enderror

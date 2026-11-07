@@ -21,6 +21,8 @@ class CaseTimeline extends Model
         'target_date_fir',
         'date_fir_submitted',
         'date_submitted_to',
+        'date_extension_30_days_requested',
+        'date_submission_120th_day_rop',
     ];
 
     protected function casts(): array
@@ -35,6 +37,8 @@ class CaseTimeline extends Model
             'submission_120th_day' => 'date',
             'target_date_fir' => 'date',
             'date_fir_submitted' => 'date',
+            'date_extension_30_days_requested' => 'date',
+            'date_submission_120th_day_rop' => 'date',
         ];
     }
 
@@ -75,6 +79,8 @@ class CaseTimeline extends Model
             'date_submission_60th_day_rorp' => $after,
             'submission_120th_day' => $after,
             'target_date_fir' => $after,
+            'date_extension_30_days_requested' => $after,
+            'date_submission_120th_day_rop' => $after,
             'date_fir_submitted' => $after,
         ];
     }

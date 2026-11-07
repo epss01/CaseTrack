@@ -13,6 +13,8 @@
         __('Submission (60th Day RORP)') => $timeline?->date_submission_60th_day_rorp?->format('d M Y'),
         __('Submission (120th Day)') => $timeline?->submission_120th_day?->format('d M Y'),
         __('Target Date (FIR)') => $timeline?->target_date_fir?->format('d M Y'),
+        __('30-Day Extension Request Date') => $timeline?->date_extension_30_days_requested?->format('d M Y'),
+        __('120th-Day ROP Submission Date') => $timeline?->date_submission_120th_day_rop?->format('d M Y'),
         __('Date FIR Submitted') => $timeline?->date_fir_submitted?->format('d M Y'),
         __('Submitted To') => $timeline?->date_submitted_to,
     ];
