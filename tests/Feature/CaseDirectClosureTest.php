@@ -13,6 +13,91 @@ class CaseDirectClosureTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_ordinary_edit_cannot_cross_the_closed_boundary_even_for_the_owner(): void
+    {
+        $owner = User::factory()->investigator()->create();
+        foreach ([CaseModel::STATUS_DOCKETED => CaseModel::STATUS_CLOSED, CaseModel::STATUS_CLOSED => CaseModel::STATUS_FOR_REVIEW] as $from => $to) {
+            $case = CaseModel::factory()->assignedTo($owner)->create(['status' => $from]);
+            $this->actingAs($owner)->put(route('cases.update', $case), $this->payload($case, ['status' => $to]))
+                ->assertSessionHasErrors('status');
+            $this->assertSame($from, $case->fresh()->status);
+            $this->assertSame(0, $case->fresh()->lock_version);
+            $this->assertDatabaseMissing('audit_logs', ['case_id' => $case->id]);
+        }
+    }
+
+    public function test_reopening_accepts_each_active_status_and_restores_workload(): void
+    {
+        $owner = User::factory()->investigator()->create(['performance_rating' => 1.0]);
+        foreach ([CaseModel::STATUS_DOCKETED, CaseModel::STATUS_UNDER_INVESTIGATION, CaseModel::STATUS_FOR_REVIEW] as $status) {
+            $case = CaseModel::factory()->assignedTo($owner)->create(['status' => CaseModel::STATUS_CLOSED, 'complexity_weight' => 2]);
+            $before = $owner->fresh()->workloadCapacityScore();
+            $this->actingAs($owner)->put(route('cases.closure.update', $case), [
+                'status' => $status, 'lock_version' => $case->lock_version,
+            ])->assertRedirect(route('cases.show', $case));
+            $this->assertSame($status, $case->fresh()->status);
+            $this->assertSame(1, $case->fresh()->lock_version);
+            $this->assertEquals($before + 2, $owner->fresh()->workloadCapacityScore());
+        }
+    }
+
+    public function test_invalid_reopening_and_missing_version_do_not_change_the_case(): void
+    {
+        $owner = User::factory()->investigator()->create();
+        $case = CaseModel::factory()->assignedTo($owner)->create(['status' => CaseModel::STATUS_CLOSED]);
+        foreach (['', 'Pending Closure', CaseModel::STATUS_CLOSED] as $status) {
+            $this->actingAs($owner)->put(route('cases.closure.update', $case), [
+                'status' => $status, 'lock_version' => 0,
+            ])->assertSessionHasErrors('status');
+        }
+        $this->put(route('cases.closure.update', $case), ['status' => CaseModel::STATUS_DOCKETED])
+            ->assertSessionHasErrors('lock_version');
+        $this->assertSame(CaseModel::STATUS_CLOSED, $case->fresh()->status);
+        $this->assertDatabaseMissing('audit_logs', ['case_id' => $case->id]);
+    }
+
+    public function test_repeated_closure_is_rejected_and_fir_dates_are_untouched(): void
+    {
+        $owner = User::factory()->investigator()->create();
+        $case = CaseModel::factory()->assignedTo($owner)->create(['status' => CaseModel::STATUS_DOCKETED]);
+        $case->timeline()->create(['date_of_docket' => '2026-01-01']);
+        // Native HTML forms submit the hidden version as a string.
+        $payload = ['status' => CaseModel::STATUS_CLOSED, 'lock_version' => '0'];
+        $this->actingAs($owner)->put(route('cases.closure.update', $case), $payload)->assertSessionHasNoErrors();
+        $this->put(route('cases.closure.update', $case), $payload)->assertSessionHasErrors('lock_version');
+        $this->assertNull($case->fresh()->timeline->date_fir_submitted);
+        $this->assertSame(1, $case->auditLogs()->where('action_performed', AuditLog::ACTION_CASE_CLOSED)->count());
+        $this->assertEquals(0, $owner->workloadCapacityScore());
+    }
+
+    public function test_reassignment_invalidates_the_previous_owners_closure_form(): void
+    {
+        $owner = User::factory()->investigator()->create();
+        $replacement = User::factory()->investigator()->create();
+        $case = CaseModel::factory()->assignedTo($owner)->create(['status' => CaseModel::STATUS_DOCKETED]);
+        $this->actingAs(User::factory()->supervisor()->create())->put(route('cases.reassign.update', $case), [
+            'docket_no' => $case->docket_no, 'investigator_id' => $replacement->id,
+        ])->assertSessionHasNoErrors();
+        $this->actingAs($owner)->put(route('cases.closure.update', $case), [
+            'status' => CaseModel::STATUS_CLOSED, 'lock_version' => 0,
+        ])->assertForbidden();
+        $this->assertSame(CaseModel::STATUS_DOCKETED, $case->fresh()->status);
+    }
+
+    public function test_case_details_offer_only_the_authorized_closure_action(): void
+    {
+        $owner = User::factory()->investigator()->create();
+        $case = CaseModel::factory()->assignedTo($owner)->create(['status' => CaseModel::STATUS_DOCKETED]);
+        $this->actingAs($owner)->get(route('cases.show', $case))
+            ->assertSee('data-bs-target="#caseClosure"', false)
+            ->assertSee('Close case')->assertDontSee('id="reopen-status"', false);
+        $case->update(['status' => CaseModel::STATUS_CLOSED]);
+        $this->get(route('cases.show', $case))->assertSee('Reopen case')
+            ->assertSee('id="reopen-status"', false)->assertSee('Choose a status');
+        $this->actingAs(User::factory()->supervisor()->create())->get(route('cases.show', $case))
+            ->assertDontSee('data-bs-target="#caseClosure"', false)->assertDontSee('id="caseClosure"', false);
+    }
+
     /** @return array<string, mixed> */
     private function payload(CaseModel $case, array $overrides = []): array
     {
@@ -34,7 +119,7 @@ class CaseDirectClosureTest extends TestCase
         ]);
 
         $this->actingAs($investigator)
-            ->put(route('cases.update', $case), $this->payload($case, [
+            ->put(route('cases.closure.update', $case), $this->payload($case, [
                 'status' => CaseModel::STATUS_CLOSED,
             ]))
             ->assertRedirect(route('cases.show', $case));
@@ -52,7 +137,7 @@ class CaseDirectClosureTest extends TestCase
         ]);
     }
 
-    public function test_a_combined_field_edit_and_closure_writes_both_audits(): void
+    public function test_closure_does_not_overwrite_other_case_fields(): void
     {
         $investigator = User::factory()->investigator()->create();
         $case = CaseModel::factory()->assignedTo($investigator)->create([
@@ -60,13 +145,13 @@ class CaseDirectClosureTest extends TestCase
             'status' => CaseModel::STATUS_FOR_REVIEW,
         ]);
 
-        $this->actingAs($investigator)->put(route('cases.update', $case), $this->payload($case, [
+        $this->actingAs($investigator)->put(route('cases.closure.update', $case), $this->payload($case, [
             'case_title' => 'Corrected before closure',
             'status' => CaseModel::STATUS_CLOSED,
         ]))->assertRedirect(route('cases.show', $case));
 
         $case->refresh();
-        $this->assertSame('Corrected before closure', $case->case_title);
+        $this->assertSame('Original title', $case->case_title);
         $this->assertSame(CaseModel::STATUS_CLOSED, $case->status);
         $this->assertSame(1, $case->auditLogs()->where('action_performed', AuditLog::ACTION_EDIT)->count());
         $this->assertSame(1, $case->auditLogs()->where('action_performed', AuditLog::ACTION_CASE_CLOSED)->count());
@@ -80,7 +165,7 @@ class CaseDirectClosureTest extends TestCase
         ]);
 
         $this->actingAs($investigator)
-            ->put(route('cases.update', $case), $this->payload($case, [
+            ->put(route('cases.closure.update', $case), $this->payload($case, [
                 'status' => CaseModel::STATUS_UNDER_INVESTIGATION,
             ]))
             ->assertRedirect(route('cases.show', $case));
@@ -115,7 +200,7 @@ class CaseDirectClosureTest extends TestCase
         try {
             $this->withoutExceptionHandling()
                 ->actingAs($investigator)
-                ->put(route('cases.update', $case), $this->payload($case, [
+                ->put(route('cases.closure.update', $case), $this->payload($case, [
                     'case_title' => 'Must roll back',
                     'status' => CaseModel::STATUS_CLOSED,
                 ]));
@@ -141,7 +226,7 @@ class CaseDirectClosureTest extends TestCase
             $case = CaseModel::factory()->assignedTo($owner)->create(['status' => $from]);
 
             $this->actingAs($other)
-                ->put(route('cases.update', $case), $this->payload($case, ['status' => $to]))
+                ->put(route('cases.closure.update', $case), $this->payload($case, ['status' => $to]))
                 ->assertForbidden();
 
             $this->assertSame($from, $case->fresh()->status);
@@ -168,7 +253,7 @@ class CaseDirectClosureTest extends TestCase
             $case = CaseModel::factory()->assignedTo($investigator)->create(['status' => $from]);
 
             $this->actingAs($supervisor)
-                ->put(route('cases.update', $case), $this->payload($case, [
+                ->put(route('cases.closure.update', $case), $this->payload($case, [
                     'status' => $to,
                     'reason' => 'Covering leave.',
                 ]))
@@ -226,7 +311,7 @@ class CaseDirectClosureTest extends TestCase
 
         $this->actingAs($investigator)->get(route('cases.edit', $open))
             ->assertOk()
-            ->assertSee('<option value="Closed"', false);
+            ->assertDontSee('<option value="Closed"', false);
 
         $this->actingAs($supervisor)->get(route('cases.edit', $open))
             ->assertOk()
@@ -245,19 +330,17 @@ class CaseDirectClosureTest extends TestCase
         $case = CaseModel::factory()->create(['status' => CaseModel::STATUS_FOR_REVIEW]);
 
         $this->actingAs($admin)
-            ->put(route('cases.update', $case), $this->payload($case, ['status' => CaseModel::STATUS_CLOSED]))
+            ->put(route('cases.closure.update', $case), $this->payload($case, ['status' => CaseModel::STATUS_CLOSED]))
             ->assertForbidden();
 
         $this->assertSame(CaseModel::STATUS_FOR_REVIEW, $case->fresh()->status);
     }
 
-    public function test_the_removed_closure_routes_are_not_found(): void
+    public function test_the_old_supervisor_closure_resolution_route_is_not_found(): void
     {
         $investigator = User::factory()->investigator()->create();
         $case = CaseModel::factory()->assignedTo($investigator)->create();
 
-        $this->actingAs($investigator)->put("/cases/{$case->id}/closure")->assertNotFound();
-        $this->actingAs($investigator)->get("/cases/{$case->id}/closure")->assertNotFound();
         $this->actingAs($investigator)->put("/cases/{$case->id}/closure/resolve")->assertNotFound();
     }
 
@@ -270,7 +353,7 @@ class CaseDirectClosureTest extends TestCase
         $case->increment('lock_version');
 
         $this->actingAs($investigator)
-            ->put(route('cases.update', $case), $this->payload($case, [
+            ->put(route('cases.closure.update', $case), $this->payload($case, [
                 'case_title' => 'Stale closure',
                 'status' => CaseModel::STATUS_CLOSED,
                 'lock_version' => $staleVersion,

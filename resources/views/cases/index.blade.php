@@ -9,15 +9,25 @@
 <div class="container-fluid container-wide">
     <div class="row justify-content-center">
         <div class="col-12">
-            <div class="card mb-3">
-                <div class="card-header">
-                    <h2 class="h6 mb-0">{{ __('Search') }}</h2>
+            <div class="page-heading">
+                <div>
+                    <h1>{{ Auth::user()->isSupervisor() ? __('All cases') : __('My cases') }}</h1>
+                    <p class="text-muted mb-0">{{ Auth::user()->isSupervisor() ? Auth::user()->office_region : __('Cases assigned to you') }}</p>
                 </div>
-
+                <div class="d-flex flex-wrap gap-2">
+                    @can('create', App\Models\CaseModel::class)
+                        <a href="{{ route('cases.import.create') }}" class="btn btn-outline-primary">{{ __('Import cases') }}</a>
+                    @endcan
+                    @can('create', App\Models\CaseModel::class)
+                        <a href="{{ route('cases.create') }}" class="btn btn-primary">{{ __('New case') }}</a>
+                    @endcan
+                </div>
+            </div>
+            <div class="card filter-panel mb-3">
                 <div class="card-body">
                     <form method="GET" action="{{ route('cases.index') }}">
-                        <div class="row g-3 align-items-end">
-                            <div class="col-sm-8 col-lg-6">
+                        <div class="filter-fields">
+                            <div class="filter-field">
                                 <label for="search" class="form-label">{{ __('Docket no., title, or party name') }}</label>
                                 <input type="text" class="form-control @error('search') is-invalid @enderror"
                                        id="search" name="search" value="{{ $search ?? '' }}"
@@ -27,13 +37,13 @@
                                 @enderror
                             </div>
 
-                            <div class="col-12 d-flex gap-2 justify-content-end">
+                            <div class="filter-actions">
                                 @if (filled($search))
                                     <a href="{{ route('cases.index') }}" class="btn btn-outline-secondary">
                                         {{ __('Clear') }}
                                     </a>
                                 @endif
-                                <button type="submit" class="btn btn-primary">{{ __('Apply') }}</button>
+                                <button type="submit" class="btn btn-primary">{{ __('Search') }}</button>
                             </div>
                         </div>
                     </form>
@@ -41,20 +51,6 @@
             </div>
 
             <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h1 class="h6 mb-0">
-                        @if (Auth::user()->isSupervisor())
-                            {{ __('All Cases') }} &mdash; {{ Auth::user()->office_region }}
-                        @else
-                            {{ __('My Cases') }}
-                        @endif
-                    </h1>
-
-                    @can('create', App\Models\CaseModel::class)
-                        <a href="{{ route('cases.create') }}" class="btn btn-sm btn-primary">{{ __('New Case') }}</a>
-                    @endcan
-                </div>
-
                 <div class="card-body">
                     @if (session('status'))
                         <div class="alert alert-success" role="alert">
@@ -65,7 +61,7 @@
                     @if ($cases->isEmpty())
                         <p class="mb-0">{{ filled($search) ? __('No cases match this search.') : __('No cases to show.') }}</p>
                     @else
-                        <div class="table-responsive">
+                        <div class="table-responsive" tabindex="0" role="region" aria-label="{{ __('Case records') }}">
                             <table class="table table-striped align-middle table-data">
                                 <caption class="visually-hidden">{{ __('Cases, with docket number, title, status, complexity and date of docket.') }}</caption>
                                 <thead>

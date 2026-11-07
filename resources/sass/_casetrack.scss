@@ -35,28 +35,231 @@
     align-items: center;
     gap: 0.5rem;
     font-weight: 700;
+    font-family: $headings-font-family;
 }
 
 .brand-mark {
-    display: grid;
+    display: inline-grid;
     place-items: center;
-    width: 1.75rem;
-    height: 1.75rem;
-    border-radius: 0.5rem;
-    background: linear-gradient(135deg, $casetrack-navy, $primary);
-    color: #fff;
-    font-size: 0.8rem;
+    width: 2rem;
+    height: 2rem;
+    flex-shrink: 0;
+    border-radius: $border-radius-sm;
+    background: $casetrack-gold;
+    color: $casetrack-navy;
+    font-size: 1rem;
+}
+
+h1, .h1 {
     font-weight: 700;
 }
 
-.navbar-light .navbar-nav .nav-link {
-    border-radius: $border-radius-sm;
-    padding-inline: 0.75rem;
+.form-label, .table-data th {
+    font-weight: 600;
+}
 
-    &.active {
-        color: $primary;
-        background-color: rgba($primary, 0.08);
+.filter-panel > .card-body {
+    padding: 0.75rem;
+}
+
+.filter-fields {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.5rem;
+
+    > .filter-field {
+        flex: 1 1 11rem;
+        min-width: 0;
     }
+
+    .form-label {
+        margin-bottom: 0.25rem;
+    }
+}
+
+.filter-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.account-role-form {
+    .form-select {
+        width: 10rem;
+        flex: 0 0 10rem;
+    }
+
+    .btn {
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+}
+
+.accounts-table {
+    min-width: 64rem;
+
+    .btn, .badge {
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+}
+
+.calculation-details summary {
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.workspace-nav {
+    background: $casetrack-navy;
+
+    .navbar-brand {
+        color: $casetrack-gold;
+        padding-block: 0.6rem;
+    }
+
+    .nav-link {
+        color: #fff;
+        border-radius: $border-radius-sm;
+        padding: 0.65rem 0.75rem;
+
+        &:hover, &:focus-visible {
+            color: #fff;
+            background: $casetrack-navy-light;
+        }
+
+        &.active {
+            color: #fff;
+            background: $primary;
+            text-decoration: underline;
+            text-underline-offset: 0.3em;
+        }
+    }
+
+    .navbar-toggler {
+        color: #fff;
+        border-color: rgba(255, 255, 255, 0.6);
+        font-size: 1rem;
+        min-height: 44px;
+    }
+
+    :focus-visible {
+        outline: 3px solid $casetrack-gold;
+        outline-offset: 3px;
+    }
+
+    .dropdown-menu :focus-visible {
+        outline-color: $primary;
+        outline-offset: -3px;
+    }
+}
+
+.account-toggle {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 0.5rem;
+    background: transparent;
+    border: 0;
+    text-align: left;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    max-width: 20rem;
+
+    span {
+        grid-column: 1;
+    }
+
+    &::after {
+        grid-column: 2;
+        grid-row: 1 / 3;
+    }
+}
+
+.account-role {
+    display: block;
+    font-size: 0.875rem;
+}
+
+.account-identity {
+    max-width: 20rem;
+    overflow-wrap: anywhere;
+}
+
+.page-heading {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+
+    h1 {
+        font-size: $h1-font-size;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+        overflow-wrap: anywhere;
+    }
+}
+
+.section-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 1rem;
+    border-bottom: 1px solid $card-border-color;
+    margin-bottom: 1.25rem;
+
+    a {
+        padding: 0.65rem 0.25rem;
+        font-weight: 600;
+
+        &[aria-current] {
+            border-bottom: 3px solid $primary;
+        }
+    }
+}
+
+.case-section {
+    scroll-margin-top: 1rem;
+}
+
+.case-record dd, .case-record p {
+    overflow-wrap: anywhere;
+}
+
+.table-responsive:focus-visible, .case-section:focus-visible {
+    outline: 3px solid $primary;
+    outline-offset: 3px;
+}
+
+// Keep absolutely positioned screen-reader labels inside the scrolling region.
+.table-responsive {
+    position: relative;
+}
+
+// Both bars share one zero-based scale; labels and values remain plain text.
+.analytics-bar-track {
+    height: 1.5rem;
+    background: $casetrack-slate-bg;
+    border-radius: $border-radius-sm;
+    overflow: hidden;
+}
+
+.analytics-bar {
+    height: 100%;
+    background: $primary;
+}
+
+.analytics-bar--resolved {
+    background: $casetrack-navy;
+}
+
+.analytics-value {
+    font-size: 2rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: $casetrack-navy;
 }
 
 // ---------------------------------------------------------------- identity bar
@@ -77,11 +280,10 @@
 
 .identity-bar__eyebrow {
     display: block;
-    color: rgba(255, 255, 255, 0.72);
-    font-size: 0.72rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
+    color: #fff;
+    font-size: $h1-font-size;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
 }
 
 .identity-bar__name {
@@ -89,14 +291,14 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 0.5rem;
-    font-size: 1.5rem;
+    font-size: $h2-font-size;
     font-weight: 700;
     line-height: 1.25;
 }
 
 .identity-bar__meta {
     color: rgba(255, 255, 255, 0.72);
-    font-size: 0.8rem;
+    font-size: 0.875rem;
 }
 
 .identity-bar__divider {
@@ -111,7 +313,7 @@
     border-radius: 999px;
     border: 1px solid rgba(255, 255, 255, 0.3);
     background-color: rgba(255, 255, 255, 0.12);
-    font-size: 0.72rem;
+    font-size: 0.875rem;
     font-weight: 600;
     letter-spacing: 0.02em;
 }
@@ -157,7 +359,7 @@
 .stat-tile__label {
     display: block;
     color: rgba(255, 255, 255, 0.72);
-    font-size: 0.72rem;
+    font-size: 0.875rem;
     text-transform: uppercase;
     letter-spacing: 0.04em;
 }
@@ -176,7 +378,7 @@
 .stat-tile__note {
     display: block;
     color: rgba(255, 255, 255, 0.72);
-    font-size: 0.68rem;
+    font-size: 0.875rem;
 }
 
 // -------------------------------------------------------- status distribution
@@ -309,7 +511,7 @@
 // say something the reader then had to reassemble.
 .cell-sub {
     display: block;
-    font-size: 0.78rem;
+    font-size: 0.875rem;
 }
 
 // --------------------------------------------------------------- weight meter

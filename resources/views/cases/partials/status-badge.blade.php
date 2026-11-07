@@ -18,4 +18,4 @@
     $colour = \App\Models\CaseModel::STATUS_COLOURS[$status]
         ?? $ramp[crc32($status) % count($ramp)];
 @endphp
-<span class="badge" style="background-color: {{ $colour }}1a; color: {{ $colour }}; border: 1px solid {{ $colour }}66;">{{ $status }}</span>
+<span class="badge {{ $status === \App\Models\CaseModel::STATUS_CLOSED ? 'badge-soft-slate' : 'badge-soft-blue' }}" style="background-color: {{ $colour }}1a; border: 1px solid {{ $colour }}66;">{{ $status }}</span>

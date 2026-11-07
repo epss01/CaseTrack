@@ -6,15 +6,12 @@
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-11">
-            <div class="card mb-3">
-                <div class="card-header">
-                    <h2 class="h6 mb-0">{{ __('Filter') }}</h2>
-                </div>
-
+            <div class="page-heading"><h1>{{ __('Audit Log') }}</h1></div>
+            <div class="card filter-panel mb-3">
                 <div class="card-body">
                     <form method="GET" action="{{ route('admin.audit-logs.index') }}">
-                        <div class="row g-3 align-items-end">
-                            <div class="col-sm-6 col-lg-3">
+                        <div class="filter-fields">
+                            <div class="filter-field">
                                 <label for="user_id" class="form-label">{{ __('Acting user') }}</label>
                                 <select class="form-select @error('user_id') is-invalid @enderror"
                                         id="user_id" name="user_id">
@@ -30,7 +27,7 @@
                                 @enderror
                             </div>
 
-                            <div class="col-sm-6 col-lg-3">
+                            <div class="filter-field">
                                 <label for="action" class="form-label">{{ __('Action') }}</label>
                                 <select class="form-select @error('action') is-invalid @enderror"
                                         id="action" name="action">
@@ -46,7 +43,7 @@
                                 @enderror
                             </div>
 
-                            <div class="col-sm-6 col-lg-3">
+                            <div class="filter-field">
                                 <label for="from" class="form-label">{{ __('From') }}</label>
                                 <input type="date" class="form-control @error('from') is-invalid @enderror"
                                        id="from" name="from" value="{{ $filters['from'] ?? '' }}">
@@ -55,7 +52,7 @@
                                 @enderror
                             </div>
 
-                            <div class="col-sm-6 col-lg-3">
+                            <div class="filter-field">
                                 <label for="to" class="form-label">{{ __('To') }}</label>
                                 <input type="date" class="form-control @error('to') is-invalid @enderror"
                                        id="to" name="to" value="{{ $filters['to'] ?? '' }}">
@@ -64,9 +61,9 @@
                                 @enderror
                             </div>
 
-                            <div class="col-12">
-                                <button type="submit" class="btn btn-sm btn-primary">{{ __('Apply') }}</button>
-                                <a href="{{ route('admin.audit-logs.index') }}" class="btn btn-sm btn-outline-secondary">{{ __('Clear') }}</a>
+                            <div class="filter-actions">
+                                <a href="{{ route('admin.audit-logs.index') }}" class="btn btn-outline-secondary">{{ __('Clear') }}</a>
+                                <button type="submit" class="btn btn-primary">{{ __('Apply') }}</button>
                             </div>
                         </div>
                     </form>

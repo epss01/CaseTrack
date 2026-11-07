@@ -13,6 +13,7 @@
 <div class="container-fluid container-wide">
     <div class="row justify-content-center">
         <div class="col-12">
+            @include('reports.partials.navigation')
 
             {{-- Same identity bar and stat tiles as the dashboards and /alerts:
                  a report is a fourth view of the same caseload, not a different
@@ -35,10 +36,6 @@
                     </div>
 
                     <div class="d-flex gap-2">
-                        <a href="{{ route('reports.analytics') }}" class="btn btn-sm btn-outline-light">
-                            {{ __('View analytics') }}
-                        </a>
-
                         {{-- The filters are already in the URL, so the download
                              is the same request with a different ending. --}}
                         <a href="{{ route('reports.export', $filters) }}" class="btn btn-sm btn-outline-light">
@@ -88,15 +85,11 @@
                 </div>
             </div>
 
-            <div class="card mb-3">
-                <div class="card-header">
-                    <h2 class="h6 mb-0">{{ __('Filter') }}</h2>
-                </div>
-
+            <div class="card filter-panel mb-3">
                 <div class="card-body">
                     <form method="GET" action="{{ route('reports.index') }}">
-                        <div class="row g-3 align-items-end">
-                            <div class="col-sm-6 col-lg-3">
+                        <div class="filter-fields">
+                            <div class="filter-field">
                                 <label for="from" class="form-label">{{ __('Docketed from') }}</label>
                                 {{-- Native date input: the browser supplies the
                                      picker, the locale and the keyboard support. --}}
@@ -107,7 +100,7 @@
                                 @enderror
                             </div>
 
-                            <div class="col-sm-6 col-lg-3">
+                            <div class="filter-field">
                                 <label for="to" class="form-label">{{ __('Docketed to') }}</label>
                                 <input type="date" class="form-control @error('to') is-invalid @enderror"
                                        id="to" name="to" value="{{ $filters['to'] ?? '' }}">
@@ -117,7 +110,7 @@
                             </div>
 
                             @if ($officeWide)
-                                <div class="col-sm-6 col-lg-3">
+                                <div class="filter-field">
                                     <label for="investigator_id" class="form-label">{{ __('Investigator') }}</label>
                                     <select class="form-select @error('investigator_id') is-invalid @enderror"
                                             id="investigator_id" name="investigator_id">
@@ -135,7 +128,7 @@
                                 </div>
                             @endif
 
-                            <div class="col-sm-6 col-lg-3">
+                            <div class="filter-field">
                                 <label for="status" class="form-label">{{ __('Status') }}</label>
                                 {{-- Free text, not a select. cases.status has no
                                      ratified vocabulary yet, so a fixed list of
@@ -156,7 +149,7 @@
                             {{-- Clear then Apply, with Apply furthest right: the
                                  form reads left to right and ends on the action
                                  that submits it. --}}
-                            <div class="col-12 d-flex gap-2 justify-content-end">
+                            <div class="filter-actions">
                                 @if ($filters !== [])
                                     <a href="{{ route('reports.index') }}" class="btn btn-outline-secondary">
                                         {{ __('Clear') }}

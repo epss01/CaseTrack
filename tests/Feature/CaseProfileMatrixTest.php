@@ -40,7 +40,7 @@ class CaseProfileMatrixTest extends TestCase
         $this->actingAs($investigator)
             ->get(route('cases.show', $case))
             ->assertOk()
-            ->assertSee('Case Profile Matrix')
+            ->assertSee('Jump to:')
             // Case details
             ->assertSee('CHR-VIII-2026-0200')
             ->assertSee('Alleged unlawful arrest in Tacloban')

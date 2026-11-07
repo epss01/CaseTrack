@@ -6,6 +6,7 @@
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-9">
+            <div class="page-heading"><h1>{{ __('Import cases') }}</h1></div>
 
             @if ($errors->any())
                 <div class="alert alert-danger">
@@ -16,9 +17,8 @@
             @endif
 
             <div class="card">
-                <div class="card-header">{{ __('Import Cases') }}</div>
-
                 <div class="card-body">
+                    @include('cases.import.assignment-note')
                     <p>{{ __('Bring in an existing caseload from a CSV or XLSX file. Nothing is created yet — the next step shows what would be created and what would be rejected, before anything is written.') }}</p>
 
                     <form method="POST" action="{{ route('cases.import.preview') }}" enctype="multipart/form-data">
@@ -40,7 +40,7 @@
             </div>
 
             <div class="card mt-3">
-                <div class="card-header">{{ __('Column contract') }}</div>
+                <div class="card-header"><h2 class="h6 mb-0">{{ __('File columns') }}</h2></div>
 
                 <div class="card-body">
                     <p class="text-muted small">{{ __('First row must be a header row using these labels. A case may span several rows: repeat the case columns on each row and share the same Docket No. to add more than one victim or respondent.') }}</p>

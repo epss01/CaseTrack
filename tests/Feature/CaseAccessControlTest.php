@@ -74,7 +74,7 @@ class CaseAccessControlTest extends TestCase
     public function test_an_investigator_can_update_their_own_case(): void
     {
         $investigator = User::factory()->investigator()->create();
-        $case = CaseModel::factory()->assignedTo($investigator)->create();
+        $case = CaseModel::factory()->assignedTo($investigator)->create(['status' => CaseModel::STATUS_DOCKETED]);
 
         $this->actingAs($investigator)
             ->put(route('cases.update', $case), [

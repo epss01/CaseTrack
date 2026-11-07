@@ -3,9 +3,10 @@
 @section('title', __('Manage Accounts'))
 
 @section('content')
-<div class="container">
+<div class="container-fluid container-wide">
     <div class="row justify-content-center">
-        <div class="col-md-11">
+        <div class="col-12">
+            <div class="page-heading"><h1>{{ __('Accounts') }}</h1></div>
             <div class="card">
                 <div class="card-header">
                     {{ __('Manage Accounts') }}
@@ -24,8 +25,8 @@
                         </div>
                     @endif
 
-                    <div class="table-responsive">
-                        <table class="table align-middle table-data">
+                    <div class="table-responsive" tabindex="0" role="region" aria-label="{{ __('Accounts') }}">
+                        <table class="table align-middle table-data accounts-table">
                             <caption class="visually-hidden">{{ __('Every approved account, with role, status, and account actions.') }}</caption>
                             <thead>
                                 <tr>
@@ -57,7 +58,7 @@
                                             @if ($isAdminRow || $isSelf)
                                                 {{ $user->role->role_name }}
                                             @else
-                                                <form method="POST" action="{{ route('admin.users.role', $user) }}" class="d-flex gap-2 flex-nowrap">
+                                                <form method="POST" action="{{ route('admin.users.role', $user) }}" class="account-role-form d-flex gap-2 flex-nowrap">
                                                     @csrf
                                                     @method('PUT')
 

@@ -1,11 +1,13 @@
 @extends('layouts.app')
 
+@section('title', __('Edit case').' · '.$case->docket_no)
+
 @section('content')
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-10">
             <div class="card">
-                <div class="card-header">{{ __('Edit Case') }} &mdash; {{ $case->docket_no }}</div>
+                <div class="card-header"><h1 class="h5 mb-0">{{ __('Edit case') }} &mdash; {{ $case->docket_no }}</h1></div>
 
                 <div class="card-body">
                     <form method="POST" action="{{ route('cases.update', $case) }}">
@@ -40,6 +42,10 @@
                                 <select id="status" class="form-select @error('status') is-invalid @enderror" name="status" required>
                                     @include('cases.partials.status-options', ['case' => $case, 'selected' => old('status', $case->status)])
                                 </select>
+
+                                @can('changeClosure', $case)
+                                    <div class="form-text">{{ __('To close or reopen this case, use the dedicated button on case details.') }}</div>
+                                @endcan
 
                                 @error('status')
                                     <span class="invalid-feedback" role="alert">

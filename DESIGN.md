@@ -5,6 +5,7 @@ colors:
   primary: "#1d4ed8"
   casetrack-navy: "#102f4f"
   casetrack-navy-light: "#1a4470"
+  casetrack-gold: "#f5cc29"
   body-bg: "#f8fafc"
   card-border: "#e6ecf3"
   table-border: "#eef2f7"
@@ -27,17 +28,22 @@ colors:
   weight-meter-track: "#cbd5e1"
 typography:
   body:
-    fontFamily: "Nunito, sans-serif"
-    fontSize: "0.9rem"
+    fontFamily: "Source Sans 3, Segoe UI, sans-serif"
+    fontSize: "1rem"
     lineHeight: 1.6
+  headings:
+    fontFamily: "Manrope, Segoe UI, sans-serif"
   scale:
-    note: "0.68rem"
-    label: "0.72rem"
-    meta: "0.78rem"
-    caption: "0.8rem"
-    subtitle: "0.95rem"
+    page-title: "1.75rem"
+    section-heading: "1.25rem"
+    subsection: "1.125rem"
+    minor-heading: "1.0625rem"
+    body: "1rem"
+    supporting: "0.875rem"
+    navigation-control: "1rem"
+    analytics-value: "2rem"
     headline: "1.35rem"
-    display-on-navy: "1.5rem"
+    subtitle: "0.95rem"
 rounded:
   sm: "0.5rem"
   md: "0.625rem"
@@ -49,6 +55,30 @@ rounded:
 # Design System: CaseTrack
 
 ## Overview
+
+### Approved workspace refinement — 28 October 2026
+
+Use a labeled navy topbar with a gold CT badge and CaseTrack wordmark, neutral work
+surfaces, and blue actions. The CHR logo remains deferred. Gold is a brand accent;
+amber remains reserved for deadline meaning. The topbar collapses to a labeled
+Menu at narrow widths, with identity, role and Logout in the far-right dropdown.
+
+Investigators see Dashboard, Cases, Alerts and Reports. Supervisors also see
+Workload. Both roles have Import cases in the Cases header. Investigator imports
+default blank assignees to self and reject another named assignee. Admins see
+Dashboard, Registrations, Accounts and Audit Log, without case destinations.
+Their dashboard shows account totals and the five oldest pending registrations. Reports has
+visible Case reports / Analytics local links.
+
+Case details use inline Details, People and Timeline sections with jump links.
+Closing/reopening is a dedicated assigned-Investigator action with confirmation;
+reopening requires choosing one of the three active statuses. Ordinary editing
+cannot cross the Closed boundary. Keep all existing people and timeline fields.
+
+Analytics foregrounds received, FIR-date resolutions and period-end backlog.
+The received/resolved bars share a zero-based scale; backlog is separate.
+Metric values use 2rem and the Menu control uses 1rem. Historical trends and
+new case-list filters are deferred. Keep the existing Bootstrap/Sass stack.
 
 **Creative North Star: "The Case File Desk"**
 
@@ -85,19 +115,29 @@ White at a fixed set of opacity steps, each tied to a role rather than picked pe
 
 ## Typography
 
-**Body Font:** Nunito, sans-serif (via Bunny Fonts)
+**Fonts:** locally bundled Source Sans 3 for body text, controls and tables;
+Manrope for headings and the wordmark. Font files and their OFL licenses live
+under resources/fonts. No external font requests are needed.
 
-**Character:** A rounder, friendlier sans than Bootstrap's system-font default, at a slightly smaller base size (0.9rem) with generous line-height (1.6) — built for scanning rows of case data, not for display type. There is no separate display/heading font; hierarchy comes from Bootstrap's heading weights plus the identity-bar treatment, not a second typeface.
+- Page titles: 1.75rem (28px), weight 700.
+- Section headings: 1.25rem (20px), weight 600.
+- Body and controls: 1rem (16px), weight 400; labels use 600.
+- Supporting text: 0.875rem (14px).
+- Metrics: 2rem, weight 700, with tabular numerals.
 
-### Supporting Sizes
-Below body size, a small scale of one-off steps rather than named heading levels — each tied to exactly one component, not a reusable ramp:
-- **display-on-navy** (1.5rem, 700): the identity-bar name — the largest text in the product.
-- **headline** (1.35rem, 700): the stat-tile value.
-- **subtitle** (0.95rem, 700): avatar initials.
-- **caption** (0.8rem): role-pill text, the identity-bar meta line.
-- **meta** (0.78rem): `.cell-sub`, the secondary line in a combined table cell.
-- **label** (0.72rem, uppercase, tracked): eyebrow labels, stat-tile labels — the most-reused step in this scale.
-- **note** (0.68rem): the stat-tile note line, sized down instead of lightened so it still clears contrast at the narrowest viewport (see the identity bar's `.stat-tile__note` in `_casetrack.scss`).
+### Compact forms
+
+Analytics, Reports, Audit Log and Cases search use 12px padding and 8px gaps.
+Labels remain visible; fields and actions share a row where space permits and
+wrap on narrow screens. No separate Filter header band. The Accounts role
+selector is 10rem wide with a nonshrinking Save button in the wide table layout.
+
+### Analytics explanations
+
+Keep descriptions short and expand FIR as Final Investigation Report. Keep the
+distinction between FIR submission and Closed status visible, alongside relevant
+data-quality notices. Detailed formulas use a native expandable section. Undefined
+rates say Not available with a reason. Calculations and chart scales are unchanged.
 
 ## Layout
 
@@ -122,10 +162,13 @@ Radius is bumped up from Bootstrap's default `0.375rem` across the board — `sm
 Bootstrap defaults (`.btn-primary`, `.btn-outline-*`) with the deeper primary blue swapped in; no custom button component exists. State-changing actions use real `<form method="POST">` submit buttons rather than link-styled anchors, so a JS failure degrades to a working form instead of a 405.
 
 ### Navbar
-White background, subtle shadow, brand mark is a 1.75rem rounded square with a navy→blue gradient and the "CT" initials rather than a logo image. Active nav link gets a tinted background (`rgba(primary, 0.08)`) plus the link's own color — Bootstrap ships no active-state treatment at all, so this was added deliberately. Nav items are role-gated inline (Blade `@if`/`@can`), not hidden by CSS — an unauthorized link never renders rather than being hidden-but-present.
+Navy topbar with labeled links and a 2rem (32px) rounded gold CT badge with navy
+letters beside CaseTrack. Active links use blue plus an underline. A labeled Menu
+control replaces the expanded links on narrow screens. Navigation is role-gated
+in Blade and mirrors backend authorization.
 
 ### Identity Bar
-The dashboard's signature component: navy gradient card, eyebrow label ("INVESTIGATOR DASHBOARD" style) above a large name, a role pill, an avatar built from initials (no avatar-photo column exists or is planned), and inline stat tiles. Heading order deliberately leads with the page's purpose and follows with whose data it is — "Dashboard" first, name second — not the reverse.
+The dashboard's signature component: navy gradient card, bold page title above the account name, a role pill, an avatar built from initials (no avatar-photo column exists or is planned), and inline stat tiles. Heading order deliberately leads with the page's purpose and follows with whose data it is — "Dashboard" first, name second — not the reverse.
 
 ### Stat Tiles
 Icon-in-a-translucent-square + label/value pair, used inside the identity bar. Supporting text sits at `rgba(255,255,255,0.72)` opacity. The investigator and supervisor dashboards each use three balanced tiles, stacking at narrow widths and switching to three columns from the medium breakpoint.
@@ -151,4 +194,4 @@ A 5-segment bar (`.weight-meter`) replacing a bare digit for `complexity_weight`
 - **Don't** introduce a second shadow value, a hover-elevation effect, or any glow/gradient-text treatment — this system is deliberately flat and restrained (Operate mode, not Persuade).
 - **Don't** use amber for active case status; reserve it for due-soon alert/report states and use red for overdue or danger conditions.
 - **Don't** revert to Bootstrap's stock `#0d6efd` blue or default `0.375rem` radius; both were deliberately overridden and reverting reads as "consumer-web" against this product's brief.
-- **Don't** add a display/heading font distinct from Nunito, or a decorative illustration/hero treatment — no such elements exist anywhere in the product today.
+- **Don't** add fonts beyond the approved Manrope / Source Sans 3 pairing, or decorative hero treatments.

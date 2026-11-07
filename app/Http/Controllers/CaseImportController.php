@@ -13,10 +13,8 @@ use Illuminate\Support\Facades\Storage;
 
 /**
  * Bulk case intake from a CSV/XLSX file — Option B (case + timeline +
- * people), the write-side mirror of /reports/export. Supervisor-only
- * (role:Supervisor route middleware): import creates cases and assigns
- * investigators, which is case data, so — unlike /workload or /admin/* — it
- * is not something the Admin role touches (CLAUDE.md, Roles / access rules).
+ * people). Both case-handling roles may import; Investigators are confined
+ * to their own caseload by the shared validator. Admins cannot import.
  *
  * Three steps, no per-case decision anywhere in them for a policy class to
  * make: upload, a dry-run preview nothing is written from, and a commit that
@@ -28,6 +26,7 @@ class CaseImportController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
+        $this->middleware('can:create,App\Models\CaseModel');
     }
 
     public function create()
@@ -40,7 +39,7 @@ class CaseImportController extends Controller
      * stashed on the private disk under a name fixed to the acting user so a
      * second preview overwrites rather than accumulates.
      *
-     * ponytail: no scheduled sweep for a preview a Supervisor uploads and
+     * shortcut: no scheduled sweep for a preview a user uploads and
      * never commits. The fixed-per-user filename caps the mess at one stale
      * file per user rather than one per attempt — add a sweep if that
      * proves not to be enough.
@@ -48,10 +47,10 @@ class CaseImportController extends Controller
     public function preview(UploadCaseImportRequest $request, CaseImportService $importer)
     {
         $upload = $request->file('file');
-        $path = $upload->storeAs('imports', "user-{$request->user()->id}.".$upload->getClientOriginalExtension());
+        $path = $upload->storeAs('imports', "user-{$request->user()->id}.".strtolower($upload->getClientOriginalExtension()));
 
         try {
-            $result = $importer->validate($importer->parse(Storage::path($path)));
+            $result = $importer->validate($importer->parse(Storage::path($path)), $request->user());
         } catch (\RuntimeException $e) {
             Storage::delete($path);
 
@@ -61,6 +60,7 @@ class CaseImportController extends Controller
         session([
             'case_import.path' => $path,
             'case_import.original_name' => $upload->getClientOriginalName(),
+            'case_import.user_id' => $request->user()->id,
         ]);
 
         // Ready rows only carry investigator_id; resolved here so the
@@ -88,16 +88,27 @@ class CaseImportController extends Controller
     {
         $path = session('case_import.path');
 
+        if ($path) {
+            abort_unless(
+                session('case_import.user_id') === $request->user()->id
+                && in_array($path, array_map(
+                    fn ($extension) => "imports/user-{$request->user()->id}.{$extension}",
+                    ['csv', 'txt', 'xlsx']
+                ), true),
+                403
+            );
+        }
+
         if (! $path || ! Storage::exists($path)) {
             return redirect()->route('cases.import.create')
                 ->withErrors(['file' => __('Nothing to import — upload a file first.')]);
         }
 
         try {
-            $result = $importer->validate($importer->parse(Storage::path($path)));
+            $result = $importer->validate($importer->parse(Storage::path($path)), $request->user());
         } catch (\RuntimeException $e) {
             Storage::delete($path);
-            session()->forget(['case_import.path', 'case_import.original_name']);
+            session()->forget('case_import');
 
             return redirect()->route('cases.import.create')->withErrors(['file' => $e->getMessage()]);
         }
@@ -142,7 +153,7 @@ class CaseImportController extends Controller
         });
 
         Storage::delete($path);
-        session()->forget(['case_import.path', 'case_import.original_name']);
+        session()->forget('case_import');
 
         $status = trans_choice(':count case imported.|:count cases imported.', count($created), ['count' => count($created)]);
 

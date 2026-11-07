@@ -7,8 +7,8 @@ use Illuminate\Foundation\Http\FormRequest;
 class UploadCaseImportRequest extends FormRequest
 {
     /**
-     * Authorization is the role:Supervisor route middleware — nothing here
-     * is scoped to an individual case, so no policy class is involved.
+     * Routes enforce case-handling roles; the controller enforces the
+     * case-creation policy and the importer validates assignment per case.
      */
     public function authorize(): bool
     {

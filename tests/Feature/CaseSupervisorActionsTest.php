@@ -243,7 +243,9 @@ class CaseSupervisorActionsTest extends TestCase
     {
         $investigator = User::factory()->investigator()->create();
         $colleague = User::factory()->investigator()->create();
-        $case = CaseModel::factory()->assignedTo($investigator)->create(['docket_no' => 'CHR-VIII-2026-0400']);
+        $case = CaseModel::factory()->assignedTo($investigator)->create([
+            'docket_no' => 'CHR-VIII-2026-0400', 'status' => CaseModel::STATUS_DOCKETED,
+        ]);
 
         $this->actingAs($investigator)
             ->put(route('cases.update', $case), [
