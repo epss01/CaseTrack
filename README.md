@@ -4,6 +4,9 @@ CaseTrack is a Laravel 11 application scaffolded with authentication views built
 
 ## Contributing
 
+For office-server HTTPS installation, see [the deployment runbook](deployment/README.md).
+The deployment package initially supports Windows/XAMPP; office activation still requires CHR IT.
+
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the branching strategy — `main` is checkpoint-only,
 `develop` is the working trunk, features branch off `develop`.
 
