@@ -4,10 +4,11 @@
 
 - **`main`** — deployment-ready checkpoints only. Advances only via an explicit, approved
   promotion from `develop`, tied to a specific milestone (adviser review, submission). Every
-  promotion strips dev/AI-tooling files (`CLAUDE.md`, `.claude/`) so `main` never carries
+  promotion strips dev/AI-tooling files (`AGENTS.md`, `CLAUDE.md`, `.claude/`,
+  `.codex/`, `.agents/`) so `main` never carries
   anything but the deployable app. Tagged at each checkpoint (e.g. `v0.1-adviser-review`).
-- **`develop`** — the working trunk. Always green. Carries dev tooling (`CLAUDE.md`,
-  `.claude/`) for the team.
+- **`develop`** — the working trunk. Always green. Carries dev tooling (`AGENTS.md`,
+  `CLAUDE.md`, `.claude/`, `.codex/`, `.agents/`) for the team.
 - **`feature/*`** — one topic per branch, cut from `develop`, merged back with `--no-ff`
   (never squashed, never fast-forwarded) so the branch's own commits survive as a
   distinguishable unit in history.
@@ -35,10 +36,16 @@ git merge --no-ff develop
 git rm CLAUDE.md
 git rm AGENTS.md
 git rm -r .claude/
+git rm -r --ignore-unmatch .codex/ .agents/
 git commit -m "chore: remove dev-only tooling files for deployment checkpoint"
 git tag v0.X-checkpoint-name
 git push origin main --tags
 ```
 
-`main` must never contain `CLAUDE.md`, `AGENTS.md`, or `.claude/` — they're project-internal
+`main` must never contain `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.codex/`, or `.agents/` — they're project-internal
 tooling with no place in a deployed or submitted artifact.
+
+The Codex workflow and detailed usage manual live in `.codex/README.md`.
+These promotion commands require explicit checkpoint approval; the workflow
+does not run them automatically. Exclude the same tooling from manually prepared
+deployment/submission packages, including untracked local tooling directories.
