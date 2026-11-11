@@ -1,11 +1,13 @@
 @extends('layouts.app')
 
+@section('title', __('Delete case'))
+
 @section('content')
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card border-danger">
-                <div class="card-header bg-danger text-white">{{ __('Delete Case') }}</div>
+                <div class="card-header bg-danger text-white"><h1 class="h5 mb-0">{{ __('Delete Case') }}</h1></div>
 
                 <div class="card-body">
                     <p>{{ __('Delete this case? It disappears from the case list along with everything filed under it.') }}</p>

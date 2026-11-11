@@ -225,6 +225,19 @@ class CaseDeadlineService
     }
 
     /**
+     * Earliest outstanding tracked obligation; null means completed or untracked.
+     *
+     * @return array{days: int, label: string, deadline: CarbonImmutable, status: string, days_remaining: int}|null
+     */
+    public function nextOutstandingFor(?CaseTimeline $timeline, ?CarbonImmutable $today = null): ?array
+    {
+        return collect($this->statusesFor($timeline, $today))
+            ->reject(fn (array $milestone) => $milestone['status'] === self::STATUS_SUBMITTED)
+            ->sortBy('days_remaining')
+            ->first();
+    }
+
+    /**
      * The worst outstanding milestone for one case, or null if unmeasurable.
      *
      * Null means no timeline row and no date of docket — nothing to count from.
@@ -262,6 +275,16 @@ class CaseDeadlineService
         return $timeline?->date_fir_submitted === null
             ? null
             : CarbonImmutable::parse($timeline->date_fir_submitted)->startOfDay();
+    }
+
+    public function daysToFir(?CaseTimeline $timeline): ?int
+    {
+        $fir = $this->resolvedOn($timeline);
+        if ($fir === null || $timeline->date_of_docket === null) {
+            return null;
+        }
+
+        return (int) CarbonImmutable::parse($timeline->date_of_docket)->startOfDay()->diffInDays($fir, false);
     }
 
     /**

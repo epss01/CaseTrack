@@ -1,12 +1,14 @@
 @extends('layouts.app')
 
+@section('title', __('Workload'))
+
 @section('content')
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-10">
             <div class="card">
                 <div class="card-header">
-                    {{ __('Workload') }} &mdash; {{ Auth::user()->office_region }}
+                    <h1 class="h5 mb-0">{{ __('Workload') }} &mdash; {{ Auth::user()->office_region }}</h1>
                 </div>
 
                 <div class="card-body">

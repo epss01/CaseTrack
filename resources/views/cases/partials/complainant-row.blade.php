@@ -16,7 +16,7 @@
 <div class="party-row border rounded p-3 mb-3">
     <div class="row g-3">
         <div class="col-md-9">
-            <label class="form-label" for="complainants_{{ $index }}_name">{{ __('Name') }}</label>
+            <label class="form-label" for="complainants_{{ $index }}_name">{{ __('Name') }} <span class="text-muted small">({{ __('required') }} {{ __('if a complainant is entered') }})</span></label>
             <input id="complainants_{{ $index }}_name"
                    type="text"
                    class="form-control @if (! $isTemplate) @error($prefix.'.name') is-invalid @enderror @endif"

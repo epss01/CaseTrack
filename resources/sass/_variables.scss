@@ -1,5 +1,7 @@
 // Body
-$body-bg: #f8fafc;
+$body-bg: #f7f8fa;
+$body-color: #2d3748;
+$secondary: #2c5282;
 
 // Typography
 $font-family-sans-serif: 'Source Sans 3', 'Segoe UI', sans-serif;
@@ -17,17 +19,29 @@ $line-height-base: 1.6;
 
 // Brand
 //
-// A deeper blue than Bootstrap's default #0d6efd — this is a Commission
-// case-management tool, and the stock palette reads consumer-web.
-$primary: #1d4ed8;
+// Navy actions and secondary blue links follow the approved institutional palette.
+$primary: #1e3a5f;
 
 // Shape
 //
-// Bootstrap defaults to .375rem, which looks sharper than the softer cards the
-// interface is modelled on.
-$border-radius: 0.625rem;
-$border-radius-sm: 0.5rem;
-$border-radius-lg: 0.875rem;
+// Compact controls and softly squared panels.
+$border-radius: 0.25rem;
+$border-radius-sm: 0.25rem;
+$border-radius-lg: 0.5rem;
+$input-btn-padding-y: 0.6rem;
+$input-btn-padding-x: 0.9rem;
+$input-border-color: #8896a8;
+$input-bg: #fff;
+$card-bg: #fff;
+$table-bg: #fff;
+$form-check-input-bg: #fff;
+$form-check-input-border: 1px solid #8896a8;
+$danger: #991b1b;
+$input-placeholder-color: #647084;
+$form-text-color: #596579;
+$text-muted: #596579;
+$link-color: #2c5282;
+$btn-font-weight: 600;
 
 // Chrome
 $card-border-color: #e6ecf3;
@@ -36,8 +50,8 @@ $table-border-color: #eef2f7;
 
 // The identity bar on the investigator dashboard. Not a Bootstrap variable —
 // consumed by _casetrack.scss, which is imported after Bootstrap.
-$casetrack-navy: #102f4f;
-$casetrack-navy-light: #1a4470;
+$casetrack-navy: #1e3a5f;
+$casetrack-navy-light: #2c5282;
 $casetrack-gold: #f5cc29;
 
 // Status accents. Amber marks a deadline due soon; slate is Closed. Active

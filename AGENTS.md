@@ -41,6 +41,11 @@ the session note for later application.
 
 ## Project scope and stack
 
+The November 9, 2026 scope amendment permits retrospective K-means only in
+the read-only Case profiles report. It groups authorized FIR submissions by
+recorded complexity, party record count, and docket-to-FIR duration. Assignment,
+statutory deadlines, case status, and legal decisions remain outside clustering.
+
 - CaseTrack is a standalone internal investigation case assignment,
   monitoring, and reporting system. It is deterministic and rule-based; it is
   not an AI/chatbot system.
@@ -131,3 +136,68 @@ the session note for later application.
   and `DESIGN.md` before making new design decisions.
 - Flag assumptions about fields, rules, or unresolved product decisions rather
   than guessing silently.
+
+## Adaptive Codex workflow
+
+Use `.codex/README.md` for the walkthrough and validation limits. These rules
+request delegation where indicated; do not spawn agents just to fill roles.
+
+- The main agent coordinates, plans proportionally, implements, verifies, and
+  integrates. Simple wording changes, isolated low-risk fixes, and minor
+  refactors stay with the main agent. Respect "work solo" or disabled roles.
+- For bounded features and nontrivial bugs, make a short plan. Request an
+  independent `reviewer` for changes to application behavior or material risk.
+  Use `researcher` only when a bounded investigation saves substantial reading.
+- For authorization, schema, WCS/deadlines, broad architecture, or destructive
+  operations, gather evidence and present concrete consequential decisions for
+  approval before implementing those decisions. Existing authorization persists;
+  routine implementation choices do not need repeated approval. After changes,
+  request independent review. An ad-hoc `gpt-6-astra` agent is appropriate only
+  for difficult architecture or unresolved substantive findings.
+- Default models: main `gpt-6.1-sol`/medium; `researcher` `gpt-6-luna`/high;
+  `reviewer` `gpt-6.1-sol`/high; `manuscript_writer` `gpt-6.1-sol`/medium.
+  These are explicit model-selection instructions for delegated work. Leave
+  the user's chosen main model alone during an active chat.
+- Use at most two subagents concurrently, with no recursive delegation. Give
+  each a bounded question, relevant paths, authority/conflicts, permitted edits,
+  acceptance criteria, and expected output. Prefer fresh contexts for independent
+  review and compact handoffs over copying the entire conversation.
+- Use the named agent when supported. If the current client has no named-agent
+  selector, read its `.codex/agents/<name>.toml` and pass its instructions and
+  model explicitly to native delegation. With the collaboration tool, model
+  overrides require `fork_turns="none"`; include project rules in the handoff.
+  Report this fallback rather than claiming automatic agent-file discovery.
+- Only the coordinator writes files by default. Specialists return findings or
+  draft text. If implementation is explicitly delegated, transfer exclusive
+  ownership of named files and wait before editing them again. Shared working
+  directories and "read-only" instructions are not isolated sandboxes.
+- Review a stable diff against requirements and actual code. Return concrete
+  findings with file/line evidence, impact, and missing tests. Allow one review
+  pass and one focused recheck; unresolved significant issues prevent a claim of
+  completion. Do not silently downgrade an unavailable independent review to
+  self-review. On delegation failure, continue safe independent work, disclose
+  the failure, and use an available model or work serially.
+- Run the checks required above before reporting completion; use the existing
+  Pint check for changed PHP. Configuration/docs-only work needs configuration,
+  link, and diff checks rather than the application test suite. Report exactly
+  what ran, what passed, and what remains unverified. Never reuse old test counts
+  as evidence for the current change.
+- Use `manuscript_writer` for requested academic drafting or substantial
+  revisions, not routine session summaries. Identify the current target/version
+  before edits; the local July PDF is only a baseline. Provide evidence and
+  unresolved claims. Preserve EVSU/APA requirements and the distinction between
+  synthetic technical results and actual CHR evaluation. No fabricated sources,
+  participants, results, deployment claims, or case-identifying examples.
+- The researcher may prepare documentation facts; only the coordinator appends
+  a session note when the user requests logging. Use Asia/Singapore dates and
+  the existing note format. Keep wiki changes as proposals in that note. Do not
+  add automatic session-writing hooks or edit a live manuscript without scope
+  authorizing that document edit. Never put credentials or case data in notes.
+- Do not commit, push, deploy, or change external services without authorization.
+  Preserve Claude tooling, existing skills, hooks, and user changes. Reuse domain
+  checklists only after checking for outdated assumptions.
+- Known conflict: the closure instruction above describes ordinary-form closure,
+  while current code and the wiki describe a dedicated closure endpoint. Flag
+  this when relevant; do not change application behavior or rewrite either
+  source silently. Historical wiki stack descriptions and Claude audit
+  exceptions are not evidence of current implementation.

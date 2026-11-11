@@ -23,14 +23,15 @@
                 </p>
             </div>
 
-            <div class="card filter-panel mb-3">
+            <details class="card filter-panel analytics-filters mb-3" open data-analytics-filters data-has-errors="{{ $errors->any() ? 'true' : 'false' }}">
+                <summary class="d-md-none">{{ __('Filters') }}</summary>
                 <div class="card-body">
                     <form method="GET" action="{{ route('reports.analytics') }}">
                         <div class="filter-fields">
                             <div class="filter-field">
                                 <label for="from" class="form-label">{{ __('Period from') }}</label>
                                 <input type="date" class="form-control @error('from') is-invalid @enderror"
-                                       id="from" name="from" value="{{ $filters['from'] }}">
+                                       id="from" name="from" value="{{ old('from', $filters['from']) }}">
                                 @error('from')
                                     <span class="invalid-feedback" role="alert">{{ $message }}</span>
                                 @enderror
@@ -39,7 +40,7 @@
                             <div class="filter-field">
                                 <label for="to" class="form-label">{{ __('Period to') }}</label>
                                 <input type="date" class="form-control @error('to') is-invalid @enderror"
-                                       id="to" name="to" value="{{ $filters['to'] }}">
+                                       id="to" name="to" value="{{ old('to', $filters['to']) }}">
                                 @error('to')
                                     <span class="invalid-feedback" role="alert">{{ $message }}</span>
                                 @enderror
@@ -53,7 +54,7 @@
                                         <option value="">{{ __('All investigators') }}</option>
                                         @foreach ($investigators as $investigator)
                                             <option value="{{ $investigator->id }}"
-                                                @selected(($filters['investigator_id'] ?? null) == $investigator->id)>
+                                                @selected(old('investigator_id', $filters['investigator_id'] ?? null) == $investigator->id)>
                                                 {{ $investigator->full_name }}
                                             </option>
                                         @endforeach
@@ -67,7 +68,7 @@
                             <div class="filter-field">
                                 <label for="status" class="form-label">{{ __('Status') }}</label>
                                 <input type="text" class="form-control @error('status') is-invalid @enderror"
-                                       id="status" name="status" value="{{ $filters['status'] ?? '' }}"
+                                       id="status" name="status" value="{{ old('status', $filters['status'] ?? '') }}"
                                        list="analytics-status-options" autocomplete="off">
                                 <datalist id="analytics-status-options">
                                     @foreach ($statuses as $status)
@@ -88,6 +89,23 @@
                         </div>
                     </form>
                 </div>
+            </details>
+
+            <div class="analytics-overview mb-4">
+                <section class="analytics-lead" aria-labelledby="clearance-title">
+                    <h2 id="clearance-title">{{ __('Clearance Rate') }}</h2>
+                    <p class="analytics-lead__value">{{ $metrics['clearance_rate'] === null ? __('Not available') : number_format($metrics['clearance_rate'], 1).'%' }}</p>
+                    <p class="mb-0">{{ $metrics['clearance_rate'] === null
+                        ? __('No cases received in this period.')
+                        : __('Cases resolved compared with cases received in this period.') }}</p>
+                </section>
+                <section class="analytics-context" aria-labelledby="disposition-title">
+                    <h2 id="disposition-title">{{ __('Disposition Time') }}</h2>
+                    <p class="analytics-value mb-2">{{ $metrics['disposition_days'] === null ? __('Not available') : __(':n days', ['n' => number_format($metrics['disposition_days'], 1)]) }}</p>
+                    <p class="text-muted mb-0">{{ $metrics['disposition_days'] === null
+                        ? __('No cases resolved in this period.')
+                        : __('Backlog expressed in days at this period’s resolution rate. Not a completion forecast.') }}</p>
+                </section>
             </div>
 
             <div class="row g-3 mb-3" aria-label="{{ __('Period totals') }}">
@@ -143,37 +161,57 @@
                     </figure>
                 </div>
                 <div class="col-lg-4">
-                    <section class="card h-100">
+                    @php
+                        $outcomeTotal = $metrics['resolved'] + $metrics['pending'];
+                        $resolvedShare = $outcomeTotal > 0 ? $metrics['resolved'] / $outcomeTotal * 100 : 0;
+                    @endphp
+                    <figure class="card h-100 mb-0" aria-labelledby="outcome-title" aria-describedby="outcome-note">
                         <div class="card-body">
-                            <h2>{{ __('Key measures') }}</h2>
-                            <h3 class="h6 mt-3">{{ __('Clearance Rate') }}</h3>
-                            <p class="analytics-value">{{ $metrics['clearance_rate'] === null ? __('Not available') : number_format($metrics['clearance_rate'], 1).'%' }}</p>
-                            <p class="text-muted">{{ $metrics['clearance_rate'] === null
-                                ? __('No cases received in this period.')
-                                : __('Resolved ÷ received. Above 100% means older cases were also resolved.') }}</p>
-                            <h3 class="h6 mt-4">{{ __('Disposition Time') }}</h3>
-                            <p class="analytics-value">{{ $metrics['disposition_days'] === null ? __('Not available') : __(':n days', ['n' => number_format($metrics['disposition_days'], 1)]) }}</p>
-                            <p class="text-muted mb-0">{{ $metrics['disposition_days'] === null
-                                ? __('No cases resolved in this period.')
-                                : __('Backlog expressed in days at this period’s resolution rate. Not a completion forecast.') }}</p>
+                            <h2 id="outcome-title">{{ __('Resolution and backlog') }}</h2>
+                            @if ($outcomeTotal > 0)
+                                <svg class="analytics-pie" viewBox="0 0 80 80" aria-hidden="true" focusable="false">
+                                    <circle cx="40" cy="40" r="32" class="analytics-pie__pending"/>
+                                    <circle cx="40" cy="40" r="16" fill="none" stroke-width="32"
+                                            pathLength="100" stroke-dasharray="{{ $resolvedShare }} {{ 100 - $resolvedShare }}"
+                                            transform="rotate(-90 40 40)" class="analytics-pie__resolved"/>
+                                </svg>
+                                <dl class="analytics-pie-legend">
+                                    <div>
+                                        <dt><span class="analytics-swatch analytics-swatch--resolved" aria-hidden="true"></span>{{ __('Resolved during period') }}</dt>
+                                        <dd>{{ number_format($metrics['resolved']) }} <span class="text-muted">({{ number_format($resolvedShare, 1) }}%)</span></dd>
+                                    </div>
+                                    <div>
+                                        <dt><span class="analytics-swatch analytics-swatch--pending" aria-hidden="true"></span>{{ __('Pending at period end') }}</dt>
+                                        <dd>{{ number_format($metrics['pending']) }} <span class="text-muted">({{ number_format(100 - $resolvedShare, 1) }}%)</span></dd>
+                                    </div>
+                                </dl>
+                            @else
+                                <p class="analytics-chart-empty">{{ __('No resolved or pending cases to chart for this period.') }}</p>
+                            @endif
+                            <figcaption id="outcome-note" class="text-muted small">
+                                {{ __('Total: :total cases = :resolved resolved during period + :pending pending at period end.', ['total' => number_format($outcomeTotal), 'resolved' => number_format($metrics['resolved']), 'pending' => number_format($metrics['pending'])]) }}
+                                {{ __('Cases resolved before the period are excluded. This is not the Clearance Rate.') }}
+                            </figcaption>
                         </div>
-                    </section>
+                    </figure>
                 </div>
             </div>
 
             <div class="card">
                 <div class="card-body">
-                    <p>{{ __('Resolved means the Final Investigation Report (FIR) was submitted. Closing a case does not record its FIR date.') }}</p>
                     <details class="calculation-details">
                         <summary>{{ __('How we calculate this') }}</summary>
+                        <p class="mt-2">{{ __('Resolved means the Final Investigation Report (FIR) was submitted. Closing a case does not record its FIR date.') }}</p>
                         <p class="mt-2">
                             <strong>{{ __('Clearance Rate:') }}</strong>
                             {{ __('cases resolved during the period divided by cases received during the period, multiplied by 100.') }}
+                            {{ __('Above 100% means older cases were also resolved.') }}
                         </p>
-                        <p class="mb-0">
+                        <p>
                             <strong>{{ __('Disposition Time:') }}</strong>
                             {{ __('cases pending at the end of the period divided by cases resolved during the period, multiplied by the number of days in the period.') }}
                         </p>
+                        <p class="mb-0">{{ __('The pie divides cases resolved during the period plus cases pending at its end into two shares. Percentages are rounded.') }}</p>
                     </details>
 
                     @if ($metrics['untracked'] > 0)
@@ -201,3 +239,17 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    const analyticsFilters = document.querySelector('[data-analytics-filters]');
+    const desktopFilters = window.matchMedia('(min-width: 768px)');
+    const updateFilters = () => {
+        analyticsFilters.open = desktopFilters.matches
+            || analyticsFilters.dataset.hasErrors === 'true'
+            || analyticsFilters.contains(document.activeElement);
+    };
+    updateFilters();
+    desktopFilters.addEventListener('change', updateFilters);
+</script>
+@endpush

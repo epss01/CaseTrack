@@ -28,10 +28,10 @@
                     <div class="d-flex gap-2">
                         {{-- The report is a read of the case, so editing stays
                              where editing lives. --}}
-                        <a href="{{ route('cases.show', $case) }}" class="btn btn-sm btn-outline-light">
+                        <a href="{{ route('cases.show', $case) }}" class="btn btn-sm btn-outline-primary">
                             {{ __('Case profile') }}
                         </a>
-                        <a href="{{ route('reports.index') }}" class="btn btn-sm btn-outline-light">
+                        <a href="{{ route('reports.index') }}" class="btn btn-sm btn-outline-primary">
                             {{ __('All reports') }}
                         </a>
                     </div>

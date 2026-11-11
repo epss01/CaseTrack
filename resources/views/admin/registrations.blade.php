@@ -8,7 +8,7 @@
         <div class="col-md-10">
             <div class="card">
                 <div class="card-header">
-                    {{ __('Pending Registrations') }}
+                    <h1 class="h5 mb-0">{{ __('Pending Registrations') }}</h1>
                 </div>
 
                 <div class="card-body">

@@ -19,6 +19,11 @@ A web-based investigation case assignment, monitoring, and reporting system for 
 
 ## Positioning
 
+The Case profiles report uses retrospective K-means to help investigators and
+supervisors inspect similar FIR submissions within their authorized caseload.
+The profiles describe current records for a selected period. Supervisors and
+investigators can inspect the docket records underlying each summary.
+
 Deterministic, rule-based deadline and workload tracking — explicitly not an AI/chatbot system and not a legal decision-making tool. The two mechanisms a generic ticketing/case-management tool wouldn't have out of the box are the Workload Capacity Score (`WCS_i = Σ C_j × (2 − P_i)`, suggesting rather than assigning cases) and assigned-investigator-controlled closure with an explicit audit event for closing or reopening.
 
 ## Operating Context

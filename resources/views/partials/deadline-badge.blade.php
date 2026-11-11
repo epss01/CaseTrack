@@ -19,4 +19,13 @@
     };
 @endphp
 
-<span class="badge {{ $deadlineBadgeClass }}">{{ $deadlineBadgeLabel }}</span>
+@php
+    $deadlineIcon = match ($status) {
+        CaseDeadlineService::STATUS_OVERDUE => 'square',
+        CaseDeadlineService::STATUS_DUE_SOON => 'alert-triangle',
+        CaseDeadlineService::STATUS_SUBMITTED => 'check-circle',
+        default => 'circle',
+    };
+@endphp
+
+<span class="badge deadline-badge {{ $deadlineBadgeClass }}">@include('partials.icon', ['name' => $deadlineIcon]) {{ $deadlineBadgeLabel }}</span>

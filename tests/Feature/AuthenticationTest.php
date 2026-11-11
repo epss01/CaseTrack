@@ -16,7 +16,25 @@ class AuthenticationTest extends TestCase
 
     public function test_login_screen_can_be_rendered(): void
     {
-        $this->get('/login')->assertOk()->assertSee('Username');
+        $this->get('/login')->assertOk()->assertSee('Username')
+            ->assertSee('autocomplete="username"', false)
+            ->assertSee('autocomplete="current-password"', false)
+            ->assertSee('name="remember"', false)
+            ->assertSee(route('register'), false)
+            ->assertSee('Contact your administrator to reset it.')
+            ->assertDontSee('/password/reset');
+    }
+
+    public function test_failed_sign_in_preserves_username_and_associates_the_error_with_its_field(): void
+    {
+        $this->from('/login')->post('/login', ['username' => 'ui-test', 'password' => 'incorrect'])
+            ->assertRedirect('/login')->assertSessionHasErrors('username');
+
+        $this->get('/login')->assertOk()
+            ->assertSee('value="ui-test"', false)
+            ->assertSee('aria-describedby="username-error"', false)
+            ->assertSee('id="username-error"', false)
+            ->assertDontSee('value="incorrect"', false);
     }
 
     public function test_users_can_authenticate_with_their_username(): void

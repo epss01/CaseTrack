@@ -21,8 +21,8 @@
             @endif
 
             {{-- The supervisor, and the whole office's caseload in three figures. --}}
-            <div class="identity-bar mb-3">
-                <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+            <div class="identity-bar identity-bar--highlighted mb-3">
+                <div class="identity-bar__heading d-flex flex-wrap justify-content-between align-items-start gap-3">
                     <div class="d-flex align-items-center gap-3">
                         <span class="avatar-initials" aria-hidden="true">{{ mb_strtoupper($initials) }}</span>
 
@@ -46,15 +46,15 @@
 
                     <div class="d-flex flex-wrap gap-2">
                         @can('create', CaseModel::class)
-                            <a href="{{ route('cases.create') }}" class="btn btn-sm btn-light">{{ __('New Case') }}</a>
+                            <a href="{{ route('cases.create') }}" class="btn btn-sm btn-primary">{{ __('New Case') }}</a>
                         @endcan
 
-                        <a href="{{ route('cases.index') }}" class="btn btn-sm btn-outline-light">{{ __('All cases') }}</a>
+                        <a href="{{ route('cases.index') }}" class="btn btn-sm btn-outline-primary">{{ __('All cases') }}</a>
 
                         {{-- Workload scores and performance ratings live on their own
                              page and are not restated here: /workload is where P_i is
                              set, so it is the one place those figures are authoritative. --}}
-                        <a href="{{ route('workload.index') }}" class="btn btn-sm btn-outline-light">{{ __('Workload') }}</a>
+                        <a href="{{ route('workload.index') }}" class="btn btn-sm btn-outline-primary">{{ __('Workload') }}</a>
                     </div>
                 </div>
 
@@ -62,7 +62,7 @@
 
                 <div class="row row-cols-1 row-cols-md-3 g-3">
                     <div class="col">
-                        <div class="stat-tile">
+                        <div class="stat-tile stat-tile--primary">
                             <span class="stat-tile__icon">@include('partials.icon', ['name' => 'folder'])</span>
                             <span>
                                 <span class="stat-tile__label">{{ __('Active cases') }}</span>
@@ -95,6 +95,8 @@
                     </div>
                 </div>
             </div>
+
+            @include('partials.needs-attention', ['officeWide' => true])
 
             {{-- The mix across every investigator's active caseload. --}}
             @if ($activeByStatus->isNotEmpty())
