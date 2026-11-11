@@ -162,4 +162,3 @@ class CaseProfileService
         return null;
     }
 }
-

@@ -75,4 +75,3 @@ class CaseProfileServiceTest extends TestCase
         $this->assertSame($report, $service->report(array_reverse($cases)));
     }
 }
-

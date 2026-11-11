@@ -5,7 +5,10 @@ namespace Tests\Feature;
 use App\Models\AuditLog;
 use App\Models\CaseModel;
 use App\Models\CaseTimeline;
+use App\Models\Complainant;
+use App\Models\Respondent;
 use App\Models\User;
+use App\Models\Victim;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -14,6 +17,7 @@ class CaseProfilesPageTest extends TestCase
     use RefreshDatabase;
 
     private const URL = '/reports/analytics/case-profiles';
+
     private const PERIOD = '?from=2026-03-01&to=2026-03-31';
 
     private function submission(User $owner, int $weight, string $docket, ?string $fir): CaseModel
@@ -36,7 +40,7 @@ class CaseProfilesPageTest extends TestCase
             $sameDay = $this->submission($owner, 1, '2026-03-01', '2026-03-01');
             $this->submission($owner, 3, '2026-02-28', '2026-03-01');
             $many = $this->submission($owner, 5, '2026-02-01', '2026-03-31');
-            foreach ([\App\Models\Victim::class, \App\Models\Respondent::class, \App\Models\Complainant::class] as $model) {
+            foreach ([Victim::class, Respondent::class, Complainant::class] as $model) {
                 $model::factory()->create(['case_id' => $many->id, 'name' => 'Private party']);
             }
         }
@@ -78,4 +82,3 @@ class CaseProfilesPageTest extends TestCase
             ->assertViewHas('to', today()->toDateString());
     }
 }
-
