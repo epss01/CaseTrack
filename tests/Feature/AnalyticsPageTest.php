@@ -23,6 +23,38 @@ class AnalyticsPageTest extends TestCase
 
     private const PERIOD = ['from' => '2026-01-01', 'to' => '2026-06-30'];
 
+    public function test_outcome_pie_uses_resolved_and_pending_cases_within_the_authorized_scope(): void
+    {
+        $owner = User::factory()->investigator()->create();
+        $this->caseFor($owner, '2026-02-01', '2026-03-01', CaseModel::STATUS_CLOSED);
+        $this->caseFor($owner, '2026-02-01');
+        $this->caseFor($owner, '2025-12-01');
+        $this->caseFor($owner, '2025-01-01', '2025-02-01', CaseModel::STATUS_CLOSED);
+        $this->caseFor(null, '2026-02-01', '2026-03-01', CaseModel::STATUS_CLOSED);
+
+        $this->actingAs($owner)->get(route('reports.analytics', self::PERIOD))->assertOk()
+            ->assertSeeInOrder(['Resolved during period', '1', '33.3%'])
+            ->assertSeeInOrder(['Pending at period end', '2', '66.7%'])
+            ->assertSee('This is not the Clearance Rate.');
+    }
+
+    public function test_outcome_pie_handles_empty_and_single_slice_caseloads(): void
+    {
+        $owner = User::factory()->investigator()->create();
+        $url = route('reports.analytics', self::PERIOD);
+        $this->actingAs($owner)->get($url)->assertOk()
+            ->assertSee('No resolved or pending cases to chart for this period.')
+            ->assertDontSee('stroke-dasharray=', false);
+
+        $case = $this->caseFor($owner, '2026-02-01');
+        $this->get($url)->assertOk()->assertSee('stroke-dasharray="0 100"', false)
+            ->assertSeeInOrder(['Pending at period end', '1', '100.0%']);
+
+        $case->timeline->update(['date_fir_submitted' => '2026-03-01']);
+        $this->get($url)->assertOk()->assertSee('stroke-dasharray="100 0"', false)
+            ->assertSeeInOrder(['Resolved during period', '1', '100.0%']);
+    }
+
     public function test_resolution_bar_uses_the_same_scale_when_resolutions_exceed_intake(): void
     {
         $owner = User::factory()->investigator()->create();

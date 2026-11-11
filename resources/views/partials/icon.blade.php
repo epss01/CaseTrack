@@ -12,6 +12,8 @@
 --}}
 @php
     $icons = [
+        'circle' => '<circle cx="12" cy="12" r="8"/>',
+        'square' => '<rect x="4" y="4" width="16" height="16" rx="1"/>',
         'folder' => '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>',
         'clock' => '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
         'check-circle' => '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',

@@ -10,6 +10,7 @@ use App\Models\AuditLog;
 use App\Models\CaseModel;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\CaseDeadlineService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -106,11 +107,14 @@ class CaseController extends Controller
     /**
      * Show the Case Profile Matrix: the whole case on one read-only page.
      */
-    public function show(CaseModel $case)
+    public function show(CaseModel $case, CaseDeadlineService $deadlines)
     {
         $case->load(['investigator', 'complainants', 'victims', 'respondents', 'timeline']);
 
-        return view('cases.show', ['case' => $case]);
+        return view('cases.show', [
+            'case' => $case,
+            'nextObligation' => $deadlines->nextOutstandingFor($case->timeline),
+        ]);
     }
 
     /**

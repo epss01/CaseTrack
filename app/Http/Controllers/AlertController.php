@@ -13,9 +13,7 @@ class AlertController extends Controller
     /**
      * The deadlines that need attention, worst first.
      *
-     * A page of its own rather than badges on the two dashboards: those exist
-     * to answer "what is my caseload" and "what needs a decision", and a third
-     * job would have made both harder to read. Neither dashboard is touched.
+     * The full work queue, also summarized on the case-handling dashboards.
      *
      * Role scoping is CaseModel::scopeVisibleTo(), the same scope /cases uses —
      * an investigator sees their own cases, a supervisor sees the office. There
@@ -67,10 +65,7 @@ class AlertController extends Controller
             // the one that decides the case's state: overdue runs negative, due
             // soon spans nought to the warning window, on track is past it. So
             // one sort answers both questions and they cannot disagree.
-            $driver = collect($milestones)
-                ->reject(fn (array $milestone) => $milestone['status'] === CaseDeadlineService::STATUS_SUBMITTED)
-                ->sortBy('days_remaining')
-                ->first();
+            $driver = $deadlines->nextOutstandingFor($case->timeline);
 
             // Every milestone discharged — the case has filed everything it owes
             // and belongs with the cases that need nothing done.

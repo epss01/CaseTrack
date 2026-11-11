@@ -21,9 +21,9 @@
 @endphp
 
 @section('content')
-<div class="container">
+<div class="container-fluid container-wide">
     <div class="row justify-content-center">
-        <div class="col-xl-11 case-record">
+        <div class="col-12 case-record">
 
             <a href="{{ route('cases.index') }}" class="d-inline-block mb-2">{{ __('Back to cases') }}</a>
 
@@ -48,8 +48,6 @@
                 <div>
                     <h1>{{ $case->docket_no }}</h1>
                     <p class="mb-2">{{ $case->case_title }}</p>
-                    @include('cases.partials.status-badge', ['status' => $case->status])
-                    <span class="text-muted ms-2">{{ __('Assigned to: :name', ['name' => $case->investigator?->full_name ?? '—']) }}</span>
                 </div>
 
                 <div class="d-flex flex-wrap gap-2 align-items-center">
@@ -75,6 +73,35 @@
                 </div>
             </div>
 
+            <section class="card mb-3" aria-label="{{ __('Case priorities') }}">
+                <dl class="card-body row g-3 mb-0">
+                    <div class="col-md-3">
+                        <dt class="mb-2">{{ __('Current status') }}</dt>
+                        <dd class="mb-0">@include('cases.partials.status-badge', ['status' => $case->status])</dd>
+                    </div>
+                    <div class="col-md-3">
+                        <dt class="mb-2">{{ __('Assigned investigator') }}</dt>
+                        <dd class="mb-0">{{ $case->investigator?->full_name ?? '—' }}</dd>
+                    </div>
+                    <div class="col-md-6">
+                        <dt class="mb-2">{{ __('Next outstanding obligation') }}</dt>
+                        <dd class="mb-0">
+                            @if ($case->status === \App\Models\CaseModel::STATUS_CLOSED)
+                                {{ __('Case closed. See the recorded timeline.') }}
+                            @elseif ($timeline?->date_of_docket === null)
+                                {{ __('Deadline unavailable: no docket date or timeline recorded.') }}
+                            @elseif ($nextObligation)
+                                <span class="d-block mb-1">{{ $nextObligation['label'] }} · {{ $nextObligation['deadline']->format('d M Y') }}</span>
+                                @include('partials.deadline-badge', ['status' => $nextObligation['status']])
+                            @else
+                                {{ __('No outstanding tracked obligations.') }}
+                            @endif
+                            <a class="d-block mt-2" href="#case-timeline">{{ __('View full timeline') }}</a>
+                        </dd>
+                    </div>
+                </dl>
+            </section>
+
             <nav class="section-nav" aria-label="{{ __('Case sections') }}">
                 <span class="text-muted">{{ __('Jump to:') }}</span>
                 <a href="#case-details">{{ __('Details') }}</a>
@@ -82,6 +109,8 @@
                 <a href="#case-timeline">{{ __('Timeline') }}</a>
             </nav>
 
+            <div class="case-profile-grid">
+            <div class="case-profile-main">
             <section class="card mb-4 case-section" id="case-details" tabindex="-1" aria-labelledby="details-heading">
                 <div class="card-header"><h2 class="h6 mb-0" id="details-heading">{{ __('Case details') }}</h2></div>
 
@@ -222,6 +251,7 @@
 
             </section>
 
+            </div>
             <section class="card mb-4 case-section" id="case-timeline" tabindex="-1" aria-labelledby="timeline-heading">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h2 class="h6 mb-0" id="timeline-heading">{{ __('Timeline') }}</h2>
@@ -254,6 +284,8 @@
                     @endif
                 </div>
             </section>
+
+            </div>
 
             <p><a href="{{ route('cases.index') }}">{{ __('Back to cases') }}</a></p>
         </div>

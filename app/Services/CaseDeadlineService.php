@@ -225,6 +225,19 @@ class CaseDeadlineService
     }
 
     /**
+     * Earliest outstanding tracked obligation; null means completed or untracked.
+     *
+     * @return array{days: int, label: string, deadline: CarbonImmutable, status: string, days_remaining: int}|null
+     */
+    public function nextOutstandingFor(?CaseTimeline $timeline, ?CarbonImmutable $today = null): ?array
+    {
+        return collect($this->statusesFor($timeline, $today))
+            ->reject(fn (array $milestone) => $milestone['status'] === self::STATUS_SUBMITTED)
+            ->sortBy('days_remaining')
+            ->first();
+    }
+
+    /**
      * The worst outstanding milestone for one case, or null if unmeasurable.
      *
      * Null means no timeline row and no date of docket — nothing to count from.

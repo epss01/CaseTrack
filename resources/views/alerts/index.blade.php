@@ -21,8 +21,8 @@
             {{-- What the page covers, and the caseload in four figures. Same
                  identity bar and stat tiles as the two dashboards: this is a
                  third view of the same caseload, not a different product. --}}
-            <div class="identity-bar mb-3">
-                <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+            <div class="identity-bar identity-bar--highlighted mb-3">
+                <div class="identity-bar__heading d-flex flex-wrap justify-content-between align-items-start gap-3">
                     <div>
                         <h1 class="identity-bar__title">
                             <span class="identity-bar__eyebrow">{{ __('Deadline Alerts') }}</span>
@@ -37,7 +37,7 @@
                         </div>
                     </div>
 
-                    <a href="{{ route('cases.index') }}" class="btn btn-sm btn-outline-light">
+                    <a href="{{ route('cases.index') }}" class="btn btn-sm btn-outline-primary">
                         {{ $officeWide ? __('All cases') : __('My cases') }}
                     </a>
                 </div>
@@ -46,7 +46,7 @@
 
                 <div class="row row-cols-2 row-cols-lg-4 g-3">
                     <div class="col">
-                        <div class="stat-tile">
+                        <div class="stat-tile stat-tile--overdue">
                             <span class="stat-tile__icon">@include('partials.icon', ['name' => 'alert-triangle'])</span>
                             <span>
                                 <span class="stat-tile__label">{{ __('Overdue') }}</span>
@@ -56,7 +56,7 @@
                     </div>
 
                     <div class="col">
-                        <div class="stat-tile">
+                        <div class="stat-tile stat-tile--due-soon">
                             <span class="stat-tile__icon">@include('partials.icon', ['name' => 'clock'])</span>
                             <span>
                                 <span class="stat-tile__label">{{ __('Due soon') }}</span>
@@ -126,7 +126,7 @@
                                             $remaining = $milestone['days_remaining'];
                                         @endphp
                                         <tr @class([
-                                            'row-pending table-warning' => $milestone['status'] === CaseDeadlineService::STATUS_OVERDUE,
+                                            'row-pending table-danger' => $milestone['status'] === CaseDeadlineService::STATUS_OVERDUE,
                                         ])>
                                             {{-- nowrap only where breaking the value costs more
                                                  than the width does: a docket number is an

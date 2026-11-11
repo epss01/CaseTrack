@@ -4,9 +4,10 @@
 // override its output. Everything here is app-specific and has no Bootstrap
 // equivalent worth bending into shape.
 
-// Cards sit on a tinted body background, so a hairline border alone reads flat.
+// Flat panels keep dense records distinct without decorative elevation.
 .card {
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    box-shadow: none;
+    border-radius: $border-radius-lg;
 }
 
 // The first Tab stop was the brand link on every page, with no way past the nav.
@@ -265,9 +266,10 @@ h1, .h1 {
 // ---------------------------------------------------------------- identity bar
 
 .identity-bar {
-    background: linear-gradient(135deg, $casetrack-navy 0%, $casetrack-navy-light 100%);
+    background: #fff;
+    border: 1px solid $card-border-color;
     border-radius: $border-radius-lg;
-    color: #fff;
+    color: $casetrack-navy;
     padding: 1.5rem;
 }
 
@@ -280,7 +282,7 @@ h1, .h1 {
 
 .identity-bar__eyebrow {
     display: block;
-    color: #fff;
+    color: $casetrack-navy;
     font-size: $h1-font-size;
     font-weight: 700;
     margin-bottom: 0.5rem;
@@ -297,22 +299,111 @@ h1, .h1 {
 }
 
 .identity-bar__meta {
-    color: rgba(255, 255, 255, 0.72);
+    color: $text-muted;
     font-size: 0.875rem;
 }
 
 .identity-bar__divider {
-    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    border-top: 1px solid $card-border-color;
     margin: 1.25rem 0 1rem;
+}
+
+// A strong page anchor above a light, readable strip of caseload figures.
+.identity-bar--highlighted {
+    .identity-bar__heading {
+        margin: -1.5rem -1.5rem 1.25rem;
+        padding: 1.5rem;
+        border-radius: $border-radius-lg $border-radius-lg 0 0;
+        background: $casetrack-navy;
+        color: #fff;
+    }
+
+    .identity-bar__eyebrow {
+        color: #fff;
+    }
+
+    .identity-bar__meta {
+        color: rgba(255, 255, 255, 0.85);
+    }
+
+    .identity-bar__divider {
+        display: none;
+    }
+
+    .avatar-initials {
+        background: $casetrack-gold;
+        border-color: $casetrack-gold;
+        color: $casetrack-navy;
+    }
+
+    .role-pill {
+        background: $casetrack-navy-light;
+        border-color: rgba(255, 255, 255, 0.4);
+    }
+
+    .btn-primary {
+        background: #fff;
+        border-color: #fff;
+        color: $casetrack-navy;
+
+        &:hover, &:active {
+            background: $casetrack-slate-bg;
+            border-color: $casetrack-slate-bg;
+            color: $casetrack-navy;
+        }
+    }
+
+    .btn-outline-primary {
+        color: #fff;
+        border-color: #fff;
+
+        &:hover, &:active {
+            color: $casetrack-navy;
+            background: #fff;
+        }
+    }
+
+    .identity-bar__heading :focus-visible {
+        outline: 3px solid $casetrack-gold;
+        outline-offset: 3px;
+    }
+
+    .stat-tile {
+        height: 100%;
+        padding: 0.75rem;
+        border-radius: $border-radius-sm;
+    }
+
+    .stat-tile--primary {
+        background: $casetrack-slate-bg;
+    }
+
+    .stat-tile--overdue {
+        background: $casetrack-red-bg;
+        color: $casetrack-red;
+
+        .stat-tile__label, .stat-tile__icon svg {
+            color: $casetrack-red;
+        }
+    }
+
+    .stat-tile--due-soon {
+        background: $casetrack-amber-bg;
+        color: $casetrack-amber;
+
+        .stat-tile__label, .stat-tile__note, .stat-tile__icon svg {
+            color: $casetrack-amber;
+        }
+    }
 }
 
 // A role pill, not a Bootstrap badge — those are too heavy on the dark ground.
 .role-pill {
     display: inline-block;
     padding: 0.15rem 0.6rem;
-    border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    background-color: rgba(255, 255, 255, 0.12);
+    border-radius: $border-radius-sm;
+    border: 1px solid $card-border-color;
+    background-color: $body-bg;
     font-size: 0.875rem;
     font-weight: 600;
     letter-spacing: 0.02em;
@@ -326,8 +417,8 @@ h1, .h1 {
     width: 2.75rem;
     height: 2.75rem;
     border-radius: 50%;
-    background-color: rgba(255, 255, 255, 0.16);
-    border: 1px solid rgba(255, 255, 255, 0.25);
+    background-color: $body-bg;
+    border: 1px solid $card-border-color;
     font-weight: 700;
     font-size: 0.95rem;
 }
@@ -335,49 +426,59 @@ h1, .h1 {
 // ------------------------------------------------------------------ stat tiles
 
 .stat-tile {
-    display: flex;
-    align-items: center;
-    gap: 0.7rem;
+    display: grid;
+    grid-template-columns: 2.25rem minmax(0, 1fr);
+    column-gap: 0.7rem;
+
+    > span:last-child {
+        display: contents;
+    }
 }
 
 .stat-tile__icon {
+    // Center beside the label and count; supporting notes must not lower the icon.
+    grid-column: 1;
+    grid-row: 1 / 3;
+    align-self: center;
     display: grid;
     place-items: center;
     flex: 0 0 auto;
     width: 2.25rem;
     height: 2.25rem;
     border-radius: $border-radius-sm;
-    background-color: rgba(255, 255, 255, 0.12);
+    background-color: $body-bg;
 
     svg {
         width: 1.1rem;
         height: 1.1rem;
-        color: rgba(255, 255, 255, 0.85);
+        color: $casetrack-navy;
     }
 }
 
 .stat-tile__label {
+    grid-column: 2;
+    grid-row: 1;
     display: block;
-    color: rgba(255, 255, 255, 0.72);
+    color: $text-muted;
     font-size: 0.875rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+
 }
 
 .stat-tile__value {
+    grid-column: 2;
+    grid-row: 2;
     display: block;
-    font-size: 1.35rem;
+    font-size: 2rem;
+    font-variant-numeric: tabular-nums;
     font-weight: 700;
     line-height: 1.2;
 }
 
-// .72 rather than a fainter tint: at .55 this measured 4.45:1 against the
-// gradient at the leftmost tile position — a real 1.4.3 failure at 375px, where
-// the bar is narrowest and the ground darkest. Font size carries the hierarchy
-// here instead of opacity.
 .stat-tile__note {
+    grid-column: 2;
+    grid-row: 3;
     display: block;
-    color: rgba(255, 255, 255, 0.72);
+    color: $text-muted;
     font-size: 0.875rem;
 }
 
@@ -460,7 +561,7 @@ h1, .h1 {
 // would otherwise leave only the 12px gutter.
 .container-wide {
     max-width: 1400px;
-    padding-inline: 2rem;
+    padding-inline: clamp(1rem, 3vw, 2.5rem);
 }
 
 // ----------------------------------------------------------------- data tables
@@ -546,4 +647,353 @@ h1, .h1 {
     width: 1.125rem;
     height: 1.125rem;
     vertical-align: -0.125em;
+}
+
+// Shared institutional treatment, including reports, imports and account pages.
+.analytics-overview {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    border: 1px solid $card-border-color;
+    border-radius: $border-radius-lg;
+    overflow: hidden;
+}
+
+.analytics-lead, .analytics-context {
+    padding: clamp(1.5rem, 3vw, 2.5rem);
+
+    h2 {
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+    }
+}
+
+.analytics-lead {
+    color: #fff;
+    background: $casetrack-navy;
+
+    > p:last-child {
+        color: rgba(255, 255, 255, 0.85);
+        max-width: 48ch;
+    }
+}
+
+.analytics-lead__value {
+    font-family: $headings-font-family;
+    font-size: clamp(2.5rem, 5vw, 3.5rem);
+    font-weight: 700;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+    margin-bottom: 1rem;
+    overflow-wrap: anywhere;
+}
+
+.analytics-context {
+    background: #fff;
+}
+
+.analytics-pie {
+    display: block;
+    width: min(100%, 14rem);
+    margin: 1.5rem auto;
+}
+
+.analytics-pie__pending {
+    fill: #cbd5e1;
+}
+
+.analytics-pie__resolved {
+    stroke: $casetrack-navy;
+}
+
+.analytics-pie-legend {
+    font-size: 0.875rem;
+
+    > div {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 0.25rem 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+
+    dt {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 400;
+    }
+
+    dd {
+        margin: 0;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+    }
+}
+
+.analytics-swatch {
+    width: 0.75rem;
+    height: 0.75rem;
+    flex-shrink: 0;
+    border: 1px solid $casetrack-slate;
+    border-radius: 2px;
+
+    &--resolved { background: $casetrack-navy; }
+    &--pending { background: #cbd5e1; }
+}
+
+.analytics-chart-empty {
+    margin-block: 2rem;
+}
+
+@media (max-width: 767.98px) {
+    .analytics-overview { grid-template-columns: minmax(0, 1fr); }
+}
+
+::selection {
+    background: $casetrack-navy;
+    color: #fff;
+}
+
+body {
+    accent-color: $primary;
+    scrollbar-color: $casetrack-slate #eef2f7;
+}
+
+a {
+    text-underline-offset: 0.2em;
+}
+
+:focus-visible {
+    outline: 3px solid $secondary;
+    outline-offset: 3px;
+}
+
+.form-control, .form-select {
+    caret-color: $primary;
+}
+
+.form-control:focus-visible, .form-select:focus-visible, .form-check-input:focus-visible {
+    border-color: $secondary;
+    outline: 3px solid $secondary;
+    outline-offset: 2px;
+    box-shadow: none;
+}
+
+.btn, .page-link, .dropdown-item {
+    min-height: 44px;
+}
+
+.btn-sm {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card-header {
+    padding: 1rem 1.25rem;
+    color: $casetrack-navy;
+    font-weight: 600;
+    border-bottom-color: $card-border-color;
+}
+
+.card-body {
+    padding: 1.25rem;
+}
+
+.table {
+    font-size: 0.875rem;
+    font-variant-numeric: tabular-nums;
+    --bs-table-striped-bg: #f7f8fa;
+
+    > :not(caption) > * > * {
+        padding: 0.75rem;
+    }
+
+    thead th {
+        color: $casetrack-navy;
+        background: $body-bg;
+        font-weight: 600;
+    }
+}
+
+.table-responsive {
+    border-radius: $border-radius-sm;
+}
+
+.badge {
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.3;
+    border-radius: $border-radius-sm;
+}
+
+.deadline-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    white-space: nowrap;
+
+    .ct-icon {
+        width: 0.875rem;
+        height: 0.875rem;
+    }
+}
+
+.case-profile-grid {
+    display: grid;
+    gap: 0 1.5rem;
+    align-items: start;
+}
+
+.case-profile-main, .case-profile-grid > section {
+    min-width: 0;
+}
+
+@media (min-width: 1200px) {
+    .case-profile-grid {
+        grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
+    }
+}
+
+.auth-layout {
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: grid;
+}
+
+.auth-identity {
+    background: $casetrack-navy;
+    color: #fff;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+
+    .navbar-brand {
+        color: #fff;
+        align-self: flex-start;
+        text-decoration: none;
+    }
+
+    a:focus-visible {
+        outline-color: $casetrack-gold;
+    }
+}
+
+.auth-identity__message {
+    display: none;
+    margin-top: auto;
+    padding-top: 6rem;
+    max-width: 31rem;
+
+    h2 {
+        font-size: clamp(1.65rem, 2.3vw, 2.4rem);
+        line-height: 1.3;
+        font-weight: 700;
+        margin-bottom: 1.25rem;
+    }
+
+    > p {
+        color: rgba(255, 255, 255, 0.8);
+        margin-bottom: 2rem;
+    }
+
+    .auth-identity__notice {
+        margin: 1.5rem 0 0;
+        font-size: 0.875rem;
+    }
+}
+
+.auth-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    font-size: 0.875rem;
+
+    span {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+}
+
+.auth-content {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2.5rem 1.25rem;
+    min-width: 0;
+}
+
+.auth-form {
+    width: 100%;
+    max-width: 25rem;
+}
+
+.auth-heading {
+    margin-bottom: 1.75rem;
+
+    h1 {
+        color: $casetrack-navy;
+        margin-bottom: 0.75rem;
+    }
+
+    p {
+        color: $text-muted;
+        margin: 0;
+    }
+}
+
+.auth-panel {
+    background: #fff;
+    padding: 1.5rem;
+    border: 1px solid $card-border-color;
+    border-radius: $border-radius-lg;
+}
+
+.auth-help, .auth-footer {
+    font-size: 0.875rem;
+    margin: 1.25rem 0 0;
+    color: $text-muted;
+}
+
+.auth-heading p, .auth-help, .auth-identity__message p {
+    text-wrap: pretty;
+}
+
+.auth-footer {
+    padding-top: 1.25rem;
+    border-top: 1px solid $card-border-color;
+}
+
+@media (min-width: 992px) {
+    .auth-layout {
+        grid-template-columns: 45% 55%;
+    }
+
+    .auth-identity {
+        padding: 3rem;
+    }
+
+    .auth-identity__message {
+        display: block;
+    }
+
+    .auth-content {
+        padding: 3rem;
+    }
+}
+.form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem;
+    margin-top: 1.5rem;
+}
+
+.analytics-filters > summary {
+    padding: 1rem;
+    font-weight: 600;
+    cursor: pointer;
 }

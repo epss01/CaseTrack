@@ -35,6 +35,28 @@ class CaseDeadlineServiceTest extends TestCase
 
     // --------------------------------------------------------- 30-day boundary
 
+    public function test_next_obligation_uses_the_earliest_stored_deadline_and_skips_submissions(): void
+    {
+        $timeline = new CaseTimeline([
+            'date_of_docket' => '2026-07-01',
+            'extension_30_days' => '2026-08-15',
+            'submission_120th_day' => '2026-08-01',
+            'submission_60th_day' => '2026-07-02',
+        ]);
+        $today = CarbonImmutable::parse(self::TODAY);
+        $this->assertSame(120, $this->deadlines->nextOutstandingFor($timeline, $today)['days']);
+        $timeline->submission_120th_day = null;
+        $this->assertSame(30, $this->deadlines->nextOutstandingFor($timeline, $today)['days']);
+        $timeline->date_submission_rop = '2026-07-20';
+        $next = $this->deadlines->nextOutstandingFor($timeline, $today);
+        $this->assertSame(120, $next['days']);
+        $this->assertSame('2026-10-29', $next['deadline']->toDateString());
+        $timeline->date_fir_submitted = '2026-07-25';
+        $this->assertNull($this->deadlines->nextOutstandingFor($timeline, $today));
+        $this->assertNull($this->deadlines->nextOutstandingFor(null, $today));
+        $this->assertNull($this->deadlines->nextOutstandingFor(new CaseTimeline, $today));
+    }
+
     /**
      * The 30-day mark, on the three days that decide its state.
      *

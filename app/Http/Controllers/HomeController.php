@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\CaseModel;
 use App\Models\User;
+use App\Services\CaseDeadlineService;
 use Illuminate\Contracts\Support\Renderable;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 
 class HomeController extends Controller
@@ -30,7 +32,7 @@ class HomeController extends Controller
      *
      * @return Renderable
      */
-    public function index(Request $request)
+    public function index(Request $request, CaseDeadlineService $deadlines)
     {
         $user = $request->user();
 
@@ -47,7 +49,7 @@ class HomeController extends Controller
         }
 
         if ($user->isSupervisor()) {
-            return $this->supervisorDashboard();
+            return $this->supervisorDashboard($deadlines);
         }
 
         // Anyone holding neither case-handling role keeps the plain landing
@@ -80,7 +82,7 @@ class HomeController extends Controller
             ->groupBy('status')
             ->pluck('total', 'status');
 
-        return view('dashboard', [
+        return view('dashboard', $this->attentionFor($cases, $deadlines) + [
             'cases' => $cases,
             'activeCount' => $cases->count(),
             'closedCount' => $byStatus[CaseModel::STATUS_CLOSED] ?? 0,
@@ -106,7 +108,7 @@ class HomeController extends Controller
      *
      * @return Renderable
      */
-    private function supervisorDashboard()
+    private function supervisorDashboard(CaseDeadlineService $deadlines)
     {
         // One grouped query covers all three figures. SoftDeletes scopes it for
         // free, so a deleted case is absent from every one of them.
@@ -124,11 +126,37 @@ class HomeController extends Controller
         // everything but Closed.
         $activeByStatus = $byStatus->except([CaseModel::STATUS_CLOSED]);
 
-        return view('supervisor-dashboard', [
+        // shortcut: classify active office timelines in PHP like Alerts; revisit if the loaded set stops fitting in memory.
+        $cases = CaseModel::query()->active()->with(['timeline', 'investigator'])->get();
+
+        return view('supervisor-dashboard', $this->attentionFor($cases, $deadlines) + [
             'activeCount' => $activeByStatus->sum(),
             'closedCount' => $byStatus[CaseModel::STATUS_CLOSED] ?? 0,
             'totalCount' => $byStatus->sum(),
             'activeByStatus' => $activeByStatus,
         ]);
+    }
+
+    private function attentionFor(Collection $cases, CaseDeadlineService $deadlines): array
+    {
+        $rows = [];
+        $untracked = 0;
+
+        foreach ($cases as $case) {
+            if ($case->timeline?->date_of_docket === null) {
+                $untracked++;
+
+                continue;
+            }
+
+            $milestone = $deadlines->nextOutstandingFor($case->timeline);
+            if ($milestone && in_array($milestone['status'], [CaseDeadlineService::STATUS_OVERDUE, CaseDeadlineService::STATUS_DUE_SOON], true)) {
+                $rows[] = ['case' => $case, 'milestone' => $milestone];
+            }
+        }
+
+        usort($rows, fn (array $a, array $b) => [$a['milestone']['days_remaining'], $a['case']->id] <=> [$b['milestone']['days_remaining'], $b['case']->id]);
+
+        return ['attentionRows' => array_slice($rows, 0, 5), 'untrackedCount' => $untracked];
     }
 }

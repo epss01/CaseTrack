@@ -38,7 +38,7 @@
                     <div class="d-flex gap-2">
                         {{-- The filters are already in the URL, so the download
                              is the same request with a different ending. --}}
-                        <a href="{{ route('reports.export', $filters) }}" class="btn btn-sm btn-outline-light">
+                        <a href="{{ route('reports.export', $filters) }}" class="btn btn-sm btn-outline-primary">
                             {{ __('Download CSV') }}
                         </a>
                     </div>

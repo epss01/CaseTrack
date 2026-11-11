@@ -8,10 +8,13 @@
     $complainantRows = old('complainants') ?: [$blankComplainant];
 @endphp
 
+@section('title', __('Docket a case'))
+
 @section('content')
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-10">
+            <div class="page-heading"><h1>{{ __('Docket a case') }}</h1></div>
             <form method="POST" action="{{ route('cases.store') }}">
                 @csrf
 
@@ -22,12 +25,13 @@
                 @endif
 
                 <div class="card mb-4">
-                    <div class="card-header">{{ __('Case Intake') }}</div>
+                    <div class="card-header"><h2 class="h5 mb-0">{{ __('Case Intake') }}</h2></div>
 
                     <div class="card-body">
-                        <div class="row g-3">
+                        <fieldset class="row g-3">
+                            <legend class="h6">{{ __('Identification') }}</legend>
                             <div class="col-md-4">
-                                <label for="docket_no" class="form-label">{{ __('Docket No.') }}</label>
+                                <label for="docket_no" class="form-label">{{ __('Docket No.') }} <span class="text-muted small">({{ __('required') }})</span></label>
                                 <input id="docket_no" type="text" class="form-control @error('docket_no') is-invalid @enderror" name="docket_no" value="{{ old('docket_no') }}" required autofocus>
                                 @error('docket_no')
                                     <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
@@ -35,7 +39,7 @@
                             </div>
 
                             <div class="col-md-4">
-                                <label for="date_of_docket" class="form-label">{{ __('Date of Docket') }}</label>
+                                <label for="date_of_docket" class="form-label">{{ __('Date of Docket') }} <span class="text-muted small">({{ __('required') }})</span></label>
                                 <input id="date_of_docket" type="date" class="form-control @error('date_of_docket') is-invalid @enderror" name="date_of_docket" value="{{ old('date_of_docket', now()->toDateString()) }}" required>
                                 @error('date_of_docket')
                                     <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
@@ -53,23 +57,29 @@
                             </div>
 
                             <div class="col-12">
-                                <label for="case_title" class="form-label">{{ __('Case Title') }}</label>
+                                <label for="case_title" class="form-label">{{ __('Case Title') }} <span class="text-muted small">({{ __('required') }})</span></label>
                                 <input id="case_title" type="text" class="form-control @error('case_title') is-invalid @enderror" name="case_title" value="{{ old('case_title') }}" required>
                                 @error('case_title')
                                     <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                                 @enderror
                             </div>
 
+                        </fieldset>
+                        <fieldset class="row g-3 mt-4">
+                            <legend class="h6">{{ __('Incident') }}</legend>
                             <div class="col-12">
-                                <label for="incident_details" class="form-label">{{ __('Incident Details') }}</label>
+                                <label for="incident_details" class="form-label">{{ __('Incident Details') }} <span class="text-muted small">({{ __('required') }})</span></label>
                                 <textarea id="incident_details" rows="6" class="form-control @error('incident_details') is-invalid @enderror" name="incident_details" required>{{ old('incident_details') }}</textarea>
                                 @error('incident_details')
                                     <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                                 @enderror
                             </div>
 
+                        </fieldset>
+                        <fieldset class="row g-3 mt-4">
+                            <legend class="h6">{{ __('Assignment and complexity') }}</legend>
                             <div class="col-md-6">
-                                <label for="complexity_weight" class="form-label">{{ __('Complexity Weight') }}</label>
+                                <label for="complexity_weight" class="form-label">{{ __('Complexity Weight') }} <span class="text-muted small">({{ __('required') }})</span></label>
                                 <select id="complexity_weight" class="form-select @error('complexity_weight') is-invalid @enderror" name="complexity_weight" required>
                                     @include('cases.partials.complexity-options', ['selected' => old('complexity_weight')])
                                 </select>
@@ -79,8 +89,8 @@
                                 @enderror
                             </div>
 
-                            <div class="col-md-6">
-                                <label class="form-label d-block">{{ __('Torture Case') }}</label>
+                            <div class="col-md-6" role="group" aria-labelledby="torture-case-label">
+                                <span id="torture-case-label" class="form-label d-block">{{ __('Torture Case') }} <span class="text-muted small">({{ __('required') }})</span></span>
                                 <div class="form-check form-check-inline">
                                     <input class="form-check-input @error('is_torture_case') is-invalid @enderror" type="radio" name="is_torture_case" id="is_torture_case_yes" value="1" @checked(old('is_torture_case') === '1') required>
                                     <label class="form-check-label" for="is_torture_case_yes">{{ __('Yes') }}</label>
@@ -97,7 +107,7 @@
 
                             @if ($investigators->isNotEmpty())
                                 <div class="col-md-6">
-                                    <label for="investigator_id" class="form-label">{{ __('Assign To') }}</label>
+                                    <label for="investigator_id" class="form-label">{{ __('Assign To') }} <span class="text-muted small">({{ __('required') }})</span></label>
                                     <select id="investigator_id" class="form-select @error('investigator_id') is-invalid @enderror" name="investigator_id" required>
                                         @include('cases.partials.investigator-options', ['selected' => old('investigator_id')])
                                     </select>
@@ -116,16 +126,16 @@
                                     @enderror
                                 </div>
                             @endif
-                        </div>
+                        </fieldset>
                     </div>
                 </div>
 
                 <div class="card mb-4">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <span>
+                        <h2 class="h5 mb-0">
                             {{ __('Complainants') }}
                             <span class="text-muted small">({{ __('optional') }})</span>
-                        </span>
+                        </h2>
                         <button type="button" class="btn btn-sm btn-outline-primary add-row" data-group="complainants">
                             {{ __('Add Complainant') }}
                         </button>
@@ -149,7 +159,7 @@
 
                 <div class="card mb-4">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <span>{{ __('Victims') }}</span>
+                        <h2 class="h5 mb-0">{{ __('Victims') }} <span class="text-muted small">({{ __('required') }})</span></h2>
                         <button type="button" class="btn btn-sm btn-outline-primary add-row" data-group="victims">
                             {{ __('Add Victim') }}
                         </button>
@@ -175,7 +185,7 @@
 
                 <div class="card mb-4">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <span>{{ __('Respondents') }}</span>
+                        <h2 class="h5 mb-0">{{ __('Respondents') }} <span class="text-muted small">({{ __('required') }})</span></h2>
                         <button type="button" class="btn btn-sm btn-outline-primary add-row" data-group="respondents">
                             {{ __('Add Respondent') }}
                         </button>
@@ -199,7 +209,7 @@
                     </div>
                 </div>
 
-                <div class="mb-5">
+                <div class="form-actions mb-5">
                     <button type="submit" class="btn btn-primary">{{ __('Docket Case') }}</button>
                     <a href="{{ route('cases.index') }}" class="btn btn-link">{{ __('Cancel') }}</a>
                 </div>
