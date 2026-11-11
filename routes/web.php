@@ -74,6 +74,8 @@ Route::middleware(['auth', 'role:Investigator,Supervisor'])->group(function () {
     // read as a report identifier.
     Route::get('reports/export', [ReportController::class, 'export'])->name('reports.export');
     Route::get('reports/analytics', [AnalyticsController::class, 'index'])->name('reports.analytics');
+    Route::get('reports/analytics/case-profiles', [AnalyticsController::class, 'caseProfiles'])
+        ->name('reports.case-profiles');
     Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
 
     // The one report that resolves a single case, so the one gated by

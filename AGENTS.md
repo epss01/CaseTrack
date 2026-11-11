@@ -41,6 +41,11 @@ the session note for later application.
 
 ## Project scope and stack
 
+The November 9, 2026 scope amendment permits retrospective K-means only in
+the read-only Case profiles report. It groups authorized FIR submissions by
+recorded complexity, party record count, and docket-to-FIR duration. Assignment,
+statutory deadlines, case status, and legal decisions remain outside clustering.
+
 - CaseTrack is a standalone internal investigation case assignment,
   monitoring, and reporting system. It is deterministic and rule-based; it is
   not an AI/chatbot system.

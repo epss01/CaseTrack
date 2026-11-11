@@ -264,6 +264,16 @@ class CaseDeadlineService
             : CarbonImmutable::parse($timeline->date_fir_submitted)->startOfDay();
     }
 
+    public function daysToFir(?CaseTimeline $timeline): ?int
+    {
+        $fir = $this->resolvedOn($timeline);
+        if ($fir === null || $timeline->date_of_docket === null) {
+            return null;
+        }
+
+        return (int) CarbonImmutable::parse($timeline->date_of_docket)->startOfDay()->diffInDays($fir, false);
+    }
+
     /**
      * Docketed inside the period, both ends inclusive. A case with no
      * timeline cannot be placed in any period, so it is never incoming.
