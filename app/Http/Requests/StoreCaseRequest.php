@@ -80,15 +80,21 @@ class StoreCaseRequest extends FormRequest
             // Optional: a case opened from a media report or on the
             // Commission's own initiative has no complainant to name.
             'complainants' => ['nullable', 'array'],
-            'complainants.*.name' => ['required', 'string', 'max:255'],
-
             'victims' => ['required', 'array', 'min:1'],
+            'respondents' => ['required', 'array', 'min:1'],
+        ] + static::peopleRules();
+    }
+
+    /** Field rules shared by intake, import and corrections; group minimums belong to intake. */
+    public static function peopleRules(): array
+    {
+        return [
+            'complainants.*.name' => ['required', 'string', 'max:255'],
             'victims.*.name' => ['required', 'string', 'max:255'],
             'victims.*.age' => ['nullable', 'integer', 'min:0', 'max:255'],
             'victims.*.status' => ['required', 'string', 'max:255'],
             'victims.*.sector' => ['required', 'string', 'max:255'],
 
-            'respondents' => ['required', 'array', 'min:1'],
             'respondents.*.name' => ['required', 'string', 'max:255'],
             'respondents.*.age' => ['nullable', 'integer', 'min:0', 'max:255'],
             'respondents.*.status' => ['nullable', 'string', 'max:255'],

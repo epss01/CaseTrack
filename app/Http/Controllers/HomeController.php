@@ -65,9 +65,8 @@ class HomeController extends Controller
         //
         // Ordered by docket number, matching CaseController::index(). Not by
         // submission_120th_day: ordering by that date would assert 120 days is
-        // *the* deadline, and for torture cases it is the 60th day — the
-        // decision still blocked on a missing case-type field. That ordering
-        // belongs with the countdown feature, so the two agree.
+        // *the* deadline. The attention queue instead uses the shared service's
+        // earliest outstanding deadline, including the torture-case milestone.
         $cases = $user->cases()
             ->active()
             ->with('timeline')
@@ -143,6 +142,7 @@ class HomeController extends Controller
         $untracked = 0;
 
         foreach ($cases as $case) {
+            $case->timeline?->setRelation('case', $case);
             if ($case->timeline?->date_of_docket === null) {
                 $untracked++;
 
@@ -157,6 +157,7 @@ class HomeController extends Controller
 
         usort($rows, fn (array $a, array $b) => [$a['milestone']['days_remaining'], $a['case']->id] <=> [$b['milestone']['days_remaining'], $b['case']->id]);
 
-        return ['attentionRows' => array_slice($rows, 0, 5), 'untrackedCount' => $untracked];
+        return ['attentionRows' => array_slice($rows, 0, 5), 'untrackedCount' => $untracked,
+            'unclassifiedCount' => $cases->whereNull('is_torture_case')->count()];
     }
 }

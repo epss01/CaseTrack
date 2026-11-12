@@ -200,6 +200,45 @@ with many populated cells may require splitting into smaller imports. Local test
 of a 6.3 MB synthetic CHR workbook with 350 rows used 58 MB peak PHP memory and
 0.88 seconds for parsing; this is not a guarantee for every 20 MB workbook.
 
+## Cases and monitoring exports
+
+Cases opens as a folder grid with a List option. The selected view is remembered
+for the current session; search and pagination work in either view without JavaScript.
+
+Edit case supports corrections, additions and explicit removal of victims,
+respondents and complainants, plus Unknown/Yes/No torture-case classification.
+Uncheck a removal before saving to undo it. Empty people groups are allowed when
+editing; intake still requires at least one victim and respondent. Adding rows
+uses JavaScript; existing-person edits and removal checkboxes work without it.
+Timeline dates remain in their separate editor. Both editors share the case's
+version token, so a successful save invalidates older open forms. Supervisors
+must provide an audit reason in either editor.
+
+Confirmed torture cases now receive a 60-day RORP milestone. The timeline editor
+can record an **externally granted 30-day extension**, with a required approval
+reference or explanatory audit note. The approved prototype assumes this moves
+the deadline to 90 calendar days from docketing, not from approval. This assumption
+requires CHR validation before office adoption. CaseTrack does not approve grants;
+the initial-ROP extension request date alone never changes this deadline.
+Unknown classification is explicitly marked as not evaluated for the 60-day rule.
+Existing manual base-deadline overrides are retained; recorded grants take precedence.
+
+Before office rollout, run `php artisan cases:check-torture-deadlines`. This read-only
+preflight reports stored base dates differing from docket +60, extensions differing
+from docket +90, and grants on unconfirmed/non-torture cases. A nonzero exit means
+records need explicit review/correction; the command never changes them. Legacy
+dates are not automatically overwritten. Grant removal and docket-date changes
+that recalculate a grant require an explanatory note and are audited atomically.
+The CSV's eleven columns and CHR workbook layout do not carry grant metadata.
+
+Reports → CHR monitoring worksheet previews the office monitoring fields.
+**Download CHR Excel** exports every case matching the current reporting filters,
+with one worksheet per investigator in the CHR template layout. The existing
+eleven-column CSV remains available. Both downloads enforce the user's case scope.
+The Excel file is a monitoring document, not a complete CaseTrack backup: the CHR
+template has no case-progress status or complexity column. Import previews new
+cases only, rejects existing dockets, and reads only the active worksheet.
+
 ## Project Structure
 
 Beyond the `laravel/ui` scaffold, the app is organized by feature:

@@ -107,6 +107,7 @@
                 <a href="#case-details">{{ __('Details') }}</a>
                 <a href="#case-people">{{ __('People') }}</a>
                 <a href="#case-timeline">{{ __('Timeline') }}</a>
+                <a href="#extension-history">{{ __('Extension history') }}</a>
             </nav>
 
             <div class="case-profile-grid">
@@ -264,6 +265,7 @@
                 </div>
 
                 <div class="card-body">
+                    @include('cases.partials.torture-deadline')
                     {{-- Without a timeline row every label would render as a
                          wall of dashes, which reads as broken rather than empty. --}}
                     @if ($timeline)
@@ -282,6 +284,7 @@
                     @else
                         <p class="text-muted mb-0">{{ __('No timeline has been recorded for this case yet.') }}</p>
                     @endif
+                    @include('cases.partials.extension-history')
                 </div>
             </section>
 

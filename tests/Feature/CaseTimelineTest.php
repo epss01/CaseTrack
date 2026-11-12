@@ -19,6 +19,8 @@ class CaseTimelineTest extends TestCase
     protected function timelinePayload(array $overrides = []): array
     {
         return array_merge([
+            'lock_version' => 0,
+            'reason' => 'Synthetic supervisor coverage',
             'date_of_docket' => '2026-06-12',
             'date_submission_rop' => '2026-06-19',
             'extension_30_days' => '2026-07-12',
@@ -107,10 +109,11 @@ class CaseTimelineTest extends TestCase
     {
         $investigator = User::factory()->investigator()->create();
         $case = CaseModel::factory()->assignedTo($investigator)->create();
-        $case->timeline()->create($this->timelinePayload());
+        $case->timeline()->create(collect($this->timelinePayload())->except(['lock_version', 'reason'])->all());
 
         $this->actingAs($investigator)
             ->put(route('cases.timeline.update', $case), [
+                'lock_version' => $case->lock_version,
                 'date_of_docket' => '2026-06-12',
                 'date_submission_rop' => '',
                 'extension_30_days' => '',

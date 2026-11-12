@@ -1,0 +1,106 @@
+{
+  "verified_at_utc": "2026-11-12 02:33:00 UTC",
+  "php": "8.4.27",
+  "command": "php tests/Acceptance/MariaDbConcurrentSaves.php",
+  "exit_code": 0,
+  "server": "10.4.32-MariaDB",
+  "engine": "InnoDB",
+  "scenarios": [
+    {
+      "scenario": "timeline_vs_timeline",
+      "statuses": [
+        302,
+        422
+      ],
+      "actual_innodb_lock_wait": true,
+      "version": 1,
+      "audit_counts": {
+        "TIMELINE_UPDATE": 1,
+        "TORTURE_EXTENSION_RECORDED": 1
+      }
+    },
+    {
+      "scenario": "timeline_vs_case",
+      "statuses": [
+        302,
+        422
+      ],
+      "actual_innodb_lock_wait": true,
+      "version": 1,
+      "audit_counts": {
+        "TIMELINE_UPDATE": 1,
+        "TORTURE_EXTENSION_RECORDED": 1
+      }
+    },
+    {
+      "scenario": "case_vs_timeline",
+      "statuses": [
+        302,
+        422
+      ],
+      "actual_innodb_lock_wait": true,
+      "version": 1,
+      "audit_counts": {
+        "EDIT": 1
+      }
+    },
+    {
+      "scenario": "reassignment_vs_grant",
+      "statuses": [
+        302,
+        403
+      ],
+      "actual_innodb_lock_wait": true,
+      "version": 1,
+      "audit_counts": {
+        "ACCESS_DENIED": 1,
+        "CASE_REASSIGNED": 1
+      }
+    },
+    {
+      "scenario": "grant_vs_reassignment",
+      "statuses": [
+        302,
+        302
+      ],
+      "actual_innodb_lock_wait": true,
+      "version": 2,
+      "audit_counts": {
+        "CASE_REASSIGNED": 1,
+        "TIMELINE_UPDATE": 1,
+        "TORTURE_EXTENSION_RECORDED": 1
+      }
+    },
+    {
+      "scenario": "supervisor_vs_supervisor",
+      "statuses": [
+        302,
+        422
+      ],
+      "actual_innodb_lock_wait": true,
+      "version": 1,
+      "audit_counts": {
+        "TIMELINE_EDIT_ON_BEHALF": 1,
+        "TIMELINE_UPDATE": 1,
+        "TORTURE_EXTENSION_RECORDED": 1
+      }
+    },
+    {
+      "scenario": "audit_failure_vs_grant",
+      "statuses": [
+        500,
+        302
+      ],
+      "actual_innodb_lock_wait": true,
+      "version": 1,
+      "audit_counts": {
+        "TIMELINE_UPDATE": 1,
+        "TORTURE_EXTENSION_RECORDED": 1
+      }
+    }
+  ],
+  "disposable_database_dropped": true,
+  "env_unchanged": true,
+  "normal_database_selected": false,
+  "harness_sha256": "c55957a23503803c251ddb3d7c25fbe373bc8cda5fe0d713a480ec36b8cec1bf"
+}

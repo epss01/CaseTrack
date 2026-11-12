@@ -17,6 +17,7 @@
 <div class="container-fluid container-wide">
     <div class="row justify-content-center">
         <div class="col-12">
+            @include('partials.unclassified-deadlines')
 
             {{-- What the page covers, and the caseload in four figures. Same
                  identity bar and stat tiles as the two dashboards: this is a

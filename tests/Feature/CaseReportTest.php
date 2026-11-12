@@ -8,7 +8,6 @@ use App\Models\Complainant;
 use App\Models\Respondent;
 use App\Models\User;
 use App\Models\Victim;
-use App\Services\CaseDeadlineService;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -163,11 +162,9 @@ class CaseReportTest extends TestCase
     }
 
     /**
-     * The 60th day binds only torture cases and no case-type column exists, so
-     * CaseDeadlineService gates it out of everything a user can see when the
-     * flag is off. A report is no exception.
+     * Unknown classification does not manufacture a torture-case deadline.
      */
-    public function test_the_sixtieth_day_appears_nowhere_when_flag_is_off(): void
+    public function test_unclassified_cases_do_not_show_sixtieth_day_milestones(): void
     {
         $investigator = User::factory()->investigator()->create();
         $case = $this->caseFor($investigator, docketedOn: '2026-01-01');
@@ -179,13 +176,17 @@ class CaseReportTest extends TestCase
             ->assertDontSee('RORP');
     }
 
-    /**
-     * This test is skipped when the flag is on because it tests behavior
-     * that requires the flag to be on. The actual logic is tested in unit tests.
-     */
     public function test_sixtieth_day_appears_in_report_for_torture_case_when_flag_is_on(): void
     {
-        $this->markTestSkipped('This test requires the SIXTY_DAY_ENABLED flag to be true, which is tested in unit tests.');
+        $actor = User::factory()->investigator()->create();
+        $case = $this->caseFor($actor, docketedOn: '2026-01-01', attributes: ['is_torture_case' => true]);
+        $this->actingAs($actor)->get(route('reports.show', $case))->assertOk()
+            ->assertSee('60th day (RORP)')->assertSee('02 Mar 2026');
+        $actor = User::factory()->investigator()->create();
+        $case = $this->caseFor($actor, docketedOn: '2026-01-01', attributes: ['is_torture_case' => true]);
+        $this->actingAs($actor)->get(route('reports.show', $case))->assertOk()
+            ->assertSee('60th day (RORP)')->assertSee('02 Mar 2026');
+
     }
 
     // ------------------------------------------------------------ parties

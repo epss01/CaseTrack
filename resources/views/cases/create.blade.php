@@ -245,42 +245,5 @@
 @endsection
 
 @push('scripts')
-<script>
-    document.addEventListener('click', function (event) {
-        const addButton = event.target.closest('.add-row');
-
-        if (addButton) {
-            const group = addButton.dataset.group;
-            const container = document.querySelector(`[data-rows="${group}"]`);
-            const template = document.getElementById(`${group}-template`);
-
-            // Keep indexes unique; gaps are fine, the server re-indexes.
-            const nextIndex = Number(container.dataset.nextIndex || container.children.length);
-            container.dataset.nextIndex = nextIndex + 1;
-
-            container.insertAdjacentHTML(
-                'beforeend',
-                template.innerHTML.replaceAll('__INDEX__', nextIndex)
-            );
-
-            return;
-        }
-
-        const removeButton = event.target.closest('.remove-row');
-
-        if (removeButton) {
-            const row = removeButton.closest('.party-row');
-            const container = row.parentElement;
-
-            // Always leave one row so the form is never empty.
-            if (container.querySelectorAll('.party-row').length > 1) {
-                row.remove();
-            } else {
-                row.querySelectorAll('input').forEach((input) => {
-                    input.value = '';
-                });
-            }
-        }
-    });
-</script>
+    @include('cases.partials.people-script', ['editing' => false])
 @endpush

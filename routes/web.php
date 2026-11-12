@@ -73,6 +73,7 @@ Route::middleware(['auth', 'role:Investigator,Supervisor'])->group(function () {
     // export is registered first so it is matched as its own path rather than
     // read as a report identifier.
     Route::get('reports/export', [ReportController::class, 'export'])->name('reports.export');
+    Route::get('reports/export/chr-excel', [ReportController::class, 'exportExcel'])->name('reports.export-excel');
     Route::get('reports/analytics', [AnalyticsController::class, 'index'])->name('reports.analytics');
     Route::get('reports/analytics/case-profiles', [AnalyticsController::class, 'caseProfiles'])
         ->name('reports.case-profiles');

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', __('Reports'))
+@section('title', __('CHR monitoring worksheet'))
 
 @php
     $user = Auth::user();
@@ -23,19 +23,18 @@
                 <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
                     <div>
                         <h1 class="identity-bar__title">
-                            <span class="identity-bar__eyebrow">{{ __('Reports') }}</span>
                             <span class="identity-bar__name">
-                                {{ $officeWide ? __('Office-wide') : __('My cases') }}
-                                <span class="role-pill">{{ $user->role?->role_name }}</span>
+                                {{ __('CHR monitoring worksheet') }}
                             </span>
                         </h1>
 
                         <div class="identity-bar__meta">
-                            {{ $user->office_region }} &middot; {{ now()->translatedFormat('l, d F Y') }}
+                            {{ $user->office_region }} &middot; {{ $officeWide ? __('Office-wide') : __('My cases') }}
                         </div>
                     </div>
 
-                    <div class="d-flex gap-2">
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="{{ route('reports.export-excel', $filters) }}" class="btn btn-sm btn-primary">{{ __('Download CHR Excel') }}</a>
                         {{-- The filters are already in the URL, so the download
                              is the same request with a different ending. --}}
                         <a href="{{ route('reports.export', $filters) }}" class="btn btn-sm btn-outline-primary">
@@ -85,6 +84,13 @@
                 </div>
             </div>
 
+            <p>{{ __('Review the CHR monitoring fields below, or download every matching case as an Excel workbook with one worksheet per investigator. The table is paginated; downloads include all matching cases.') }}</p>
+            <details class="record-help mb-3 small">
+                <summary>{{ __('About downloads and re-importing') }}</summary>
+                <p class="mt-2 mb-0">{{ __('CHR Excel follows the office template, including extra rows for people and recorded submission dates. It omits CaseTrack-only fields such as progress status and complexity and is not a complete backup. Import reads the active worksheet only, previews new cases, and rejects existing docket numbers. The simpler CSV download retains its existing eleven columns.') }}</p>
+            </details>
+            @include('cases.partials.record-label-help')
+
             <div class="card filter-panel mb-3">
                 <div class="card-body">
                     <form method="GET" action="{{ route('reports.index') }}">
@@ -94,7 +100,7 @@
                                 {{-- Native date input: the browser supplies the
                                      picker, the locale and the keyboard support. --}}
                                 <input type="date" class="form-control @error('from') is-invalid @enderror"
-                                       id="from" name="from" value="{{ $filters['from'] ?? '' }}">
+                                       id="from" name="from" value="{{ old('from', $filters['from'] ?? '') }}">
                                 @error('from')
                                     <span class="invalid-feedback" role="alert">{{ $message }}</span>
                                 @enderror
@@ -103,7 +109,7 @@
                             <div class="filter-field">
                                 <label for="to" class="form-label">{{ __('Docketed to') }}</label>
                                 <input type="date" class="form-control @error('to') is-invalid @enderror"
-                                       id="to" name="to" value="{{ $filters['to'] ?? '' }}">
+                                       id="to" name="to" value="{{ old('to', $filters['to'] ?? '') }}">
                                 @error('to')
                                     <span class="invalid-feedback" role="alert">{{ $message }}</span>
                                 @enderror
@@ -117,7 +123,7 @@
                                         <option value="">{{ __('All investigators') }}</option>
                                         @foreach ($investigators as $investigator)
                                             <option value="{{ $investigator->id }}"
-                                                @selected(($filters['investigator_id'] ?? null) == $investigator->id)>
+                                                @selected(old('investigator_id', $filters['investigator_id'] ?? null) == $investigator->id)>
                                                 {{ $investigator->full_name }}
                                             </option>
                                         @endforeach
@@ -134,7 +140,7 @@
                                      ratified vocabulary yet, so a fixed list of
                                      options here would invent one. --}}
                                 <input type="text" class="form-control @error('status') is-invalid @enderror"
-                                       id="status" name="status" value="{{ $filters['status'] ?? '' }}"
+                                       id="status" name="status" value="{{ old('status', $filters['status'] ?? '') }}"
                                        list="report-status-options" autocomplete="off">
                                 <datalist id="report-status-options">
                                     @foreach ($byStatus->keys() as $status)
@@ -179,7 +185,7 @@
 
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h2 class="h6 mb-0">{{ __('Case listing') }}</h2>
+                    <h2 class="h6 mb-0">{{ __('Monitoring records') }}</h2>
                     <span class="badge badge-soft-blue">{{ $caseCount }}</span>
                 </div>
 
@@ -187,96 +193,8 @@
                     @if ($rows->isEmpty())
                         <p class="mb-0">{{ __('No cases match this filter.') }}</p>
                     @else
-                        {{-- The listing shows the columns that carry information at a
-                             readable width; the CSV carries all eleven. Office Region is
-                             the same value on every row of a single-region deployment and
-                             is already in the identity bar above, and each deadline is
-                             paired with the submission that discharges it rather than
-                             given a column of its own. Eleven separate columns needed
-                             1281px inside an 893px wrapper, which is what pushed the View
-                             button out of reach and squeezed Title to 79px. --}}
-                        <div class="table-responsive">
-                            <table class="table table-sm table-striped align-middle table-data">
-                                <caption class="visually-hidden">
-                                    {{ __('Cases in this report, with their statutory deadlines and the submissions that discharge them. The full set of columns is in the CSV download.') }}
-                                </caption>
-                                <thead>
-                                    <tr>
-                                        <th scope="col">{{ __('Docket No.') }}</th>
-                                        <th scope="col" class="col-title">{{ __('Title') }}</th>
-                                        <th scope="col">{{ __('Status') }}</th>
-                                        <th scope="col">{{ __('Phase') }}</th>
-                                        {{-- Shown only where there is more than one
-                                             caseload in view, exactly as /alerts does. --}}
-                                        @if ($officeWide)
-                                            <th scope="col">{{ __('Investigator') }}</th>
-                                        @endif
-                                        <th scope="col">{{ __('Complexity') }}</th>
-                                        <th scope="col">{{ __('Docketed') }}</th>
-                                        <th scope="col">{{ __('30-day (ROP)') }}</th>
-                                        <th scope="col">{{ __('120-day (FIR)') }}</th>
-                                        <th scope="col"><span class="visually-hidden">{{ __('Actions') }}</span></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($rows as $row)
-                                        @php $fields = $row['fields']; @endphp
-                                        <tr>
-                                            {{-- text-nowrap only where breaking the value
-                                                 costs more than the width does: identifiers,
-                                                 dates and badges. Everything else wraps, so
-                                                 the table answers to its container. --}}
-                                            <td class="text-nowrap">{{ $fields['docket_no'] }}</td>
-                                            <td class="col-title">{{ $fields['case_title'] }}</td>
-                                            <td class="text-nowrap">
-                                                @include('cases.partials.status-badge', ['status' => $fields['status']])
-                                            </td>
-                                            <td>{{ $row['case']->docket_phase ?? '—' }}</td>
-                                            @if ($officeWide)
-                                                <td>{{ $fields['investigator'] ?? '—' }}</td>
-                                            @endif
-                                            <td>{{ $fields['complexity_weight'] }}</td>
-                                            <td class="text-nowrap">{{ $fields['date_of_docket'] ?: '—' }}</td>
-
-                                            {{-- Deadline over the submission that discharges
-                                                 it: one fact about the case, so one cell. --}}
-                                            <td class="text-nowrap">
-                                                {{ $fields['thirty_day_deadline'] ?: '—' }}
-                                                <span class="cell-sub text-muted">
-                                                    {{ $fields['rop_submitted']
-                                                        ? __('filed :date', ['date' => $fields['rop_submitted']])
-                                                        : __('not filed') }}
-                                                </span>
-                                            </td>
-                                            <td class="text-nowrap">
-                                                {{ $fields['hundred_twentieth_day_deadline'] ?: '—' }}
-                                                <span class="cell-sub text-muted">
-                                                    {{ $fields['fir_submitted']
-                                                        ? __('filed :date', ['date' => $fields['fir_submitted']])
-                                                        : __('not filed') }}
-                                                </span>
-                                            </td>
-
-                                            <td class="text-end">
-                                                {{-- Into this case's report, not its edit
-                                                     profile: the listing is a report and the
-                                                     row below it should be one too. The
-                                                     report links on to the profile. --}}
-                                                <a href="{{ route('reports.show', $row['case']) }}" class="btn btn-sm btn-outline-primary">
-                                                    {{ __('View') }}<span class="visually-hidden"> {{ __('report for case') }} {{ $row['case']->docket_no }}</span>
-                                                </a>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-
+                        @include('reports.partials.worksheet')
                         {{ $rows->links() }}
-
-                        <p class="text-muted small mb-0 mt-3">
-                            {{ __('Office region and the exact submission dates are included in the CSV download.') }}
-                        </p>
                     @endif
 
                     {{-- The date range reads through to case_timelines, so a case

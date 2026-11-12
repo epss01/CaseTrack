@@ -1,5 +1,14 @@
 # Stop-and-Ask Summary: 60-Day RORP Milestone Activation
 
+> **Superseded — 12 November 2026.** This file preserves the historical
+> pre-activation checkpoint below. The 60-day milestone is now enabled for
+> confirmed torture cases. CaseTrack records externally granted extensions;
+> it does not approve them. The prototype uses docket date +90 calendar days
+> for a recorded +30-day grant, an assumption requiring CHR validation before
+> adoption. Unknown classification remains unevaluated. See
+> [current behavior and evidence](docs/TORTURE_DEADLINE_STATUS.md).
+> Earlier disabled-flag and skipped-test statements below are historical.
+
 ## What Was Implemented
 Completed all steps from the prompt "Promt to activate the 60D RORP.txt" except flipping the `SIXTY_DAY_ENABLED` flag:
 

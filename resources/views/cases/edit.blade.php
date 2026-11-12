@@ -10,7 +10,11 @@
                 <div class="card-header"><h1 class="h5 mb-0">{{ __('Edit case') }} &mdash; {{ $case->docket_no }}</h1></div>
 
                 <div class="card-body">
-                    <form method="POST" action="{{ route('cases.update', $case) }}">
+                    @if (request()->query('classification') === 'unknown')
+                        <p><a href="{{ route('cases.index', ['classification' => 'unknown']) }}">{{ __('Return to classification review without saving') }}</a></p>
+                    @endif
+                    <p><a href="{{ route('cases.timeline.edit', $case) }}">{{ __('Edit timeline dates separately') }}</a></p>
+                    <form method="POST" action="{{ route('cases.update', request()->query('classification') === 'unknown' ? [$case, 'classification' => 'unknown'] : $case) }}">
                         @csrf
                         @method('PUT')
                         <input type="hidden" name="lock_version" value="{{ old('lock_version', $case->lock_version) }}">
@@ -106,6 +110,19 @@
 
                         </fieldset>
 
+                        <fieldset class="mt-4">
+                            <legend class="h6">{{ __('Case classification') }}</legend>
+                            <label for="is_torture_case" class="form-label">{{ __('Torture case') }}</label>
+                            <select id="is_torture_case" name="is_torture_case" class="form-select @error('is_torture_case') is-invalid @enderror" aria-describedby="classification-help">
+                                <option value="" @selected(old('is_torture_case', $case->is_torture_case) === null || old('is_torture_case', $case->is_torture_case) === '')>{{ __('Unknown') }}</option>
+                                <option value="1" @selected((string) old('is_torture_case', $case->is_torture_case) === '1')>{{ __('Yes') }}</option>
+                                <option value="0" @selected(in_array(old('is_torture_case', $case->is_torture_case), [false, 0, '0'], true))>{{ __('No') }}</option>
+                            </select>
+                            <p id="classification-help" class="form-text">{{ __('Keep Unknown until the classification is confirmed. The 60-day deadline is evaluated only for confirmed torture cases. Clear any recorded external extension in the timeline editor before changing to No or Unknown.') }}</p>
+                            @error('is_torture_case')<p class="text-danger" role="alert">{{ $message }}</p>@enderror
+                        </fieldset>
+                        @include('cases.partials.edit-people')
+
                         @if ($onBehalf)
                             <fieldset class="mt-4">
                                 <legend class="h6 mb-3">{{ __('Edit reason') }}</legend>
@@ -128,7 +145,7 @@
 
                         <div class="form-actions">
                                 <button type="submit" class="btn btn-primary">
-                                    {{ __('Save Changes') }}
+                                    {{ request()->query('classification') === 'unknown' ? __('Save and return to review') : __('Save Changes') }}
                                 </button>
 
                                 <a href="{{ route('cases.show', $case) }}" class="btn btn-link">
@@ -142,3 +159,7 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+    @include('cases.partials.people-script', ['editing' => true])
+@endpush

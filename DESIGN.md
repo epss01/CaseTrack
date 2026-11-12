@@ -95,8 +95,12 @@ field groups. Do not calculate deadlines in views or browser code.
 
 Deadline badges combine visible text with decorative SVG: circle On track,
 triangle Due soon, square Overdue, check-circle Submitted. Case-status labels
-remain separate from deadline states. Retain the disabled 60-day alerting rule;
-never manufacture a result for it. Charts and reports preserve existing
+remain separate from deadline states. Show the 60-day RORP deadline only for
+confirmed torture cases, with a clear caveat for unknown classification. The
+timeline editor records externally granted extensions separately from initial-ROP
+requests and explains the prototype 90-days-from-docketing assumption. Show the
+effective due date and grant status without suggesting CaseTrack approves grants.
+Charts and reports preserve existing
 server-calculated values and accessible textual summaries.
 
 ## Accessibility and verification

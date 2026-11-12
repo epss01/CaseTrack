@@ -90,8 +90,10 @@ statutory deadlines, case status, and legal decisions remain outside clustering.
   human-entered from 0.1-1.0. WCS suggests an assignment; it never assigns
   one automatically.
 - Statutory deadlines, alerts, dashboard aggregates, and WCS must remain
-  deterministic. The 60th-day torture-case rule is blocked by the missing
-  case-type field; flag it rather than inventing a workaround.
+  deterministic. Evaluate the 60-day RORP milestone only for confirmed torture
+  cases. The approved prototype assumption uses docket date +90 calendar days
+  for an externally granted +30-day extension; CaseTrack records the grant,
+  never approves it. This assumption still requires CHR validation before adoption.
 - Only the assigned investigator may close or reopen a case through the
   ordinary case edit form. Supervisors may edit non-closure fields office-wide
   but cannot change a case across the `Closed` boundary. Closed cases do not

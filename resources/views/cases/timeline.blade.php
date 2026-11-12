@@ -30,10 +30,32 @@
                 <div class="card-header"><h1 class="h5 mb-0">{{ __('Set Timeline') }} &mdash; {{ $case->docket_no }}</h1></div>
 
                 <div class="card-body">
+                    <p><a href="{{ route('cases.edit', $case) }}">{{ __('Edit case details and people') }}</a></p>
                     <p id="timeline-help" class="text-muted">{{ __('Extension request and 120th-day ROP submission dates record what happened. They do not grant an extension, change a deadline, or mark the FIR submitted.') }}</p>
+                    @include('cases.partials.torture-deadline')
                     <form method="POST" action="{{ route('cases.timeline.update', $case) }}">
                         @csrf
                         @method('PUT')
+                        <input type="hidden" name="lock_version" value="{{ old('lock_version', $case->lock_version) }}">
+                        @error('lock_version')<div class="alert alert-warning" role="alert">{{ $message }}</div>@enderror
+
+                        @if ($case->is_torture_case === true || $timeline?->extension_60th_days)
+                            <fieldset class="mb-4">
+                                <legend class="h6 float-none">{{ __('External torture-case extension') }}</legend>
+                                <input type="hidden" name="torture_extension_granted" value="0">
+                                <div class="form-check d-flex align-items-center gap-2 ps-0">
+                                    <input class="form-check-input ms-0 mt-0 flex-shrink-0 @error('torture_extension_granted') is-invalid @enderror" id="torture_extension_granted" type="checkbox" name="torture_extension_granted" value="1"
+                                           @checked(old('torture_extension_granted', $timeline?->extension_60th_days !== null)) aria-describedby="extension-help @error('torture_extension_granted') extension-error @enderror" @error('torture_extension_granted') aria-invalid="true" @enderror>
+                                    <label class="form-check-label py-3" for="torture_extension_granted">{{ __('Externally granted 30-day extension') }}</label>
+                                </div>
+                                <p id="extension-help" class="form-text">{{ __('Record a grant made outside CaseTrack. A request alone does not qualify. Prototype assumption: a granted extension ends 90 calendar days from docketing, not 30 days from approval. Uncheck to remove a mistaken grant.') }}</p>
+                                @error('torture_extension_granted')<p id="extension-error" class="text-danger" role="alert">{{ $message }}</p>@enderror
+                                <label for="extension_note" class="form-label">{{ __('External approval reference or explanatory note') }}</label>
+                                <textarea id="extension_note" name="extension_note" maxlength="500" rows="2" class="form-control @error('extension_note') is-invalid @enderror" aria-describedby="extension-note-help @error('extension_note') extension-note-error @enderror" @error('extension_note') aria-invalid="true" @enderror>{{ old('extension_note') }}</textarea>
+                                <p id="extension-note-help" class="form-text">{{ __('Required when recording, removing or recalculating the extension, including a docket-date correction. Stored in the audit trail; do not enter case narratives here.') }}</p>
+                                @error('extension_note')<p id="extension-note-error" class="text-danger" role="alert">{{ $message }}</p>@enderror
+                            </fieldset>
+                        @endif
 
                         @foreach ($dateGroups as $group => $fields)
                         <fieldset class="mb-4">
@@ -91,6 +113,14 @@
                         </fieldset>
                         @endforeach
 
+                        @if (auth()->user()->isSupervisor())
+                            <div class="mb-4">
+                                <label for="reason" class="form-label">{{ __('Reason for editing this timeline') }} ({{ __('required') }})</label>
+                                <textarea id="reason" name="reason" class="form-control @error('reason') is-invalid @enderror" maxlength="500" required rows="3">{{ old('reason') }}</textarea>
+                                <p class="form-text">{{ __('This reason is recorded in the audit trail.') }}</p>
+                                @error('reason')<p class="text-danger" role="alert">{{ $message }}</p>@enderror
+                            </div>
+                        @endif
                         <div class="form-actions">
                                 <button type="submit" class="btn btn-primary">
                                     {{ __('Save Timeline') }}

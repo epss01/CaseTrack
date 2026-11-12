@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+<rect width="100%" height="100%" fill="white"/>
+<text x="600" y="40" text-anchor="middle" font-family="Arial" font-size="30" font-weight="bold" fill="#111">CaseTrack: data flow</text>
+<rect x="30" y="90" width="320" height="100" rx="4" fill="#f6f6f6" stroke="#222" stroke-width="2"/>
+<text x="190.0" y="132.0" text-anchor="middle" font-family="Arial" font-size="25" font-weight="normal" fill="#111">Investigator / Supervisor</text>
+<text x="190.0" y="164.0" text-anchor="middle" font-family="Arial" font-size="25" font-weight="normal" fill="#111">Authorized case inputs</text>
+<ellipse cx="610.0" cy="140.0" rx="170.0" ry="50.0" fill="#f6f6f6" stroke="#222" stroke-width="2"/>
+<text x="610.0" y="132.0" text-anchor="middle" font-family="Arial" font-size="25" font-weight="normal" fill="#111">1.0 Validate role, case</text>
+<text x="610.0" y="164.0" text-anchor="middle" font-family="Arial" font-size="25" font-weight="normal" fill="#111">permission and version</text>
+<polyline points="350,140 440,140" fill="none" stroke="#222" stroke-width="2"/>
+<polygon points="440,140 428.2941876694152,145.654551943446 428.2941876694152,134.345448056554" fill="#222"/>
+<rect x="870" y="90" width="300" height="100" rx="4" fill="#f6f6f6" stroke="#222" stroke-width="2"/>
+<text x="1020.0" y="132.0" text-anchor="middle" font-family="Arial" font-size="25" font-weight="normal" fill="#111">D1 Cases and people</text>
+<text x="1020.0" y="164.0" text-anchor="middle" font-family="Arial" font-size="25" font-weight="normal" fill="#111">Classification / version</text>
+<polyline points="780,115 870,115" fill="none" stroke="#222" stroke-width="2"/>
+<polygon points="870,115 858.2941876694152,120.654551943446 858.2941876694152,109.345448056554" fill="#222"/>
+<polyline points="870,165 780,165" fill="none" stroke="#222" stroke-width="2"/>
+<polygon points="780,165 791.7058123305848,159.345448056554 791.7058123305848,170.654551943446" fill="#222"/>
+<ellipse cx="610.0" cy="340.0" rx="170.0" ry="55.0" fill="#f6f6f6" stroke="#222" stroke-width="2"/>
+<text x="610.0" y="332.0" text-anchor="middle" font-family="Arial" font-size="25" font-weight="normal" fill="#111">2.0 Save timeline and</text>
+<text x="610.0" y="364.0" text-anchor="middle" font-family="Arial" font-size="25" font-weight="normal" fill="#111">external-grant record</text>
+<polyline points="610,190 610,285" fill="none" stroke="#222" stroke-width="2"/>
+<polygon points="610,285 604.345448056554,273.2941876694152 615.654551943446,273.2941876694152" fill="#222"/>
+<text x="800" y="240" text-anchor="middle" font-family="Arial" font-size="22" font-weight="normal" fill="#111">Validated input</text>
+<rect x="870" y="290" width="300" height="100" rx="4" fill="#f6f6f6" stroke="#222" stroke-width="2"/>
+<text x="1020.0" y="332.0" text-anchor="middle" font-family="Arial" font-size="25" font-weight="normal" fill="#111">D2 Case timelines</text>
+<text x="1020.0" y="364.0" text-anchor="middle" font-family="Arial" font-size="25" font-weight="normal" fill="#111">Actuals / stored dates</text>
+<polyline points="780,320 870,320" fill="none" stroke="#222" stroke-width="2"/>
+<polygon points="870,320 858.2941876694152,325.654551943446 858.2941876694152,314.345448056554" fill="#222"/>
+<polyline points="870,365 780,365" fill="none" stroke="#222" stroke-width="2"/>
+<polygon points="780,365 791.7058123305848,359.345448056554 791.7058123305848,370.654551943446" fill="#222"/>
+<rect x="40" y="290" width="290" height="100" rx="4" fill="#f6f6f6" stroke="#222" stroke-width="2"/>
+<text x="185.0" y="332.0" text-anchor="middle" font-family="Arial" font-size="25" font-weight="normal" fill="#111">D3 Audit logs</text>
+<text x="185.0" y="364.0" text-anchor="middle" font-family="Arial" font-size="25" font-weight="normal" fill="#111">Change / reason / dates</text>
+<polyline points="440,340 330,340" fill="none" stroke="#222" stroke-width="2"/>
+<polygon points="330,340 341.7058123305848,334.345448056554 341.7058123305848,345.654551943446" fill="#222"/>
+<text x="180" y="245" text-anchor="middle" font-family="Arial" font-size="22" font-weight="normal" fill="#111">Atomic change events</text>
+<ellipse cx="610.0" cy="540.0" rx="170.0" ry="55.0" fill="#f6f6f6" stroke="#222" stroke-width="2"/>
+<text x="610.0" y="532.0" text-anchor="middle" font-family="Arial" font-size="25" font-weight="normal" fill="#111">3.0 Evaluate deadlines</text>
+<text x="610.0" y="564.0" text-anchor="middle" font-family="Arial" font-size="25" font-weight="normal" fill="#111">CaseDeadlineService</text>
+<polyline points="610,395 610,485" fill="none" stroke="#222" stroke-width="2"/>
+<polygon points="610,485 604.345448056554,473.2941876694152 615.654551943446,473.2941876694152" fill="#222"/>
+<ellipse cx="185.0" cy="540.0" rx="145.0" ry="50.0" fill="#f6f6f6" stroke="#222" stroke-width="2"/>
+<text x="185.0" y="532.0" text-anchor="middle" font-family="Arial" font-size="25" font-weight="normal" fill="#111">4.0 Authorized views</text>
+<text x="185.0" y="564.0" text-anchor="middle" font-family="Arial" font-size="25" font-weight="normal" fill="#111">History / reports / alerts</text>
+<polyline points="440,540 330,540" fill="none" stroke="#222" stroke-width="2"/>
+<polygon points="330,540 341.7058123305848,534.345448056554 341.7058123305848,545.654551943446" fill="#222"/>
+<polyline points="185,390 185,490" fill="none" stroke="#222" stroke-width="2"/>
+<polygon points="185,490 179.345448056554,478.2941876694152 190.654551943446,478.2941876694152" fill="#222"/>
+<polyline points="40,540 15,540 15,140 30,140" fill="none" stroke="#222" stroke-width="2"/>
+<polygon points="30,140 18.2941876694152,145.654551943446 18.2941876694152,134.345448056554" fill="#222"/>
+<text x="630" y="665" text-anchor="middle" font-family="Arial" font-size="23" font-weight="normal" fill="#111">Confirmed torture: stored base, otherwise docket +60; grant uses docket +90.</text>
+<text x="630" y="695" text-anchor="middle" font-family="Arial" font-size="23" font-weight="normal" fill="#111">Unknown: no 60-day evaluation. Requests do not grant time.</text>
+<text x="630" y="725" text-anchor="middle" font-family="Arial" font-size="23" font-weight="normal" fill="#111">90-day formula is provisional; CHR validation pending.</text>
+<text x="600" y="770" text-anchor="middle" font-family="Arial" font-size="23" font-weight="normal" fill="#111">Admin account management is separate; no Admin case-data flow.</text>
+</svg>

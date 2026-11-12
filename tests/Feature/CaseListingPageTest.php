@@ -33,7 +33,7 @@ class CaseListingPageTest extends TestCase
             ->create(['case_id' => $case->id]);
 
         $this->actingAs($investigator)
-            ->get(route('cases.index'))
+            ->get(route('cases.index', ['view' => 'list']))
             ->assertOk()
             ->assertSee($docketedOn->format('d M Y'))
             ->assertSee('Complexity 4 of 5');
@@ -61,7 +61,7 @@ class CaseListingPageTest extends TestCase
         CaseModel::factory()->create(['status' => CaseModel::STATUS_DOCKETED]);
 
         $this->actingAs($supervisor)
-            ->get(route('cases.index'))
+            ->get(route('cases.index', ['view' => 'list']))
             ->assertOk()
             ->assertSeeInOrder(['Complexity', 'Date of Docket', 'Investigator']);
     }

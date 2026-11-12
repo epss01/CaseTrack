@@ -23,6 +23,17 @@ class ReportPageTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_invalid_date_filters_preserve_values_for_correction(): void
+    {
+        $actor = User::factory()->supervisor()->create();
+        $this->actingAs($actor)->from(route('reports.index'))
+            ->get(route('reports.index', ['from' => '2026-02-01', 'to' => '2026-01-01', 'status' => 'Docketed']))
+            ->assertRedirect(route('reports.index'))->assertSessionHasErrors('to');
+        $this->get(route('reports.index'))->assertOk()
+            ->assertSee('value="2026-02-01"', false)->assertSee('value="2026-01-01"', false)
+            ->assertSee('value="Docketed"', false);
+    }
+
     // ------------------------------------------------------------ access
 
     public function test_a_guest_is_sent_to_the_login_page(): void
@@ -327,11 +338,9 @@ class ReportPageTest extends TestCase
     // ------------------------------------------------------------ content
 
     /**
-     * The listing shows the columns that stay readable at a laptop width; the
-     * CSV carries all eleven. Eleven columns on screen needed 1281px inside an
-     * 893px wrapper, which pushed the View button out of reach.
+     * The monitoring worksheet follows CHR's grouped people and actual-date columns.
      */
-    public function test_the_listing_shows_the_columns_that_fit(): void
+    public function test_the_listing_shows_chr_monitoring_columns(): void
     {
         $investigator = User::factory()->investigator()->create();
 
@@ -341,11 +350,10 @@ class ReportPageTest extends TestCase
             ->get('/reports')
             ->assertOk()
             ->assertSeeInOrder([
-                __('Docket No.'), __('Title'), __('Status'), __('Complexity'),
-                __('Docketed'), __('30-day (ROP)'), __('120-day (FIR)'),
+                __('Docket No.'), __('Case title'), __('Complainant'), __('Victim/s'),
+                __('Respondent/s'), __('Timeline tracking'), __('FIR submission'),
             ])
-            // Paired into the two deadline columns rather than given columns
-            // of their own.
+            // Calculated deadlines belong in the per-case report and legacy CSV.
             ->assertDontSee(__('30-day Deadline'))
             ->assertDontSee(__('ROP Submitted'))
             ->assertDontSee(__('120-day Deadline'))
@@ -367,7 +375,7 @@ class ReportPageTest extends TestCase
         $this->actingAs($investigator)
             ->get('/reports')
             ->assertOk()
-            ->assertSee(__('included in the CSV download'), escape: false);
+            ->assertSee(__('The simpler CSV download retains its existing eleven columns.'), escape: false);
 
         $csv = $this->actingAs($investigator)
             ->get(route('reports.export'))
@@ -390,15 +398,15 @@ class ReportPageTest extends TestCase
         $this->actingAs($investigator)
             ->get('/reports')
             ->assertOk()
-            ->assertDontSee('<th scope="col">'.__('Investigator').'</th>', escape: false);
+            ->assertDontSee('<th rowspan="2" scope="col">'.__('Investigator').'</th>', escape: false);
 
         $this->actingAs(User::factory()->supervisor()->create())
             ->get('/reports')
             ->assertOk()
-            ->assertSee('<th scope="col">'.__('Investigator').'</th>', escape: false);
+            ->assertSee('<th rowspan="2" scope="col">'.__('Investigator').'</th>', escape: false);
     }
 
-    public function test_each_deadline_is_shown_with_the_submission_that_discharges_it(): void
+    public function test_recorded_submission_dates_reach_the_worksheet(): void
     {
         $investigator = User::factory()->investigator()->create();
 
@@ -408,17 +416,16 @@ class ReportPageTest extends TestCase
         $this->actingAs($investigator)
             ->get('/reports')
             ->assertOk()
-            // The 30-day deadline, then the ROP that discharged it, in one cell.
-            ->assertSeeInOrder(['2026-03-31', __('filed :date', ['date' => '2026-03-28'])])
-            // The FIR is outstanding, and says so rather than showing a blank.
-            ->assertSee(__('not filed'));
+            ->assertSee('2026-03-28')
+            ->assertDontSee('2026-03-31')
+            ->assertSee('Dashes mean no value is recorded.');
     }
 
     /**
      * The button lives in the last cell of the row, which .table-data pins to
      * its own width so a long title can never squeeze it off the table.
      */
-    public function test_every_row_ends_with_a_reachable_view_button(): void
+    public function test_the_docket_link_opens_the_case_report(): void
     {
         $investigator = User::factory()->investigator()->create();
 
@@ -430,10 +437,10 @@ class ReportPageTest extends TestCase
             ->get('/reports')
             ->assertOk()
             ->assertSee($case->case_title)
-            ->assertSeeInOrder([$case->case_title, route('reports.show', $case)], escape: false);
+            ->assertSeeInOrder([route('reports.show', $case), $case->docket_no, $case->case_title], escape: false);
     }
 
-    public function test_a_deadline_computed_by_the_service_reaches_the_page(): void
+    public function test_calculated_deadlines_are_not_presented_as_recorded_actuals(): void
     {
         $investigator = User::factory()->investigator()->create();
 
@@ -444,8 +451,8 @@ class ReportPageTest extends TestCase
         $this->actingAs($investigator)
             ->get('/reports')
             ->assertOk()
-            ->assertSee('2026-03-31')
-            ->assertSee('2026-06-29');
+            ->assertDontSee('2026-03-31')
+            ->assertDontSee('2026-06-29');
     }
 
     public function test_the_status_mix_covers_the_reported_set(): void

@@ -312,11 +312,9 @@ class ReportExportTest extends TestCase
     }
 
     /**
-     * The 60th day binds only torture cases and no case-type column exists, so
-     * CaseDeadlineService gates it out of everything a user can see when the
-     * flag is off. A report is no exception.
+     * The legacy export retains its eleven-column contract without a 60-day column.
      */
-    public function test_the_sixtieth_day_appears_nowhere_in_the_export_when_flag_is_off(): void
+    public function test_the_legacy_export_omits_sixtieth_day_columns(): void
     {
         $investigator = User::factory()->investigator()->create();
 
@@ -332,13 +330,18 @@ class ReportExportTest extends TestCase
         $this->assertStringNotContainsString('2026-03-02', $csv);
     }
 
-    /**
-     * This test is skipped when the flag is on because it tests behavior
-     * that requires the flag to be on. The actual logic is tested in unit tests.
-     */
-    public function test_sixtieth_day_appears_in_export_for_torture_case_when_flag_is_on(): void
+    public function test_enabled_torture_deadlines_do_not_change_the_eleven_column_csv_contract(): void
     {
-        $this->markTestSkipped('This test requires the SIXTY_DAY_ENABLED flag to be true, which is tested in unit tests.');
+        $actor = User::factory()->investigator()->create();
+        $case = $this->caseFor($actor, docketedOn: '2026-01-01');
+        $case->update(['is_torture_case' => true]);
+        $case->timeline->update(['extension_60th_days' => '2026-04-01']);
+        $lines = array_values(array_filter(explode("\n", trim($this->export($actor)))));
+        $this->assertCount(11, str_getcsv($lines[0], escape: ''));
+        $this->assertCount(11, str_getcsv($lines[1], escape: ''));
+        $this->assertStringNotContainsString('60th', $lines[0]);
+        $this->assertStringNotContainsString('2026-04-01', $lines[1]);
+
     }
 
     // --------------------------------------------------------- spreadsheet

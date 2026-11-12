@@ -174,7 +174,7 @@ class DeadlineAlertsPageTest extends TestCase
      * A case 90 days in with its ROP filed: the 60th day passed a month ago and
      * is the only milestone that could put it on this page.
      */
-    public function test_a_case_well_past_its_sixtieth_day_shows_no_trace_when_flag_is_off(): void
+    public function test_an_unclassified_case_does_not_raise_a_sixtieth_day_alert(): void
     {
         $investigator = User::factory()->investigator()->create();
 
@@ -205,22 +205,34 @@ class DeadlineAlertsPageTest extends TestCase
             ->assertSeeInOrder([__('On track'), '1']);
     }
 
-    /**
-     * These tests are skipped when the flag is on because they test behavior
-     * that requires the flag to be on. The actual logic is tested in unit tests.
-     */
     public function test_a_torture_case_well_past_its_sixtieth_day_shows_as_overdue_when_flag_is_on(): void
     {
-        $this->markTestSkipped('This test requires the SIXTY_DAY_ENABLED flag to be true, which is tested in unit tests.');
+        $actor = User::factory()->investigator()->create();
+        $case = $this->caseWithTimeline($actor, 70, ['date_submission_rop' => CarbonImmutable::today()->subDays(50)]);
+        $case->update(['is_torture_case' => true]);
+        $this->actingAs($actor)->get(route('alerts.index'))->assertOk()
+            ->assertSee($case->docket_no)->assertSee('60th day (RORP)');
+        $actor = User::factory()->investigator()->create();
+        $case = $this->caseWithTimeline($actor, 70, ['date_submission_rop' => CarbonImmutable::today()->subDays(50)]);
+        $case->update(['is_torture_case' => true]);
+        $this->actingAs($actor)->get(route('alerts.index'))->assertOk()
+            ->assertSee($case->docket_no)->assertSee('60th day (RORP)');
+
     }
 
-    /**
-     * These tests are skipped when the flag is on because they test behavior
-     * that requires the flag to be on. The actual logic is tested in unit tests.
-     */
     public function test_a_non_torture_case_well_past_its_sixtieth_day_shows_no_trace_when_flag_is_on(): void
     {
-        $this->markTestSkipped('This test requires the SIXTY_DAY_ENABLED flag to be true, which is tested in unit tests.');
+        $actor = User::factory()->investigator()->create();
+        $case = $this->caseWithTimeline($actor, 70, ['date_submission_rop' => CarbonImmutable::today()->subDays(50)]);
+        $case->update(['is_torture_case' => false]);
+        $this->actingAs($actor)->get(route('alerts.index'))->assertOk()
+            ->assertDontSee($case->docket_no)->assertDontSee('60th day (RORP)');
+        $actor = User::factory()->investigator()->create();
+        $case = $this->caseWithTimeline($actor, 70, ['date_submission_rop' => CarbonImmutable::today()->subDays(50)]);
+        $case->update(['is_torture_case' => false]);
+        $this->actingAs($actor)->get(route('alerts.index'))->assertOk()
+            ->assertDontSee($case->docket_no)->assertDontSee('60th day (RORP)');
+
     }
 
     // --------------------------------------------------------- pagination

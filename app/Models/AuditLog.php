@@ -32,6 +32,16 @@ class AuditLog extends Model
      */
     public const ACTION_EDIT = 'EDIT';
 
+    public const ACTION_PEOPLE_ADDED = 'PEOPLE_ADDED';
+
+    public const ACTION_PEOPLE_UPDATED = 'PEOPLE_UPDATED';
+
+    public const ACTION_PEOPLE_REMOVED = 'PEOPLE_REMOVED';
+
+    public const ACTION_CLASSIFICATION_CHANGED = 'CLASSIFICATION_CHANGED';
+
+    public const ACTION_TIMELINE_EDIT_ON_BEHALF = 'TIMELINE_EDIT_ON_BEHALF';
+
     /** A supervisor moved a case to another investigator. */
     public const ACTION_CASE_REASSIGNED = 'CASE_REASSIGNED';
 
@@ -45,6 +55,12 @@ class AuditLog extends Model
      * these columns, so moving one moves what the system reports as overdue.
      */
     public const ACTION_TIMELINE_UPDATE = 'TIMELINE_UPDATE';
+
+    public const ACTION_TORTURE_EXTENSION_RECORDED = 'TORTURE_EXTENSION_RECORDED';
+
+    public const ACTION_TORTURE_EXTENSION_REMOVED = 'TORTURE_EXTENSION_REMOVED';
+
+    public const ACTION_TORTURE_EXTENSION_RECALCULATED = 'TORTURE_EXTENSION_RECALCULATED';
 
     /** A case closed directly by its assigned investigator. */
     public const ACTION_CASE_CLOSED = 'CASE_CLOSED';
@@ -179,9 +195,17 @@ class AuditLog extends Model
         self::ACTION_DELETE,
         self::ACTION_CREATE,
         self::ACTION_EDIT,
+        self::ACTION_PEOPLE_ADDED,
+        self::ACTION_PEOPLE_UPDATED,
+        self::ACTION_PEOPLE_REMOVED,
+        self::ACTION_CLASSIFICATION_CHANGED,
+        self::ACTION_TIMELINE_EDIT_ON_BEHALF,
         self::ACTION_CASE_REASSIGNED,
         self::ACTION_PERFORMANCE_RATING_UPDATED,
         self::ACTION_TIMELINE_UPDATE,
+        self::ACTION_TORTURE_EXTENSION_RECORDED,
+        self::ACTION_TORTURE_EXTENSION_REMOVED,
+        self::ACTION_TORTURE_EXTENSION_RECALCULATED,
         self::ACTION_CASE_CLOSED,
         self::ACTION_CASE_REOPENED,
         self::ACTION_CLOSURE_PROPOSED,
@@ -225,8 +249,7 @@ class AuditLog extends Model
      * assigned casework, and case_id is nullable for exactly this shape of
      * entry. $target is optional for the same reason on the other side: many
      * actions (a login, an export, a denial) have no one to name but the
-     * actor. $notes is free-text context — currently only ACTION_EDIT_ON_BEHALF
-     * uses it, to carry the supervisor's stated reason.
+     * actor. $notes carries supervisor reasons, affected person IDs or classification changes.
      */
     public static function record(User $user, ?CaseModel $case, string $action, ?User $target = null, ?string $notes = null): self
     {
@@ -237,6 +260,27 @@ class AuditLog extends Model
             'action_performed' => $action,
             'notes' => $notes,
         ]);
+    }
+
+    /** Historical audit notes may predate the structured extension record. */
+    public function extensionHistoryDetails(): ?array
+    {
+        $details = json_decode($this->notes ?? '', true);
+        if (! is_array($details) || ! is_string($details['note'] ?? null)) {
+            return null;
+        }
+        foreach (['previous_deadline', 'deadline'] as $field) {
+            if (! array_key_exists($field, $details)) {
+                return null;
+            }
+            $date = $details[$field];
+            if ($date !== null && (! is_string($date) || ! preg_match('/^\d{4}-\d{2}-\d{2}$/D', $date)
+                || ! checkdate((int) substr($date, 5, 2), (int) substr($date, 8, 2), (int) substr($date, 0, 4)))) {
+                return null;
+            }
+        }
+
+        return $details;
     }
 
     /**
