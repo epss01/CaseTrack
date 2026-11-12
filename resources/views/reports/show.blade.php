@@ -114,6 +114,7 @@
                 </div>
 
                 <div class="card-body">
+                    @include('cases.partials.torture-deadline', ['tortureMilestone' => $milestones[\App\Services\CaseDeadlineService::SIXTIETH_DAY] ?? null])
                     {{-- What the listing has no room for. A case with no timeline
                          row cannot be measured at all, which is not the same as
                          being on track and must not read as it. --}}

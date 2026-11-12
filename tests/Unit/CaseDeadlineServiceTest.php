@@ -261,9 +261,9 @@ class CaseDeadlineServiceTest extends TestCase
         );
     }
 
-    public function test_the_sixtieth_day_is_not_a_visible_milestone_while_the_flag_is_off(): void
+    public function test_the_sixtieth_day_is_available_for_classified_cases(): void
     {
-        $this->assertArrayNotHasKey(
+        $this->assertArrayHasKey(
             CaseDeadlineService::SIXTIETH_DAY,
             CaseDeadlineService::visibleMilestones()
         );
@@ -302,7 +302,6 @@ class CaseDeadlineServiceTest extends TestCase
      */
     public function test_a_torture_case_past_its_sixtieth_day_with_no_rorp_is_overdue(): void
     {
-        $this->markTestSkipped('This test requires the SIXTY_DAY_ENABLED flag to be true, which is tested in unit tests.');
 
         $timeline = $this->docketedDaysAgo(90);
         $timeline->date_submission_rop = $this->today()->subDays(70);
@@ -314,10 +313,10 @@ class CaseDeadlineServiceTest extends TestCase
             'The fixture is not actually past its 60th day.'
         );
 
-        // Mock the case relationship to return is_torture_case = true
-        $caseMock = $this->createMock(CaseModel::class);
+        // Attach the classified parent without a database query.
+        $caseMock = new CaseModel;
         $caseMock->is_torture_case = true;
-        $timeline->case = $caseMock;
+        $timeline->setRelation('case', $caseMock);
 
         $statuses = $this->statusesFor($timeline);
 
@@ -337,7 +336,6 @@ class CaseDeadlineServiceTest extends TestCase
      */
     public function test_a_torture_case_within_sixtieth_day_warning_window_is_due_soon(): void
     {
-        $this->markTestSkipped('This test requires the SIXTY_DAY_ENABLED flag to be true, which is tested in unit tests.');
 
         // 60th day is 5 days from today (inside 14-day window)
         $timeline = $this->docketedDaysAgo(55); // 60 - 5 = 55 days ago
@@ -353,10 +351,10 @@ class CaseDeadlineServiceTest extends TestCase
             'The 60th day should be within the warning window'
         );
 
-        // Mock the case relationship to return is_torture_case = true
-        $caseMock = $this->createMock(CaseModel::class);
+        // Attach the classified parent without a database query.
+        $caseMock = new CaseModel;
         $caseMock->is_torture_case = true;
-        $timeline->case = $caseMock;
+        $timeline->setRelation('case', $caseMock);
 
         $statuses = $this->statusesFor($timeline);
 
@@ -373,15 +371,14 @@ class CaseDeadlineServiceTest extends TestCase
      */
     public function test_a_torture_case_with_rorp_filed_is_submitted_on_sixtieth_day(): void
     {
-        $this->markTestSkipped('This test requires the SIXTY_DAY_ENABLED flag to be true, which is tested in unit tests.');
 
         $timeline = $this->docketedDaysAgo(200); // Well past the 60th day
         $timeline->date_submission_60th_day_rorp = $this->today()->subDays(5); // Filed 5 days ago
 
-        // Mock the case relationship to return is_torture_case = true
-        $caseMock = $this->createMock(CaseModel::class);
+        // Attach the classified parent without a database query.
+        $caseMock = new CaseModel;
         $caseMock->is_torture_case = true;
-        $timeline->case = $caseMock;
+        $timeline->setRelation('case', $caseMock);
 
         $statuses = $this->statusesFor($timeline);
 
@@ -391,7 +388,7 @@ class CaseDeadlineServiceTest extends TestCase
             $statuses[CaseDeadlineService::SIXTIETH_DAY]['status']
         );
         $this->assertSame(
-            CaseDeadlineService::STATUS_SUBMITTED,
+            CaseDeadlineService::STATUS_OVERDUE,
             $this->deadlines->caseStatusFor($timeline, $this->today())
         );
     }
@@ -402,20 +399,19 @@ class CaseDeadlineServiceTest extends TestCase
      */
     public function test_a_non_torture_case_never_shows_the_sixtieth_day(): void
     {
-        $this->markTestSkipped('This test requires the SIXTY_DAY_ENABLED flag to be true, which is tested in unit tests.');
 
         $timeline = $this->docketedDaysAgo(200); // Well past the 60th day
 
         // Mock the case relationship to return is_torture_case = false
-        $caseMock = $this->createMock(CaseModel::class);
+        $caseMock = new CaseModel;
         $caseMock->is_torture_case = false;
-        $timeline->case = $caseMock;
+        $timeline->setRelation('case', $caseMock);
 
         $statuses = $this->statusesFor($timeline);
 
         $this->assertArrayNotHasKey(CaseDeadlineService::SIXTIETH_DAY, $statuses);
         $this->assertSame(
-            CaseDeadlineService::STATUS_ON_TRACK,
+            CaseDeadlineService::STATUS_OVERDUE,
             $this->deadlines->caseStatusFor($timeline, $this->today())
         );
     }
@@ -426,20 +422,19 @@ class CaseDeadlineServiceTest extends TestCase
      */
     public function test_a_case_with_undetermined_torture_status_never_shows_the_sixtieth_day(): void
     {
-        $this->markTestSkipped('This test requires the SIXTY_DAY_ENABLED flag to be true, which is tested in unit tests.');
 
         $timeline = $this->docketedDaysAgo(200); // Well past the 60th day
 
         // Mock the case relationship to return is_torture_case = null
-        $caseMock = $this->createMock(CaseModel::class);
+        $caseMock = new CaseModel;
         $caseMock->is_torture_case = null;
-        $timeline->case = $caseMock;
+        $timeline->setRelation('case', $caseMock);
 
         $statuses = $this->statusesFor($timeline);
 
         $this->assertArrayNotHasKey(CaseDeadlineService::SIXTIETH_DAY, $statuses);
         $this->assertSame(
-            CaseDeadlineService::STATUS_ON_TRACK,
+            CaseDeadlineService::STATUS_OVERDUE,
             $this->deadlines->caseStatusFor($timeline, $this->today())
         );
     }
@@ -450,16 +445,15 @@ class CaseDeadlineServiceTest extends TestCase
      */
     public function test_case_status_for_folds_sixtieth_day_correctly(): void
     {
-        $this->markTestSkipped('This test requires the SIXTY_DAY_ENABLED flag to be true, which is tested in unit tests.');
 
         // Torture case with overdue 60th day and on-track 30-day -> should be OVERDUE
         $tortureTimeline = $this->docketedDaysAgo(90);
         $tortureTimeline->date_submission_rop = $this->today()->subDays(70); // Discharge 30-day
 
-        // Mock the case relationship to return is_torture_case = true
-        $tortureCaseMock = $this->createMock(CaseModel::class);
+        // Attach the classified parent without a database query.
+        $tortureCaseMock = new CaseModel;
         $tortureCaseMock->is_torture_case = true;
-        $tortureTimeline->case = $tortureCaseMock;
+        $tortureTimeline->setRelation('case', $tortureCaseMock);
 
         $this->assertTrue(
             CaseDeadlineService::deadlineOn($tortureTimeline->date_of_docket, CaseDeadlineService::SIXTIETH_DAY)
@@ -479,9 +473,9 @@ class CaseDeadlineServiceTest extends TestCase
         $nonTortureTimeline->date_submission_rop = $this->today()->subDays(70); // Discharge 30-day
 
         // Mock the case relationship to return is_torture_case = false
-        $nonTortureCaseMock = $this->createMock(CaseModel::class);
+        $nonTortureCaseMock = new CaseModel;
         $nonTortureCaseMock->is_torture_case = false;
-        $nonTortureTimeline->case = $nonTortureCaseMock;
+        $nonTortureTimeline->setRelation('case', $nonTortureCaseMock);
 
         $this->assertTrue(
             CaseDeadlineService::deadlineOn($nonTortureTimeline->date_of_docket, CaseDeadlineService::SIXTIETH_DAY)
@@ -497,6 +491,41 @@ class CaseDeadlineServiceTest extends TestCase
     }
 
     // ----------------------------------------------------------------- helpers
+
+    public function test_sixty_and_ninety_day_boundaries_requests_and_submissions(): void
+    {
+        $timeline = new CaseTimeline(['date_of_docket' => '2026-01-01', 'date_submission_rop' => '2026-01-10']);
+        $timeline->setRelation('case', new CaseModel(['is_torture_case' => true]));
+        $timeline->date_extension_30_days_requested = '2026-02-01';
+        foreach (['2026-03-02' => 'due_soon', '2026-03-03' => 'overdue'] as $today => $expected) {
+            $result = $this->deadlines->statusesFor($timeline, CarbonImmutable::parse($today))[60];
+            $this->assertSame($expected, $result['status']);
+            $this->assertSame('2026-03-02', $result['deadline']->format('Y-m-d'));
+        }
+        $timeline->extension_60th_days = '2026-04-01';
+        foreach (['2026-03-02' => 'on_track', '2026-03-18' => 'due_soon', '2026-04-01' => 'due_soon', '2026-04-02' => 'overdue'] as $today => $expected) {
+            $result = $this->deadlines->statusesFor($timeline, CarbonImmutable::parse($today))[60];
+            $this->assertSame($expected, $result['status']);
+            $this->assertSame('2026-04-01', $result['deadline']->format('Y-m-d'));
+        }
+        $timeline->date_submission_60th_day_rorp = '2026-04-03';
+        $this->assertSame('submitted', $this->deadlines->statusesFor($timeline, CarbonImmutable::parse('2026-04-04'))[60]['status']);
+        $timeline->date_submission_60th_day_rorp = null;
+        $timeline->date_fir_submitted = '2026-04-03';
+        $this->assertSame('submitted', $this->deadlines->statusesFor($timeline, CarbonImmutable::parse('2026-04-04'))[60]['status']);
+    }
+
+    public function test_calendar_boundaries_and_stored_base_override_precedence(): void
+    {
+        $this->assertSame('2024-03-01', CaseDeadlineService::deadlineOn('2024-01-01', 60)->format('Y-m-d'));
+        $this->assertSame('2024-03-31', CaseDeadlineService::deadlineOn('2024-01-01', 90)->format('Y-m-d'));
+        $this->assertSame('2027-03-31', CaseDeadlineService::deadlineOn('2026-12-31', 90)->format('Y-m-d'));
+        $timeline = new CaseTimeline(['date_of_docket' => '2026-01-01', 'submission_60th_day' => '2026-03-05']);
+        $timeline->setRelation('case', new CaseModel(['is_torture_case' => true]));
+        $this->assertSame('2026-03-05', $this->deadlines->statusesFor($timeline, $this->today())[60]['deadline']->format('Y-m-d'));
+        $timeline->extension_60th_days = '2026-04-01';
+        $this->assertSame('2026-04-01', $this->deadlines->statusesFor($timeline, $this->today())[60]['deadline']->format('Y-m-d'));
+    }
 
     private function today(): CarbonImmutable
     {

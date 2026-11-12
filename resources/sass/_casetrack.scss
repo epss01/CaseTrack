@@ -997,3 +997,41 @@ a {
     font-weight: 600;
     cursor: pointer;
 }
+// Folder view keeps the case identifier and workflow state readable at every size.
+.case-folders {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+    gap: 1rem;
+}
+
+.case-folder {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .35rem;
+    height: 100%;
+    padding: 1.25rem;
+    border: 1px solid $border-color;
+    border-radius: .5rem;
+    color: $primary;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+
+    &:hover { background: $body-bg; border-color: $primary; }
+    &:focus-visible { outline: 3px solid $primary; outline-offset: 3px; }
+    &__icon svg { width: 52px; height: 52px; }
+    &__docket { font-weight: 700; }
+    &__title { color: $body-color; font-weight: 600; margin-bottom: .35rem; }
+}
+
+.chr-worksheet {
+    th { min-width: 9rem; vertical-align: middle; }
+    td { min-width: 9rem; white-space: normal; overflow-wrap: anywhere; }
+    a { display: inline-flex; min-height: 44px; align-items: center; }
+}
+
+.record-help > summary {
+    min-height: 44px;
+    padding: .625rem 0;
+    cursor: pointer;
+}

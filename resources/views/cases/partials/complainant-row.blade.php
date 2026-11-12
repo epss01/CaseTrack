@@ -29,8 +29,8 @@
             @endif
         </div>
 
-        <div class="col-md-3 d-flex align-items-end justify-content-end">
-            <button type="button" class="btn btn-sm btn-outline-danger remove-row">{{ __('Remove') }}</button>
+        <div class="{{ ($editing ?? false) && filled($row['id'] ?? null) ? 'col-12' : 'col-md-3 d-flex align-items-end justify-content-end' }}">
+            @include('cases.partials.person-removal', ['group' => 'complainants'])
         </div>
     </div>
 </div>

@@ -8,9 +8,11 @@ use App\Models\CaseModel;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\CaseDeadlineService;
+use App\Services\ChrMonitoringExportService;
 use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 /**
  * The case listing, as a page and as a file.
@@ -34,12 +36,12 @@ class ReportController extends Controller
      *
      * @return Renderable
      */
-    public function index(ReportFilterRequest $request, CaseDeadlineService $deadlines)
+    public function index(ReportFilterRequest $request, CaseDeadlineService $deadlines, ChrMonitoringExportService $worksheet)
     {
         $filters = $request->filters();
 
         $cases = $this->casesQuery($request)
-            ->with(['timeline', 'investigator'])
+            ->with(['timeline', 'investigator', 'victims', 'respondents', 'complainants'])
             ->latest('docket_no')
             ->paginate(15)
             ->withQueryString();
@@ -48,6 +50,7 @@ class ReportController extends Controller
             'rows' => $cases->through(fn (CaseModel $case) => [
                 'case' => $case,
                 'fields' => $this->row($case, $deadlines),
+                'worksheetRows' => $worksheet->rows($case),
             ]),
             'filters' => $filters,
 
@@ -203,6 +206,25 @@ class ReportController extends Controller
             ->filteredBy($request->filters());
     }
 
+    public function exportExcel(ReportFilterRequest $request, ChrMonitoringExportService $worksheet)
+    {
+        $cases = $this->casesQuery($request)
+            ->with(['timeline', 'investigator', 'victims', 'respondents', 'complainants'])
+            ->orderBy('investigator_id')->orderBy('docket_no')->get();
+        $book = $worksheet->workbook($cases);
+        AuditLog::record($request->user(), null, AuditLog::ACTION_EXPORTED);
+
+        return response()->streamDownload(function () use ($book) {
+            try {
+                (new Xlsx($book))->save('php://output');
+            } finally {
+                $book->disconnectWorksheets();
+            }
+        }, 'chr-monitoring-'.now()->format('Y-m-d').'.xlsx', [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
     /**
      * What a report says about a case, in order.
      *
@@ -288,6 +310,7 @@ class ReportController extends Controller
      */
     private function row(CaseModel $case, CaseDeadlineService $deadlines): array
     {
+        $case->timeline?->setRelation('case', $case);
         $milestones = $deadlines->statusesFor($case->timeline);
 
         return array_map(

@@ -34,7 +34,7 @@ Internal, non-public tool. Investigators/supervisors work from the case list and
 
 - Statutory deadline math (30/60/120-day) is centralized in `CaseDeadlineService`; nothing else may do date math on `case_timelines` columns (enforced by a pre-commit-style guard hook).
 - Case status has a ratified four-value vocabulary: Docketed, Under investigation, For review, and Closed. Only the assigned investigator may move a case into or out of Closed.
-- No case-type/category field exists yet, so the 60-day (torture-case-only) milestone can't be computed correctly — a known, flagged gap, not something to silently work around.
+- Torture classification is recorded as Yes/No/Unknown. Only confirmed torture cases receive the 60-day RORP deadline; unknown classification carries an evaluation caveat. The approved prototype assumes an externally granted +30-day extension ends 90 calendar days from docketing. CaseTrack records external grants with audit notes and does not approve them; CHR validation remains required before adoption.
 - Every state-changing action on case or account data must write an `AuditLog` entry inside the same transaction; the audit trail has no diff column, so the constant name is the only record of what happened.
 - Two roles enforce access at the route level (middleware) and the record level (policy); a third role (Admin) is gated by middleware only since it has no per-record decisions to make.
 

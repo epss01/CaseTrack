@@ -42,19 +42,34 @@ class CaseController extends Controller
      */
     public function index(Request $request)
     {
-        $search = $request->validate([
+        $validated = $request->validate([
             // max:255 bounds the LIKE — a trust-boundary guard, not a UX one.
             'search' => ['nullable', 'string', 'max:255'],
-        ])['search'] ?? null;
+            'view' => ['nullable', 'in:folders,list'],
+            'classification' => ['nullable', 'in:unknown'],
+        ]);
+        $search = $validated['search'] ?? null;
+        $classification = $validated['classification'] ?? null;
+        $view = $validated['view'] ?? $request->session()->get('cases_view', 'folders');
+        $request->session()->put('cases_view', $view);
 
         $cases = CaseModel::visibleTo($request->user())
             ->search($search)
+            ->when($classification === 'unknown', fn ($query) => $query
+                ->whereNull('is_torture_case')
+                ->orderByRaw('CASE WHEN status = ? THEN 1 ELSE 0 END', [CaseModel::STATUS_CLOSED]))
             ->with(['investigator', 'timeline'])
             ->latest('docket_no')
             ->paginate(15)
             ->withQueryString();
 
-        return view('cases.index', ['cases' => $cases, 'search' => $search]);
+        $unknown = CaseModel::visibleTo($request->user())->whereNull('is_torture_case');
+
+        return view('cases.index', [
+            'cases' => $cases, 'search' => $search, 'view' => $view, 'classification' => $classification,
+            'unknownTotal' => (clone $unknown)->count(),
+            'unknownActive' => $unknown->active()->count(),
+        ]);
     }
 
     /**
@@ -110,10 +125,22 @@ class CaseController extends Controller
     public function show(CaseModel $case, CaseDeadlineService $deadlines)
     {
         $case->load(['investigator', 'complainants', 'victims', 'respondents', 'timeline']);
+        $case->timeline?->setRelation('case', $case);
 
         return view('cases.show', [
             'case' => $case,
             'nextObligation' => $deadlines->nextOutstandingFor($case->timeline),
+            'tortureMilestone' => $deadlines->statusesFor($case->timeline)[CaseDeadlineService::SIXTIETH_DAY] ?? null,
+            'extensionHistory' => $case->auditLogs()
+                ->whereIn('action_performed', [
+                    AuditLog::ACTION_TORTURE_EXTENSION_RECORDED,
+                    AuditLog::ACTION_TORTURE_EXTENSION_RECALCULATED,
+                    AuditLog::ACTION_TORTURE_EXTENSION_REMOVED,
+                ])
+                ->with('user:id,first_name,last_name')
+                ->latest('timestamp')->latest('id')
+                ->paginate(10, ['*'], 'extension_history_page')
+                ->withQueryString()->fragment('extension-history'),
         ]);
     }
 
@@ -122,6 +149,8 @@ class CaseController extends Controller
      */
     public function edit(Request $request, CaseModel $case)
     {
+        $case->load(['victims', 'respondents', 'complainants']);
+
         return view('cases.edit', [
             'case' => $case,
             'onBehalf' => $request->user()->isSupervisor() && $case->investigator_id !== $request->user()->id,
@@ -171,9 +200,38 @@ class CaseController extends Controller
                 ]);
             }
 
-            $fresh->fill(collect($validated)->except(['lock_version', 'reason'])->all());
+            $previousClassification = $fresh->is_torture_case;
+            $fresh->fill(collect($validated)->except(['lock_version', 'reason', 'victims', 'respondents', 'complainants'])->all());
+            if ($fresh->isDirty('is_torture_case') && $fresh->is_torture_case !== true && $fresh->timeline?->extension_60th_days !== null) {
+                throw ValidationException::withMessages([
+                    'is_torture_case' => __('Clear the recorded external extension in the timeline editor before changing this classification to No or Unknown.'),
+                ]);
+            }
             $fresh->lock_version++;
             $fresh->save();
+
+            foreach (['victims', 'respondents', 'complainants'] as $group) {
+                foreach ($validated[$group] ?? [] as $row) {
+                    $person = isset($row['id']) ? $fresh->{$group}()->findOrFail($row['id']) : $fresh->{$group}()->make();
+                    if ($row['_remove'] ?? false) {
+                        $person->delete();
+                        AuditLog::record($request->user(), $fresh, AuditLog::ACTION_PEOPLE_REMOVED, notes: $group.':'.$person->id);
+
+                        continue;
+                    }
+                    $new = ! $person->exists;
+                    $person->fill(collect($row)->except(['id', '_remove'])->all());
+                    if ($new || $person->isDirty()) {
+                        $person->save();
+                        AuditLog::record($request->user(), $fresh, $new ? AuditLog::ACTION_PEOPLE_ADDED : AuditLog::ACTION_PEOPLE_UPDATED, notes: $group.':'.$person->id);
+                    }
+                }
+            }
+
+            if ($previousClassification !== $fresh->is_torture_case) {
+                AuditLog::record($request->user(), $fresh, AuditLog::ACTION_CLASSIFICATION_CHANGED,
+                    notes: json_encode(['from' => $previousClassification, 'to' => $fresh->is_torture_case], JSON_THROW_ON_ERROR));
+            }
 
             if ($onBehalf) {
                 AuditLog::record($request->user(), $fresh, AuditLog::ACTION_EDIT_ON_BEHALF, notes: $validated['reason']);
@@ -183,7 +241,8 @@ class CaseController extends Controller
         });
 
         return redirect()
-            ->route('cases.show', $case)
+            ->route($request->query('classification') === 'unknown' ? 'cases.index' : 'cases.show',
+                $request->query('classification') === 'unknown' ? ['classification' => 'unknown'] : $case)
             ->with('status', __('Case updated.'));
     }
 

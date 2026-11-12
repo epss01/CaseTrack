@@ -41,6 +41,11 @@ class UpdateCaseTimelineRequest extends FormRequest
         $chronology = CaseTimeline::chronologyRules();
 
         return [
+            'lock_version' => ['required', 'integer', 'min:0'],
+            'reason' => [$this->user()->isSupervisor() ? 'required' : 'nullable', 'string', 'max:500'],
+            'torture_extension_granted' => ['sometimes', 'boolean'],
+            'extension_note' => ['nullable', 'string', 'max:500'],
+            'extension_60th_days' => ['missing'],
             // The date the case was docketed opens the timeline, so unlike the
             // milestones below it can never be cleared.
             'date_of_docket' => ['required', 'date'],

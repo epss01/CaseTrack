@@ -50,6 +50,7 @@ class AlertController extends Controller
         $untracked = 0;
 
         foreach ($cases as $case) {
+            $case->timeline?->setRelation('case', $case);
             $milestones = $deadlines->statusesFor($case->timeline);
 
             // No timeline row, or one with no date of docket: there is nothing
@@ -102,6 +103,7 @@ class AlertController extends Controller
             'onTrackCount' => $counts[CaseDeadlineService::STATUS_ON_TRACK],
             'trackedCount' => array_sum($counts),
             'untrackedCount' => $untracked,
+            'unclassifiedCount' => $cases->whereNull('is_torture_case')->count(),
         ]);
     }
 }

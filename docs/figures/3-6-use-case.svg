@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="920" viewBox="0 0 1200 920">
+<rect width="100%" height="100%" fill="white"/>
+<text x="600" y="40" text-anchor="middle" font-family="Arial" font-size="30" font-weight="bold" fill="#111">CaseTrack: use cases</text>
+<rect x="320" y="80" width="690" height="825" rx="4" fill="#f6f6f6" stroke="#222" stroke-width="2" stroke-dasharray="9 6"/>
+<text x="665.0" y="500.5" text-anchor="middle" font-family="Arial" font-size="25" font-weight="normal" fill="#111"></text>
+<text x="665" y="115" text-anchor="middle" font-family="Arial" font-size="25" font-weight="bold" fill="#111">Application boundary</text>
+<circle cx="150" cy="150" r="15" fill="white" stroke="#222" stroke-width="2"/>
+<polyline points="150,165 150,215" fill="none" stroke="#222" stroke-width="2"/>
+<polyline points="120,185 180,185" fill="none" stroke="#222" stroke-width="2"/>
+<polyline points="150,215 125,250" fill="none" stroke="#222" stroke-width="2"/>
+<polyline points="150,215 175,250" fill="none" stroke="#222" stroke-width="2"/>
+<text x="150" y="282" text-anchor="middle" font-family="Arial" font-size="24" font-weight="normal" fill="#111">Investigator</text>
+<circle cx="150" cy="465" r="15" fill="white" stroke="#222" stroke-width="2"/>
+<polyline points="150,480 150,530" fill="none" stroke="#222" stroke-width="2"/>
+<polyline points="120,500 180,500" fill="none" stroke="#222" stroke-width="2"/>
+<polyline points="150,530 125,565" fill="none" stroke="#222" stroke-width="2"/>
+<polyline points="150,530 175,565" fill="none" stroke="#222" stroke-width="2"/>
+<text x="150" y="597" text-anchor="middle" font-family="Arial" font-size="24" font-weight="normal" fill="#111">Supervisor</text>
+<ellipse cx="665.0" cy="185.0" rx="295.0" ry="40.0" fill="#f6f6f6" stroke="#222" stroke-width="2"/>
+<text x="665.0" y="192.68" text-anchor="middle" font-family="Arial" font-size="24" font-weight="normal" fill="#111">Create / edit case and people</text>
+<polyline points="180,185 315,185 315,185 370,185" fill="none" stroke="#222" stroke-width="2"/>
+<polyline points="180,500 340,500 340,185 370,185" fill="none" stroke="#222" stroke-width="2"/>
+<ellipse cx="665.0" cy="295.0" rx="295.0" ry="40.0" fill="#f6f6f6" stroke="#222" stroke-width="2"/>
+<text x="665.0" y="302.68" text-anchor="middle" font-family="Arial" font-size="24" font-weight="normal" fill="#111">Review Unknown classification</text>
+<polyline points="180,185 315,185 315,295 370,295" fill="none" stroke="#222" stroke-width="2"/>
+<polyline points="180,500 340,500 340,295 370,295" fill="none" stroke="#222" stroke-width="2"/>
+<ellipse cx="665.0" cy="405.0" rx="295.0" ry="40.0" fill="#f6f6f6" stroke="#222" stroke-width="2"/>
+<text x="665.0" y="412.68" text-anchor="middle" font-family="Arial" font-size="24" font-weight="normal" fill="#111">Record / remove external grant</text>
+<polyline points="180,185 315,185 315,405 370,405" fill="none" stroke="#222" stroke-width="2"/>
+<polyline points="180,500 340,500 340,405 370,405" fill="none" stroke="#222" stroke-width="2"/>
+<ellipse cx="665.0" cy="515.0" rx="295.0" ry="40.0" fill="#f6f6f6" stroke="#222" stroke-width="2"/>
+<text x="665.0" y="522.68" text-anchor="middle" font-family="Arial" font-size="24" font-weight="normal" fill="#111">View history, alerts and reports</text>
+<polyline points="180,185 315,185 315,515 370,515" fill="none" stroke="#222" stroke-width="2"/>
+<polyline points="180,500 340,500 340,515 370,515" fill="none" stroke="#222" stroke-width="2"/>
+<ellipse cx="665.0" cy="625.0" rx="295.0" ry="40.0" fill="#f6f6f6" stroke="#222" stroke-width="2"/>
+<text x="665.0" y="632.68" text-anchor="middle" font-family="Arial" font-size="24" font-weight="normal" fill="#111">Close / reopen own assigned case</text>
+<polyline points="180,185 285,185 285,625 370,625" fill="none" stroke="#222" stroke-width="2"/>
+<ellipse cx="665.0" cy="735.0" rx="295.0" ry="40.0" fill="#f6f6f6" stroke="#222" stroke-width="2"/>
+<text x="665.0" y="742.68" text-anchor="middle" font-family="Arial" font-size="24" font-weight="normal" fill="#111">Reassign / set performance rating</text>
+<polyline points="180,500 305,500 305,735 370,735" fill="none" stroke="#222" stroke-width="2"/>
+<circle cx="150" cy="750" r="15" fill="white" stroke="#222" stroke-width="2"/>
+<polyline points="150,765 150,815" fill="none" stroke="#222" stroke-width="2"/>
+<polyline points="120,785 180,785" fill="none" stroke="#222" stroke-width="2"/>
+<polyline points="150,815 125,850" fill="none" stroke="#222" stroke-width="2"/>
+<polyline points="150,815 175,850" fill="none" stroke="#222" stroke-width="2"/>
+<text x="150" y="882" text-anchor="middle" font-family="Arial" font-size="24" font-weight="normal" fill="#111">Admin</text>
+<ellipse cx="665.0" cy="855.0" rx="295.0" ry="35.0" fill="#f6f6f6" stroke="#222" stroke-width="2"/>
+<text x="665.0" y="862.68" text-anchor="middle" font-family="Arial" font-size="24" font-weight="normal" fill="#111">Manage registrations and accounts</text>
+<polyline points="180,785 285,785 285,855 370,855" fill="none" stroke="#222" stroke-width="2"/>
+<text x="1090" y="180" text-anchor="middle" font-family="Arial" font-size="21" font-weight="normal" fill="#111">All actions</text>
+<text x="1090" y="208" text-anchor="middle" font-family="Arial" font-size="21" font-weight="normal" fill="#111">require login</text>
+<text x="1090" y="405" text-anchor="middle" font-family="Arial" font-size="21" font-weight="normal" fill="#111">External</text>
+<text x="1090" y="433" text-anchor="middle" font-family="Arial" font-size="21" font-weight="normal" fill="#111">authority:</text>
+<text x="1090" y="461" text-anchor="middle" font-family="Arial" font-size="21" font-weight="normal" fill="#111">no application</text>
+<text x="1090" y="489" text-anchor="middle" font-family="Arial" font-size="21" font-weight="normal" fill="#111">approval role</text>
+</svg>

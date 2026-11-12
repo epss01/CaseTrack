@@ -1,5 +1,11 @@
 # Local deployment-package verification
 
+> Historical record: the 26 October 2026 verification below is preserved.
+> For the enabled torture-case deadline, later technical evidence and remaining
+> acceptance, use [TORTURE_DEADLINE_ACCEPTANCE.md](TORTURE_DEADLINE_ACCEPTANCE.md)
+> and the [current release gate](README.md#torture-deadline-release-gate).
+> The ten skips below describe that older build, not the current suite.
+
 Verified **2026-10-26** on the development workstation. This is **not** an office
 deployment or an approval of the office server's security posture.
 

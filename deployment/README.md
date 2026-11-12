@@ -197,11 +197,18 @@ permissions using the actual service identity. Never grant blanket Everyone writ
    RoleSeeder may be run explicitly if reference roles are missing; never seed
    demo data. **Never run `migrate:fresh`, `migrate:refresh`, `db:wipe`, or a reset.**
 
+Before completing either installation path, follow the
+[torture-deadline release gate](#torture-deadline-release-gate) below. This applies
+to first installations and updates; an empty database passing the command does
+not establish that subsequently imported cases have been classified.
+
 After either path, run `php artisan config:cache` and `php artisan view:cache`
 against the final production environment. Do not use a blanket `optimize:clear`
 that could clear database-backed application cache unintentionally. Review pending
 queue work and arrange an approved worker only if the deployment uses queued jobs.
-Run `php artisan up` after the approved changes are ready.
+Run `php artisan up` only after the release gate passes and the approved changes
+are ready. Keep normal users out while performing authorized post-update smoke
+checks; reopen normal access only after acceptance is recorded.
 
 Acceptance from an office client: HTTP redirects to the exact HTTPS hostname;
 certificate SAN/chain/date and browser trust pass without exceptions; `/up` and
@@ -209,6 +216,129 @@ login work; cookies have Secure/HttpOnly; unauthorized case access remains denie
 assets load without a Vite development server; sensitive paths and XAMPP tools are
 unreachable through the CaseTrack name; unrelated sites still behave as before.
 Do not put real case data into an installation that has not passed acceptance.
+
+## Torture-deadline release gate
+
+Use this checklist with the [acceptance record](TORTURE_DEADLINE_ACCEPTANCE.md).
+It records readiness; it does not authorize a deployment or an external extension.
+The 90-day calculation is a prototype assumption requiring CHR validation before
+office adoption. Complete technical rehearsal on a separate installation using
+synthetic records; do not use office cases as smoke-test fixtures.
+
+- [ ] Identify the reviewed release, intended database/environment, operator,
+  CHR workflow reviewer and CHR IT release owner in the acceptance record. Verify
+  the command will use the intended installation's configuration after
+  `config:clear`; never paste database credentials into evidence or this checklist.
+- [ ] Before any update or case correction, take a consistent backup of the
+  database **including audit logs**, needed storage, release/assets, `.env` and
+  existing APP_KEY, and the certificate/Apache configuration. Record the protected
+  backup reference and a successful restoration test in a separate environment.
+  A CHR Excel or CSV download is not a backup. For an empty first installation,
+  secure the new key/configuration and establish and test backup/restore before
+  accepting real records.
+- [ ] After reviewed forward migrations and before `php artisan up`, run from
+  the intended release directory with its approved PHP binary:
+
+  ```powershell
+  $ErrorActionPreference = 'Stop'
+  php artisan cases:check-torture-deadlines
+  $preflightExitCode = $LASTEXITCODE
+  if ($preflightExitCode -ne 0) {
+      throw 'Torture-deadline preflight failed. Keep maintenance mode; do not proceed.'
+  }
+  ```
+
+  Retain the exit code, timestamp, release/environment reference and the three
+  printed totals: `Base deadline conflicts`, `Extended deadline conflicts`, and
+  `Extension classification conflicts`. **Any nonzero conflict or command error
+  blocks rollout.** Refer the affected records for explicit authorized correction
+  against supporting records; preserve audit history and correction references.
+  The command reports aggregates and never rewrites data. Do not bypass it by
+  clearing grants, changing classifications or normalizing legacy dates without
+  an actual authorized correction. Rerun it after corrections and after any
+  pre-release data import; keep the successful result with the acceptance record.
+  The command checks timelines attached to non-soft-deleted cases. It does not
+  certify cases without a timeline or assess whether an Unknown should be Yes/No.
+- [ ] Separately, an authorized Supervisor reviews office-wide **Unknown
+  classification only** in Cases. Clear search to obtain the whole review queue
+  and record its active and overall Unknown counts. Investigators can review
+  their assigned cases but their counts do not certify office-wide completeness;
+  Admin cannot access this queue. Record the review date and responsible staff.
+- [ ] Staff classify only from their records through the existing case editor.
+  Refresh counts after saves. Record completed reviews separately from unresolved
+  cases, with a responsible reviewer and follow-up reference in the protected
+  office record. Unknown stays Unknown when the evidence is insufficient; it
+  receives no 60-day evaluation. Do not infer from a narrative or bulk-change
+  values to clear the queue. **Zero preflight conflicts is not a classification
+  completeness certificate.** Record the unresolved position explicitly for
+  the release owner; never mark this as an all-classified result unless true.
+- [ ] Confirm CHR's response on calendar days, docket-date reference, an external
+  grant ending 90 days from docket, and RORP/FIR discharge behavior. Record the
+  source and any qualifications. Obtain the separate institutional/IT adoption
+  decision. A workflow answer or a passing test is not office adoption approval.
+  If the answer contradicts the prototype, stop adoption and present the rule
+  change for approval; do not silently reinterpret or rewrite stored dates.
+- [ ] Complete the synthetic rehearsal checks below and the existing HTTPS,
+  authorization, asset and backup checks. Carry pending MariaDB, Narrator and
+  representative-user results as pending in the acceptance record. Obtain the
+  office-specific release decision before normal access.
+
+### Operator workflow: recording an external grant
+
+The normal torture-case RORP deadline is **60 calendar days from docketing**,
+unless a stored base deadline applies. A recorded external additional 30-day
+grant takes precedence; new grants/recalculations use **90 calendar days from
+docketing**, irrespective of when staff record it. That formula remains
+provisional pending CHR validation. A request alone never changes the deadline.
+
+1. Obtain the external decision and supporting reference through the office's
+   existing process. CaseTrack provides no approval action or higher approval
+   role. Only the assigned Investigator or an authorized Supervisor records it.
+2. Open the case's separate timeline editor. The grant control is available for
+   confirmed torture cases. Check **Externally granted 30-day extension** and
+   enter the **External approval reference or explanatory note** (maximum 500
+   characters). A Supervisor must also provide the separate edit reason.
+3. Save once and inspect the effective deadline and extension history on case
+   details. The system calculates the date; do not submit a raw extended date.
+   History shows recorder, time, previous/resulting extension dates and the note.
+   No earlier extension date means no recorded extension, not no base deadline.
+4. To correct a mistaken grant, uncheck it in the timeline editor and explain
+   the removal. The base deadline becomes effective again. Clear a mistaken
+   grant before changing classification to No/Unknown. A docket correction with
+   a recorded grant recalculates +90 and needs a note when its date changes.
+5. A stale-save warning means another update has taken effect. Reload and
+   reconcile against the latest record before re-entering the intended change;
+   do not repeatedly resubmit the old form. RORP actual submission discharges
+   the 60-day milestone and FIR submission discharges all tracked milestones.
+   Record actual submissions separately; do not enter a due date as an actual.
+
+### Synthetic post-update smoke checks
+
+Rehearse on the candidate release in an isolated database with synthetic accounts
+and records. Record expected/actual dates and results in the acceptance record;
+retain evidence without real docket identifiers or personal details. Verify the
+installed office release's read-only behavior and access restrictions afterward
+under the approved acceptance process. Rehearsal does not prove office-client
+trust, office-database concurrency or staff accessibility acceptance.
+
+| Check | Expected result |
+| --- | --- |
+| Confirmed torture, docket 1 January 2026, no override/grant | RORP due 2 March 2026 (+60); the 14-day window includes the due date and overdue starts the following day. |
+| Initial-ROP extension request only | The request date is stored; the torture RORP deadline remains unchanged. |
+| Record external grant with note | Due 1 April 2026 (+90 from docket); history identifies recorder, reference and resulting extension date. |
+| Remove grant with explanatory note | Stored extension clears; base deadline resumes; removal remains in history. |
+| Change docket to 2 January with a recorded grant and note | Effective extension becomes 2 April 2026; history retains the previous and resulting extension dates. |
+| Known base override without a grant | Stored base is used; do not silently normalize it. Any preflight conflict still blocks rollout until explicitly resolved. |
+| Unknown and confirmed No | Neither receives a 60-day evaluation; Unknown explicitly says it was not evaluated and appears in the scoped review queue. |
+| RORP/FIR actuals | RORP submission discharges the 60-day milestone; FIR discharges all. Confirm on dashboards, Alerts, details and per-case reports for an active synthetic case. |
+| Missing required note/reason, stale version or lost assignment | Invalid/stale/unauthorized save fails with no successful change or partial audit; check the persisted version and timeline. Genuine overlap testing is Stage 5. |
+| Access and history | Assigned Investigator sees their own history/queue; Supervisor sees office scope; another Investigator cannot open an unassigned case; Admin is denied case data. Missing legacy history does not invent an approval. |
+| Downloads and imports | CSV stays eleven columns; CHR worksheet keeps its template layout and actual dates without approval fields. Import previews first, reads only the active sheet and rejects existing dockets; it does not update them. |
+
+If a save, effective date, audit or authorization check fails, stop normal access,
+retain evidence and obtain correction/rollback approval. Follow the matching
+backup/release rollback procedure below; do not fix a failed update by resetting
+the database. See [current rule details](../docs/TORTURE_DEADLINE_STATUS.md).
 
 ## Renewal, backups and rollback
 
@@ -260,6 +390,8 @@ because the disposable CA has no CRL service; certificate chain and hostname
 verification stay enabled. Production revocation/trust behavior requires IT testing.
 See [VERIFICATION.md](VERIFICATION.md) for the recorded local result.
 
-The vault wiki's existing HTTPS-decision entry will be stale after this package is
-accepted; it has deliberately not been edited. Office deployment remains pending
-CHR IT's installation values, platform/security review, service changes and acceptance.
+The [historical verification](VERIFICATION.md) remains dated evidence of the local
+HTTPS package. The [current acceptance record](TORTURE_DEADLINE_ACCEPTANCE.md)
+separates completed technical checks from pending human and office checks.
+Office deployment remains pending CHR IT's installation values, platform/security
+review, service changes and acceptance.

@@ -20,6 +20,8 @@
                 <div class="card-body">
                     @include('cases.import.assignment-note')
                     <p>{{ __('Bring in an existing caseload from a CSV or XLSX file. Nothing is created yet — the next step shows what would be created and what would be rejected, before anything is written.') }}</p>
+                    <p>{{ __('Import creates new cases only. Existing docket numbers are rejected, not updated. For a CHR Excel download, select and save the investigator worksheet you want as the active sheet before uploading; only that sheet is imported.') }}</p>
+                    <p><a href="{{ route('reports.index') }}">{{ __('Open CHR monitoring worksheet and downloads') }}</a></p>
 
                     <form method="POST" action="{{ route('cases.import.preview') }}" enctype="multipart/form-data">
                         @csrf

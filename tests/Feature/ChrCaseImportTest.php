@@ -164,11 +164,13 @@ class ChrCaseImportTest extends TestCase
         $case = CaseModel::sole();
         $before = (new CaseDeadlineService)->statusesFor($case->timeline);
         $this->put(route('cases.timeline.update', $case), [
+            'lock_version' => $case->fresh()->lock_version,
             'date_of_docket' => '2026-01-05',
             'date_extension_30_days_requested' => '2026-01-04',
             'date_submission_120th_day_rop' => 'not-a-date',
         ])->assertSessionHasErrors(['date_extension_30_days_requested', 'date_submission_120th_day_rop']);
         $this->put(route('cases.timeline.update', $case), [
+            'lock_version' => $case->fresh()->lock_version,
             'date_of_docket' => '2026-01-05',
             'date_extension_30_days_requested' => '2026-02-10',
             'date_submission_120th_day_rop' => '2026-03-10',

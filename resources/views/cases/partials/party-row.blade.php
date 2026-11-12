@@ -79,6 +79,6 @@
     </div>
 
     <div class="text-end mt-2">
-        <button type="button" class="btn btn-sm btn-outline-danger remove-row">{{ __('Remove') }}</button>
+        @include('cases.partials.person-removal')
     </div>
 </div>

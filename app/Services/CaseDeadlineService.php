@@ -49,32 +49,10 @@ class CaseDeadlineService
      */
     public const FIR_TARGET_DAYS = 100;
 
-    /**
-     * The 60th-day milestone is computed and conditionally surfaced.
-     *
-     * It binds only torture cases (is_torture_case === true). An extension-
-     * request/grant field is also required (not yet implemented). This flag
-     * gates the milestone's visibility, but it will only appear for cases
-     * where is_torture_case === true.
-     *
-     * Turning this on before the extension-request/grant field exists would
-     * apply the torture-case rule to cases with is_torture_case === true
-     * (which is safe), but the milestone would remain invisible for
-     * is_torture_case !== true (false or null) due to case-scoping in
-     * statusesFor().
-     *
-     * The milestone becomes visible when BOTH:
-     *  - This flag is true
-     *  - The case's is_torture_case === true
-     *
-     * Once the extension-request/grant field is implemented, all three
-     * conditions must be met for the milestone to be active.
-     *
-     * ponytail: SIXTY_DAY_ENABLED remains false pending clarification on the
-     * "extension-request/grant field" requirement — see [this session's summary] —
-     * flip once resolved.
-     */
-    public const SIXTY_DAY_ENABLED = false;
+    /** Prototype assumption: an external +30-day grant ends 90 calendar days after docketing. */
+    public const EXTENDED_TORTURE_DAYS = 90;
+
+    public const SIXTY_DAY_ENABLED = true;
 
     public const STATUS_SUBMITTED = 'submitted';
 
@@ -194,7 +172,7 @@ class CaseDeadlineService
 
         foreach (self::visibleMilestones() as $days => $milestone) {
             // Skip 60th day for non-torture cases (is_torture_case !== true)
-            if ($days === self::SIXTIETH_DAY && ($timeline->case->is_torture_case !== true)) {
+            if ($days === self::SIXTIETH_DAY && ($timeline->case?->is_torture_case !== true)) {
                 continue;
             }
 
@@ -207,6 +185,12 @@ class CaseDeadlineService
             $deadline = $timeline->{$milestone['column']} !== null
                 ? CarbonImmutable::parse($timeline->{$milestone['column']})->startOfDay()
                 : self::deadlineOn($docketedOn, $days);
+
+            if ($days === self::SIXTIETH_DAY && $timeline->extension_60th_days !== null) {
+                // Preserve recorded legacy dates; the read-only preflight reports conflicts.
+                $deadline = CarbonImmutable::parse($timeline->extension_60th_days)->startOfDay();
+                $milestone['label'] = 'RORP deadline (external extension recorded)';
+            }
 
             $dischargedOn = $closedOut ?? ($milestone['discharged_by'] === null
                 ? null
