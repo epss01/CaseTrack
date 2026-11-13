@@ -138,6 +138,29 @@ CVE-2026-109619. If `php -v` reports below 8.4.27, upgrade it rather than workin
    php artisan db:seed --class=DemoDataSeeder
    ```
 
+## Double-click local startup (Windows/XAMPP)
+
+After completing setup, double-click **Open CaseTrack.cmd** in the project folder.
+It starts XAMPP MariaDB on port 3307 and CaseTrack on
+[http://127.0.0.1:8000/login](http://127.0.0.1:8000/login), then opens your default
+browser. Existing matching services are reused. You can create a Windows desktop
+shortcut to the `.cmd`; keep the launcher itself in the project folder.
+For a custom Windows shortcut icon, use `public/images/casetrack-icon.ico` in
+the shortcut's **Properties > Change Icon** dialog. The icon uses CaseTrack's
+gold-and-navy CT mark. Windows applies custom icons to shortcuts (`.lnk`),
+not to individual `.cmd` files. A locally created `CaseTrack.lnk` can be copied
+to the desktop; recreate its target and icon paths if the project moves.
+
+This launcher uses `C:\xampp`, PHP 8.4.27 or newer, the existing local `.env`
+database settings (MariaDB at `127.0.0.1:3307`), and assets from `npm run build`.
+Stop Vite before using it; a remaining `public/hot` file is reported as a setup
+error. It does not install dependencies, migrate or seed the database, or log in.
+
+New service windows start minimized. Keep the PHP window and MariaDB running
+while using CaseTrack; closing the browser does not stop them. Close the PHP
+server window when finished, and stop MariaDB through XAMPP when no other app
+needs it. Startup failures remain visible in the launcher window.
+
 ## Pulling changes into an existing clone
 
 `public/build` is **not committed** (see `.gitignore`), so compiled CSS and JS exist only on
