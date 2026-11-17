@@ -78,15 +78,13 @@
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table align-middle table-data">
-                            <caption class="visually-hidden">{{ __('Every recorded action, who performed it, who or what it was performed on, and when.') }}</caption>
+                            <caption class="visually-hidden">{{ __('Recorded actions, acting users, target accounts, and timestamps.') }}</caption>
                             <thead>
                                 <tr>
                                     <th scope="col">{{ __('Timestamp') }}</th>
                                     <th scope="col" class="col-title">{{ __('Actor') }}</th>
                                     <th scope="col">{{ __('Action') }}</th>
                                     <th scope="col" class="col-title">{{ __('Target') }}</th>
-                                    <th scope="col">{{ __('Case') }}</th>
-                                    <th scope="col">{{ __('Notes') }}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -96,16 +94,10 @@
                                         <td class="col-title">{{ $log->user?->full_name ?? __('(deleted user)') }}</td>
                                         <td><code>{{ $log->action_performed }}</code></td>
                                         <td class="col-title">{{ $log->targetUser?->full_name ?? '—' }}</td>
-                                        {{-- Plain text, not a link: Admin never opens, views, or
-                                             edits a case (CLAUDE.md, Roles/access rules), and
-                                             reports.show would 403 the only role that can see
-                                             this page. --}}
-                                        <td>{{ $log->case?->docket_no ?? '—' }}</td>
-                                        <td>{{ $log->notes ?? '—' }}</td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="6" class="text-center text-muted">{{ __('No matching entries.') }}</td>
+                                        <td colspan="4" class="text-center text-muted">{{ __('No matching entries.') }}</td>
                                     </tr>
                                 @endforelse
                             </tbody>

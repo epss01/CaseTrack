@@ -33,7 +33,8 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            // Private imports are read by authorized controllers, never signed file URLs.
+            'serve' => false,
             'throw' => false,
             'report' => false,
         ],

@@ -3,14 +3,18 @@
 use App\Console\Commands\MakeAdminCommand;
 use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\EnsureUserHasRole;
+use App\Http\Middleware\PreventResponseCaching;
 use App\Models\AuditLog;
 use App\Models\CaseModel;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -27,6 +31,9 @@ return Application::configure(basePath: dirname(__DIR__))
         MakeAdminCommand::class,
     ])
     ->withMiddleware(function (Middleware $middleware) {
+        // Run outside route/session middleware so redirects and errors are covered too.
+        $middleware->prepend(PreventResponseCaching::class);
+
         $middleware->alias([
             'role' => EnsureUserHasRole::class,
         ]);
@@ -39,6 +46,28 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [EnsureAccountIsActive::class]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
+        $exceptions->report(function (Throwable $e) {
+            for ($query = $e; $query !== null; $query = $query->getPrevious()) {
+                if (! $query instanceof QueryException) {
+                    continue;
+                }
+
+                // SQL, driver messages and exception objects can all contain case data.
+                $sqlState = $query->errorInfo[0] ?? null;
+                Log::error('Database query failed.', [
+                    'exception_type' => $e::class,
+                    'database_exception_type' => $query::class,
+                    'sql_state' => is_string($sqlState) && preg_match('/^[A-Z0-9]{5}$/D', $sqlState) ? $sqlState : null,
+                    'driver_code' => is_int($query->errorInfo[1] ?? null) ? $query->errorInfo[1] : null,
+                    'file' => $query->getFile(),
+                    'line' => $query->getLine(),
+                    'trace' => array_map(fn (array $frame) => Arr::only($frame, ['file', 'line', 'class', 'function']), $query->getTrace()),
+                ]);
+
+                return false;
+            }
+        });
+
         // Makes a denied request visible in the trail instead of leaving
         // reconnaissance-by-URL-probing invisible: a CaseModelPolicy denial
         // (AuthorizationException, before Laravel's default rendering turns

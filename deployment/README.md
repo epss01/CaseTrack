@@ -28,6 +28,13 @@ Do not leave a public `phpinfo()` page. The existing Laravel 11 security decisio
 remain: no email validation/auth flow or signed/temporary URLs; introducing either
 requires the previously documented Laravel upgrade first.
 
+Private local-file serving is disabled; imports and exports use the authorized
+application controllers. Refresh configuration cache during release, and rebuild
+any existing route cache so an old private-file route is not retained. Do not
+copy development caches into an installation. Review current upstream advisories
+before any future email or signed-URL feature; the internal assessment is retained
+in the companion vault.
+
 ## Obtain a certificate
 
 Preferred internal route: CHR IT issues a server-authentication certificate from
