@@ -36,3 +36,13 @@ yarn-error.log
 /.claude/launch.json
 /.impeccable/config.local.json
 /.impeccable/hook.cache.json
+
+# Local handoffs, working artifacts and notes retained in the companion vault.
+/tmp/
+/*HANDOFF*.md
+/*handoff*.md
+/STOP_AND_ASK_SUMMARY.md
+/docs/STAGE3_MANUSCRIPT_REVISION.md
+/docs/PRIVATE_FILE_SERVING.md
+/docs/DATABASE_ERROR_LOGGING.md
+/docs/RESPONSE_CACHE_CONTROL.md

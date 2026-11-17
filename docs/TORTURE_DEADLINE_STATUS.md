@@ -1,7 +1,7 @@
 # Torture-case monitoring: current status
 
-Updated 12 November 2026. This supersedes pre-activation descriptions in
-`STOP_AND_ASK_SUMMARY.md`; dated earlier results remain historical.
+Updated 12 November 2026. This supersedes the pre-activation stop summary,
+now retained in the companion vault; dated earlier results remain historical.
 
 ## Implemented behavior
 
@@ -105,4 +105,4 @@ is marked complete. No deployment, commit or push is claimed here.
   [history tests](../tests/Feature/CaseExtensionHistoryTest.php),
   [review tests](../tests/Feature/CaseClassificationReviewTest.php)
 - [Editable workflow figures and reproduction](figures/README.md)
-- [Live manuscript](https://docs.google.com/document/d/127VZN6tvbm6bAbPc_mGW2_Xy0xFU8nY6uB_eBwXxXoE/edit)
+- Manuscript revision history and live-document references are retained in the companion vault.

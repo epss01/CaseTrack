@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\AuditLog;
+use App\Models\CaseModel;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -27,6 +28,54 @@ class AuditLogViewerTest extends TestCase
             ->assertOk()
             ->assertSee(AuditLog::ACTION_LOGIN)
             ->assertSee($someone->full_name);
+    }
+
+    public function test_admin_audit_rows_exclude_case_data_and_notes_without_changing_history(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $investigator = User::factory()->investigator()->create();
+        $case = CaseModel::factory()->create(['investigator_id' => $investigator->id]);
+        $caseLog = AuditLog::record($investigator, $case, AuditLog::ACTION_EDIT_ON_BEHALF,
+            notes: 'Synthetic confidential case explanation');
+        $accountLog = AuditLog::record($admin, null, AuditLog::ACTION_ACCOUNT_PASSWORD_RESET, $investigator,
+            notes: 'Synthetic historical confidential note');
+
+        $this->actingAs($admin)
+            ->get(route('admin.audit-logs.index'))
+            ->assertOk()
+            ->assertSee($admin->full_name)
+            ->assertSee($investigator->full_name)
+            ->assertSee(AuditLog::ACTION_EDIT_ON_BEHALF)
+            ->assertSee(AuditLog::ACTION_ACCOUNT_PASSWORD_RESET)
+            ->assertSee($caseLog->timestamp->format('Y-m-d H:i:s'))
+            ->assertDontSee($case->docket_no)
+            ->assertDontSee($caseLog->notes)
+            ->assertDontSee($accountLog->notes)
+            ->assertViewHas('logs', function ($logs) {
+                $this->assertSame(2, $logs->total());
+                foreach ($logs as $log) {
+                    $this->assertEqualsCanonicalizing(
+                        ['id', 'user_id', 'target_user_id', 'action_performed', 'timestamp'],
+                        array_keys($log->getAttributes())
+                    );
+                    $this->assertFalse($log->relationLoaded('case'));
+                }
+
+                return true;
+            });
+
+        $this->assertDatabaseCount('audit_logs', 2);
+        $this->assertDatabaseHas('audit_logs', ['id' => $caseLog->id, 'case_id' => $case->id, 'notes' => $caseLog->notes]);
+        $this->assertDatabaseHas('audit_logs', ['id' => $accountLog->id, 'notes' => $accountLog->notes]);
+    }
+
+    public function test_empty_audit_log_keeps_the_four_column_table_structure(): void
+    {
+        $this->actingAs(User::factory()->admin()->create())
+            ->get(route('admin.audit-logs.index'))
+            ->assertOk()
+            ->assertSee('No matching entries.')
+            ->assertSee('colspan="4"', false);
     }
 
     public function test_non_admins_get_403(): void

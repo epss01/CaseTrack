@@ -13,7 +13,7 @@ documentation only and does not rerun or re-date earlier technical tests.
 | Evidence | Result and limits |
 | --- | --- |
 | 26 October 2026 HTTPS-package verification | 50 disposable harness checks; 364 tests / 1,427 assertions / 10 skips. Preserved verbatim in [VERIFICATION.md](VERIFICATION.md). No office services or persistent database were verified by that harness. |
-| 12 November 2026 current Laravel suite | 462 passed / 2,278 assertions / zero skips, synthetic fixtures and in-memory SQLite. Recorded in the [Stage 3 revision](../docs/STAGE3_MANUSCRIPT_REVISION.md). This does not demonstrate simultaneous MariaDB saves or CHR user acceptance. |
+| 12 November 2026 current Laravel suite | 462 passed / 2,278 assertions / zero skips, synthetic fixtures and in-memory SQLite. The Stage 3 manuscript revision record is retained in the companion vault. This does not demonstrate simultaneous MariaDB saves or CHR user acceptance. |
 | Extension history and Unknown review | Implemented with authorized scope; prior independent reviews and synthetic responsive, keyboard and no-JavaScript checks completed. Screen-reader spoken results remain pending. See [current status](../docs/TORTURE_DEADLINE_STATUS.md). |
 | Earlier local preflight | Zero base, extension and classification conflicts were reported before Stage 4; it made no corrections. This is not a result for the intended office database/release and must be rerun there. |
 | Classification snapshot, 11 November 2026 | 12 active / 15 overall local Unknown cases; no real classifications were inferred or changed by synthetic checks. These are historical development counts, not current office totals. |
