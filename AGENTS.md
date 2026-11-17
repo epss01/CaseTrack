@@ -34,10 +34,33 @@ C:/Users/admin/Downloads/Capstone_CaseTrack/CaseTrack_Vault/CaseTrack/raw/sessio
 Create the file if it does not exist for today; otherwise append to today’s
 note. Follow the format established in prior session notes.
 
+Write session notes in plain English that the user can understand on the first
+read. Use the writing rules below for both the log and proposed wiki updates.
+
 This is the one write exception to the read-only vault rule: `raw/` is a
 capture zone. Do not write directly to `wiki/`; include proposed
 `wiki/log.md` and `wiki/roadmap/sprint-checklist.md` changes at the bottom of
 the session note for later application.
+
+## Writing style
+
+- Use plain English in replies, vault pages, reports and future session logs.
+  Prefer familiar words, short sentences and clear headings that say what the
+  reader needs to do or know.
+- Keep all necessary details: facts, dates, numbers, sources, rules, decisions,
+  people responsible, checks and results, limits, and unfinished work. Simplify
+  the wording without changing the meaning or shortening away important facts.
+- Keep required technical or academic terms and explain them when needed.
+  Preserve exact code names, commands, paths, formulas and source quotations.
+  Do not guess the meaning of an unconfirmed acronym or framework.
+- Say what happened, what was checked, what is still unknown, and what happens
+  next. Use clear status phrases such as "not yet checked" or "waiting for CHR
+  confirmation" instead of vague or formal wording.
+- Check rewrites against the original for missing details or changed claims.
+  Keep raw sources and earlier log entries unchanged; rewrite maintained pages
+  and use the simpler style for new log entries.
+- The main agent writes the session log. Apply these rules there; do not add a
+  separate logging agent or automatic logging hook for this preference.
 
 ## Project scope and stack
 
