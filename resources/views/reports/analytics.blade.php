@@ -26,7 +26,7 @@
             <details class="card filter-panel analytics-filters mb-3" open data-analytics-filters data-has-errors="{{ $errors->any() ? 'true' : 'false' }}">
                 <summary class="d-md-none">{{ __('Filters') }}</summary>
                 <div class="card-body">
-                    <form method="GET" action="{{ route('reports.analytics') }}">
+                    <form data-submit-feedback method="GET" action="{{ route('reports.analytics') }}">
                         <div class="filter-fields">
                             <div class="filter-field">
                                 <label for="from" class="form-label">{{ __('Period from') }}</label>
@@ -82,9 +82,11 @@
 
                             <div class="filter-actions">
                                 <a href="{{ route('reports.analytics') }}" class="btn btn-outline-secondary">
-                                    {{ __('Clear') }}
+                                    {{ __('Clear filters') }}
                                 </a>
-                                <button type="submit" class="btn btn-primary">{{ __('Apply') }}</button>
+                                <button type="submit" class="btn btn-primary">
+                                    @include('partials.submit-label', ['label' => __('Apply'), 'pending' => __('Applying…')])
+                                </button>
                             </div>
                         </div>
                     </form>
@@ -152,7 +154,8 @@
                                 @endforeach
                             </div>
                             @if ($metrics['incoming'] === 0 && $metrics['resolved'] === 0)
-                                <p class="mt-3 mb-0">{{ __('No received or resolved cases in this period. Backlog may still remain.') }}</p>
+                                <h3 class="h6 mt-3">{{ __('No cases to chart for this period') }}</h3>
+                                <p class="mb-0">{{ __('No received or resolved cases in this period. Backlog may still remain.') }}</p>
                             @endif
                             <figcaption id="flow-chart-note" class="text-muted mt-3">
                                 {{ __('Backlog is shown separately above.') }}
@@ -186,6 +189,7 @@
                                     </div>
                                 </dl>
                             @else
+                                <h3 class="h6">{{ __('No cases to chart for this period') }}</h3>
                                 <p class="analytics-chart-empty">{{ __('No resolved or pending cases to chart for this period.') }}</p>
                             @endif
                             <figcaption id="outcome-note" class="text-muted small">

@@ -9,7 +9,7 @@
             <div class="page-heading"><h1>{{ __('Audit Log') }}</h1></div>
             <div class="card filter-panel mb-3">
                 <div class="card-body">
-                    <form method="GET" action="{{ route('admin.audit-logs.index') }}">
+                    <form data-submit-feedback method="GET" action="{{ route('admin.audit-logs.index') }}">
                         <div class="filter-fields">
                             <div class="filter-field">
                                 <label for="user_id" class="form-label">{{ __('Acting user') }}</label>
@@ -62,8 +62,10 @@
                             </div>
 
                             <div class="filter-actions">
-                                <a href="{{ route('admin.audit-logs.index') }}" class="btn btn-outline-secondary">{{ __('Clear') }}</a>
-                                <button type="submit" class="btn btn-primary">{{ __('Apply') }}</button>
+                                <a href="{{ route('admin.audit-logs.index') }}" class="btn btn-outline-secondary">{{ __('Clear filters') }}</a>
+                                <button type="submit" class="btn btn-primary">
+                                    @include('partials.submit-label', ['label' => __('Apply'), 'pending' => __('Applying…')])
+                                </button>
                             </div>
                         </div>
                     </form>
@@ -97,7 +99,22 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="4" class="text-center text-muted">{{ __('No matching entries.') }}</td>
+                                        <td colspan="4">
+                                            @if ($logs->total() > 0)
+                                                <h2 class="h6">{{ __('No results on this page') }}</h2>
+                                                <p>{{ __('Results are available on another page.') }}</p>
+                                                <a href="{{ route('admin.audit-logs.index', $filters) }}">{{ __('Return to first page') }}</a>
+                                            @else
+                                                @if ($filters)
+                                                    <h2 class="h6">{{ __('No audit entries match these filters') }}</h2>
+                                                    <p>{{ __('Change the selected filters or clear them.') }}</p>
+                                                    <a href="{{ route('admin.audit-logs.index') }}">{{ __('Clear filters') }}</a>
+                                                @else
+                                                    <h2 class="h6">{{ __('No audit entries recorded') }}</h2>
+                                                    <p class="mb-0">{{ __('Audit entries will appear here when recorded actions occur.') }}</p>
+                                                @endif
+                                            @endif
+                                        </td>
                                     </tr>
                                 @endforelse
                             </tbody>

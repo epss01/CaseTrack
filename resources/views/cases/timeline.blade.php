@@ -33,7 +33,7 @@
                     <p><a href="{{ route('cases.edit', $case) }}">{{ __('Edit case details and people') }}</a></p>
                     <p id="timeline-help" class="text-muted">{{ __('Extension request and 120th-day ROP submission dates record what happened. They do not grant an extension, change a deadline, or mark the FIR submitted.') }}</p>
                     @include('cases.partials.torture-deadline')
-                    <form method="POST" action="{{ route('cases.timeline.update', $case) }}">
+                    <form data-submit-feedback method="POST" action="{{ route('cases.timeline.update', $case) }}">
                         @csrf
                         @method('PUT')
                         <input type="hidden" name="lock_version" value="{{ old('lock_version', $case->lock_version) }}">
@@ -123,7 +123,7 @@
                         @endif
                         <div class="form-actions">
                                 <button type="submit" class="btn btn-primary">
-                                    {{ __('Save Timeline') }}
+                                    @include('partials.submit-label', ['label' => __('Save Timeline'), 'pending' => __('Saving…')])
                                 </button>
 
                                 <a href="{{ route('cases.show', $case) }}" class="btn btn-link">

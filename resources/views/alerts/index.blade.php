@@ -98,7 +98,15 @@
 
                 <div class="card-body">
                     @if ($rows->isEmpty())
-                        <p class="mb-0">{{ __('No deadline needs attention.') }}</p>
+                        @if ($rows->total() > 0)
+                            <h3 class="h6">{{ __('No results on this page') }}</h3>
+                            <p>{{ __('Results are available on another page.') }}</p>
+                            <a href="{{ route('alerts.index', request()->except('page')) }}">{{ __('Return to first page') }}</a>
+                        @else
+                            <h3 class="h6">{{ __('No tracked deadlines need attention') }}</h3>
+                            <p>{{ __('No tracked obligations are overdue or due within 14 days.') }}</p>
+                            <a href="{{ route('cases.index') }}">{{ __('View cases') }}</a>
+                        @endif
                     @else
                         <div class="table-responsive">
                             <table class="table table-striped align-middle table-data">

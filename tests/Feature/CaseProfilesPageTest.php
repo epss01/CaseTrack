@@ -16,6 +16,14 @@ class CaseProfilesPageTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_insufficient_profiles_keep_counts_and_offer_period_correction(): void
+    {
+        $actor = User::factory()->investigator()->create();
+        $this->actingAs($actor)->get(route('reports.case-profiles'))->assertOk()
+            ->assertSee('Not enough eligible cases')->assertSee('At least 15 eligible cases are needed.')
+            ->assertSee('Change period')->assertSee('href="#from"', false);
+    }
+
     private const URL = '/reports/analytics/case-profiles';
 
     private const PERIOD = '?from=2026-03-01&to=2026-03-31';

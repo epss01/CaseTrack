@@ -62,7 +62,8 @@ class CaseImportController extends Controller
         } catch (\RuntimeException $e) {
             Storage::delete($path);
 
-            return back()->withErrors(['file' => $e->getMessage()]);
+            return back()->withErrors(['file' => $e->getMessage()])
+                ->withInput($request->only('investigator_id'));
         }
 
         session([

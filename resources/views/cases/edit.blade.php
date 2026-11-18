@@ -14,7 +14,7 @@
                         <p><a href="{{ route('cases.index', ['classification' => 'unknown']) }}">{{ __('Return to classification review without saving') }}</a></p>
                     @endif
                     <p><a href="{{ route('cases.timeline.edit', $case) }}">{{ __('Edit timeline dates separately') }}</a></p>
-                    <form method="POST" action="{{ route('cases.update', request()->query('classification') === 'unknown' ? [$case, 'classification' => 'unknown'] : $case) }}">
+                    <form data-submit-feedback method="POST" action="{{ route('cases.update', request()->query('classification') === 'unknown' ? [$case, 'classification' => 'unknown'] : $case) }}">
                         @csrf
                         @method('PUT')
                         <input type="hidden" name="lock_version" value="{{ old('lock_version', $case->lock_version) }}">
@@ -145,7 +145,7 @@
 
                         <div class="form-actions">
                                 <button type="submit" class="btn btn-primary">
-                                    {{ request()->query('classification') === 'unknown' ? __('Save and return to review') : __('Save Changes') }}
+                                    @include('partials.submit-label', ['label' => request()->query('classification') === 'unknown' ? __('Save and return to review') : __('Save Changes'), 'pending' => __('Saving…')])
                                 </button>
 
                                 <a href="{{ route('cases.show', $case) }}" class="btn btn-link">

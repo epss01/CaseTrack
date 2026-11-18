@@ -12,7 +12,7 @@
                 <div class="card-body">
                     {{ __('Please confirm your password before continuing.') }}
 
-                    <form method="POST" action="{{ route('password.confirm') }}">
+                    <form data-submit-feedback method="POST" action="{{ route('password.confirm') }}">
                         @csrf
 
                         <div class="row mb-3">
@@ -32,7 +32,7 @@
                         <div class="row mb-0">
                             <div class="col-md-8 offset-md-4">
                                 <button type="submit" class="btn btn-primary">
-                                    {{ __('Confirm Password') }}
+                                    @include('partials.submit-label', ['label' => __('Confirm Password'), 'pending' => __('Confirming…')])
                                 </button>
                             </div>
                         </div>

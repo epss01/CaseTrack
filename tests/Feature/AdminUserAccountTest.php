@@ -19,6 +19,34 @@ class AdminUserAccountTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_array_role_validation_error_can_be_corrected(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $target = User::factory()->investigator()->create();
+        $roleId = $target->role_id;
+        $this->actingAs($admin)->from(route('admin.users.index'))
+            ->put(route('admin.users.role', $target), ['_feedback_form' => 'role-'.$target->id, 'role_id' => ['invalid']])
+            ->assertRedirect(route('admin.users.index'))->assertSessionHasErrors('role_id');
+        $this->get(route('admin.users.index'))->assertOk()->assertSee('aria-invalid="true"', false);
+        $this->assertSame($roleId, $target->fresh()->role_id);
+    }
+
+    public function test_old_role_input_is_restored_only_in_the_submitted_row(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $target = User::factory()->investigator()->create();
+        $other = User::factory()->investigator()->create();
+        $role = User::factory()->supervisor()->create()->role;
+        $response = $this->actingAs($admin)->withSession(['_old_input' => [
+            '_feedback_form' => 'role-'.$target->id, 'role_id' => $role->id,
+        ]])->get(route('admin.users.index'))->assertOk();
+        $html = $response->getContent();
+        preg_match('/<select id="role_id_'.$target->id.'"[^>]*>(.*?)<\/select>/s', $html, $targetSelect);
+        preg_match('/<select id="role_id_'.$other->id.'"[^>]*>(.*?)<\/select>/s', $html, $otherSelect);
+        $this->assertMatchesRegularExpression('/value="'.$role->id.'" selected/', $targetSelect[1]);
+        $this->assertDoesNotMatchRegularExpression('/value="'.$role->id.'" selected/', $otherSelect[1]);
+    }
+
     public function test_non_admins_get_403_on_every_admin_route(): void
     {
         $investigator = User::factory()->investigator()->create();

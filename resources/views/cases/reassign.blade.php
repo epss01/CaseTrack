@@ -10,7 +10,7 @@
                 <div class="card-header"><h1 class="h5 mb-0">{{ __('Reassign Case') }} &mdash; {{ $case->docket_no }}</h1></div>
 
                 <div class="card-body">
-                    <form method="POST" action="{{ route('cases.reassign.update', $case) }}">
+                    <form data-submit-feedback method="POST" action="{{ route('cases.reassign.update', $case) }}">
                         @csrf
                         @method('PUT')
 
@@ -53,7 +53,7 @@
                         </fieldset>
                         <div class="form-actions">
                                 <button type="submit" class="btn btn-primary">
-                                    {{ __('Save Reassignment') }}
+                                    @include('partials.submit-label', ['label' => __('Save Reassignment'), 'pending' => __('Reassigning…')])
                                 </button>
 
                                 <a href="{{ route('cases.show', $case) }}" class="btn btn-link">

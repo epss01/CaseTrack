@@ -14,7 +14,7 @@
             </p>
         </div>
     </div>
-    <form method="GET" action="{{ route('reports.case-profiles') }}" class="card filter-panel mb-3">
+    <form data-submit-feedback method="GET" action="{{ route('reports.case-profiles') }}" class="card filter-panel mb-3">
         <fieldset class="card-body">
             <legend class="h6">{{ __('FIR submission period') }}</legend>
             <div class="filter-fields">
@@ -31,8 +31,10 @@
                     </div>
                 @endforeach
                 <div class="filter-actions">
-                    <a class="btn btn-outline-secondary" href="{{ route('reports.case-profiles') }}">{{ __('Clear') }}</a>
-                    <button class="btn btn-primary" type="submit">{{ __('Apply') }}</button>
+                    <a class="btn btn-outline-secondary" href="{{ route('reports.case-profiles') }}">{{ __('Clear filters') }}</a>
+                    <button class="btn btn-primary" type="submit">
+                        @include('partials.submit-label', ['label' => __('Apply'), 'pending' => __('Applying…')])
+                    </button>
                 </div>
             </div>
         </fieldset>
@@ -41,7 +43,9 @@
         <div class="card-body">
             <h2>{{ __('Profile comparison') }}</h2>
             @if ($report['reason'])
+                <h3 class="h6">{{ $report['eligible'] < 15 ? __('Not enough eligible cases') : ($report['reason'] === 'Fewer than three distinct combinations of recorded values are available.' ? __('Not enough variation for three profiles') : __('Profiles unavailable for this period')) }}</h3>
                 <p>{{ __($report['reason']) }}</p>
+                <a href="#from">{{ __('Change period') }}</a>
             @else
                 <p>{{ __('Profiles are ordered by average days from docket to Final Investigation Report (FIR) submission. Profile numbers apply only to this selection.') }}</p>
             @endif

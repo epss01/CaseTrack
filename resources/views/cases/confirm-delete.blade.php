@@ -27,11 +27,13 @@
                         {{ __('The record is retained for the audit trail and the deletion is logged against your account.') }}
                     </p>
 
-                    <form method="POST" action="{{ route('cases.destroy', $case) }}">
+                    <form data-submit-feedback method="POST" action="{{ route('cases.destroy', $case) }}">
                         @csrf
                         @method('DELETE')
 
-                        <button type="submit" class="btn btn-danger">{{ __('Delete Case') }}</button>
+                        <button type="submit" class="btn btn-danger">
+                            @include('partials.submit-label', ['label' => __('Delete Case'), 'pending' => __('Deleting…')])
+                        </button>
 
                         <a href="{{ route('cases.show', $case) }}" class="btn btn-link">{{ __('Cancel') }}</a>
                     </form>

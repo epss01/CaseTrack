@@ -15,7 +15,7 @@
     <div class="row justify-content-center">
         <div class="col-md-10">
             <div class="page-heading"><h1>{{ __('Docket a case') }}</h1></div>
-            <form method="POST" action="{{ route('cases.store') }}">
+            <form data-submit-feedback method="POST" action="{{ route('cases.store') }}">
                 @csrf
 
                 @if ($errors->any())
@@ -210,7 +210,9 @@
                 </div>
 
                 <div class="form-actions mb-5">
-                    <button type="submit" class="btn btn-primary">{{ __('Docket Case') }}</button>
+                    <button type="submit" class="btn btn-primary">
+                        @include('partials.submit-label', ['label' => __('Docket Case'), 'pending' => __('Saving…')])
+                    </button>
                     <a href="{{ route('cases.index') }}" class="btn btn-link">{{ __('Cancel') }}</a>
                 </div>
             </form>

@@ -7,7 +7,7 @@
     <h1>{{ __('Request access') }}</h1>
     <p>{{ __('For internal staff. An administrator must approve your account and role before you can sign in.') }}</p>
 </header>
-<form class="auth-panel" method="POST" action="{{ route('register') }}">
+<form data-submit-feedback class="auth-panel" method="POST" action="{{ route('register') }}">
     @csrf
 
     <div class="row mb-3">
@@ -110,7 +110,7 @@
     <div class="row mb-0">
         <div class="col-12">
             <button type="submit" class="btn btn-primary w-100">
-                {{ __('Request access') }}
+                @include('partials.submit-label', ['label' => __('Request access'), 'pending' => __('Requesting access…')])
             </button>
         </div>
     </div>

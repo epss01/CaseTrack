@@ -5,7 +5,7 @@
 <div class="modal fade" id="caseClosure" tabindex="-1" aria-labelledby="closure-title" aria-describedby="closure-description" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <form method="POST" action="{{ route('cases.closure.update', $case) }}">
+            <form data-submit-feedback data-submit-context="{{ $case->docket_no }}" method="POST" action="{{ route('cases.closure.update', $case) }}">
                 @csrf
                 @method('PUT')
                 <input type="hidden" name="lock_version" value="{{ $case->lock_version }}">
@@ -26,7 +26,7 @@
                             <option value="">{{ __('Choose a status') }}</option>
                             @foreach (\App\Models\CaseModel::STATUS_COLOURS as $status => $colour)
                                 @if ($status !== \App\Models\CaseModel::STATUS_CLOSED)
-                                    <option value="{{ $status }}">{{ $status }}</option>
+                                    <option value="{{ $status }}" @selected(old('status') === $status)>{{ $status }}</option>
                                 @endif
                             @endforeach
                         </select>
@@ -37,7 +37,9 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
-                    <button type="submit" class="btn btn-primary">{{ $closureLabel }}</button>
+                    <button type="submit" class="btn btn-primary">
+                        @include('partials.submit-label', ['label' => $closureLabel, 'pending' => $reopening ? __('Reopening…') : __('Closing…')])
+                    </button>
                 </div>
             </form>
         </div>

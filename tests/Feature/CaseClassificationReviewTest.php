@@ -73,14 +73,14 @@ class CaseClassificationReviewTest extends TestCase
     public function test_party_search_empty_states_and_invalid_filters(): void
     {
         $actor = User::factory()->investigator()->create();
-        $this->actingAs($actor)->get(route('cases.index', ['classification' => 'unknown']))->assertOk()->assertSee('No Unknown cases to review.');
+        $this->actingAs($actor)->get(route('cases.index', ['classification' => 'unknown']))->assertOk()->assertSee('No unknown classifications to review');
         $case = $this->caseFor($actor);
         Victim::factory()->create(['case_id' => $case->id, 'name' => 'Synthetic searchable person']);
         $this->get(route('cases.index', ['classification' => 'unknown', 'search' => 'searchable person']))->assertOk()->assertSee($case->docket_no);
         $this->get(route('cases.index', ['classification' => 'unknown', 'search' => 'No matching record']))->assertOk()
-            ->assertSee('No Unknown cases match this search.')->assertViewHas('unknownTotal', 1)->assertViewHas('unknownActive', 1);
+            ->assertSee('No cases match these filters')->assertViewHas('unknownTotal', 1)->assertViewHas('unknownActive', 1);
         $this->get(route('cases.index', ['classification' => 'unknown', 'page' => 99]))->assertOk()
-            ->assertSee('No cases on this page.')->assertSee('Return to the first page')->assertDontSee('No Unknown cases to review.');
+            ->assertSee('No cases on this page')->assertSee('Return to the first page')->assertDontSee('No unknown classifications to review');
         foreach (['yes', 'false', ['unknown']] as $invalid) {
             $this->get(route('cases.index', ['classification' => $invalid]))->assertSessionHasErrors('classification');
         }

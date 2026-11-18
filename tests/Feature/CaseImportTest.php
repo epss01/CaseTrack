@@ -286,10 +286,16 @@ class CaseImportTest extends TestCase
             ['Case One', 'jdc'],
         ]);
 
-        $response = $this->actingAs($supervisor)->post(route('cases.import.preview'), ['file' => $file]);
+        $fallback = User::factory()->investigator()->create();
+        $response = $this->actingAs($supervisor)->from(route('cases.import.create'))
+            ->post(route('cases.import.preview'), ['file' => $file, 'investigator_id' => $fallback->id]);
 
         $response->assertRedirect();
         $response->assertSessionHasErrors('file');
+        $response->assertSessionHasInput('investigator_id', $fallback->id);
+        $response->assertSessionMissing('_old_input.file');
+        $this->get(route('cases.import.create'))->assertSee('The file could not be processed')
+            ->assertSee('Select the file again before retrying.');
         $this->assertSame(0, CaseModel::count());
     }
 }

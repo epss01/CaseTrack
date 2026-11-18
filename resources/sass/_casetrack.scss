@@ -783,6 +783,23 @@ a {
     min-height: 44px;
 }
 
+.submit-label {
+    display: inline-grid;
+
+    > span { grid-area: 1 / 1; }
+    [data-label-pending] { visibility: hidden; }
+}
+
+[data-submitting] .submit-label {
+    [data-label-normal] { visibility: hidden; }
+    [data-label-pending] { visibility: visible; }
+}
+
+[data-submit-feedback] [aria-disabled="true"] {
+    opacity: $btn-disabled-opacity;
+    cursor: wait;
+}
+
 .btn-sm {
     display: inline-flex;
     align-items: center;

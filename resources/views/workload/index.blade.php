@@ -29,7 +29,15 @@
                     </p>
 
                     @if ($investigators->isEmpty())
-                        <p class="mb-0">{{ __('No investigators on record.') }}</p>
+                        @if ($investigators->total() > 0)
+                            <h2 class="h6">{{ __('No results on this page') }}</h2>
+                            <p>{{ __('Results are available on another page.') }}</p>
+                            <a href="{{ route('workload.index', request()->except('page')) }}">{{ __('Return to first page') }}</a>
+                        @else
+                            <h2 class="h6">{{ __('No approved investigators available') }}</h2>
+                            <p>{{ __('Workload appears here for approved Investigator accounts.') }}</p>
+                            <a href="{{ route('home') }}">{{ __('Dashboard') }}</a>
+                        @endif
                     @else
                         <div class="table-responsive">
                             <table class="table align-middle">
@@ -56,9 +64,10 @@
                                             <td class="text-end">{{ $investigator->active_cases_count }}</td>
                                             <td class="text-end">{{ $investigator->active_complexity_sum ?? 0 }}</td>
                                             <td>
-                                                <form method="POST" action="{{ route('workload.update', $investigator) }}" class="d-flex gap-2 flex-nowrap">
+                                                <form data-submit-feedback data-submit-context="{{ $investigator->full_name }}" method="POST" action="{{ route('workload.update', $investigator) }}" class="d-flex gap-2 flex-nowrap">
                                                     @csrf
                                                     @method('PUT')
+                                                    <input type="hidden" name="_feedback_form" value="rating-{{ $investigator->id }}">
 
                                                     <label for="performance_rating_{{ $investigator->id }}" class="visually-hidden">
                                                         {{ __('Performance rating for :name', ['name' => $investigator->full_name]) }}
@@ -67,10 +76,14 @@
                                                            type="number" step="0.1" min="0.1" max="1.0"
                                                            class="form-control form-control-sm flex-shrink-0" style="width: 5rem;"
                                                            name="performance_rating"
-                                                           value="{{ number_format($investigator->performance_rating, 1) }}" required>
+                                                           @if (old('_feedback_form') === 'rating-'.$investigator->id && $errors->has('performance_rating')) aria-invalid="true" aria-describedby="rating-error-{{ $investigator->id }}" @endif
+                                                           value="{{ old('_feedback_form') === 'rating-'.$investigator->id && is_scalar(old('performance_rating')) ? old('performance_rating') : number_format($investigator->performance_rating, 1) }}" required>
 
+                                                    @if (old('_feedback_form') === 'rating-'.$investigator->id)
+                                                        @error('performance_rating')<span id="rating-error-{{ $investigator->id }}" class="text-danger" role="alert">{{ $message }}</span>@enderror
+                                                    @endif
                                                     <button type="submit" class="btn btn-sm btn-outline-primary">
-                                                        {{ __('Save') }}
+                                                        @include('partials.submit-label', ['label' => __('Save'), 'pending' => __('Saving…')])<span class="visually-hidden"> {{ __('rating for') }} {{ $investigator->full_name }}</span>
                                                     </button>
                                                 </form>
                                             </td>

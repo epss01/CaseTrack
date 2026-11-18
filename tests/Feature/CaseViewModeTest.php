@@ -34,11 +34,11 @@ class CaseViewModeTest extends TestCase
     public function test_empty_states_and_supervisor_folder_metadata(): void
     {
         $actor = User::factory()->investigator()->create();
-        $this->actingAs($actor)->get(route('cases.index'))->assertSee('No cases to show.');
+        $this->actingAs($actor)->get(route('cases.index'))->assertSee('No cases available');
         $case = CaseModel::factory()->assignedTo($actor)->create(['case_title' => str_repeat('Long title ', 20)]);
         $this->actingAs(User::factory()->supervisor()->create())->get(route('cases.index'))
             ->assertOk()->assertSee($actor->full_name)->assertSee($case->case_title)->assertSee('Year grouping');
-        $this->get(route('cases.index', ['search' => 'No match']))->assertSee('No cases match this search.');
+        $this->get(route('cases.index', ['search' => 'No match']))->assertSee('No cases match these filters');
         $this->actingAs(User::factory()->admin()->create())->get(route('cases.index'))->assertForbidden();
     }
 }

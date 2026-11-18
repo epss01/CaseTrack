@@ -9,10 +9,12 @@
             <div class="page-heading"><h1>{{ __('Import cases') }}</h1></div>
 
             @if ($errors->any())
-                <div class="alert alert-danger">
+                <div class="alert alert-danger" role="alert">
+                    <h2 class="h6">{{ __('The file could not be processed') }}</h2>
                     @foreach ($errors->all() as $message)
                         <div>{{ $message }}</div>
                     @endforeach
+                    <p class="mb-0">{{ __('Select the file again before retrying.') }}</p>
                 </div>
             @endif
 
@@ -23,7 +25,7 @@
                     <p>{{ __('Import creates new cases only. Existing docket numbers are rejected, not updated. For a CHR Excel download, select and save the investigator worksheet you want as the active sheet before uploading; only that sheet is imported.') }}</p>
                     <p><a href="{{ route('reports.index') }}">{{ __('Open CHR monitoring worksheet and downloads') }}</a></p>
 
-                    <form method="POST" action="{{ route('cases.import.preview') }}" enctype="multipart/form-data">
+                    <form data-submit-feedback method="POST" action="{{ route('cases.import.preview') }}" enctype="multipart/form-data">
                         @csrf
 
                         <div class="mb-3">
@@ -51,7 +53,9 @@
                             </div>
                         @endif
 
-                        <button type="submit" class="btn btn-primary">{{ __('Preview Import') }}</button>
+                        <button type="submit" class="btn btn-primary">
+                            @include('partials.submit-label', ['label' => __('Preview Import'), 'pending' => __('Processing file…')])
+                        </button>
                         <a href="{{ route('cases.index') }}" class="btn btn-link">{{ __('Cancel') }}</a>
                     </form>
                 </div>

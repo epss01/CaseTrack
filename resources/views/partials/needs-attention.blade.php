@@ -35,6 +35,7 @@
                 </table>
             </div>
         @else
+            <h3 class="h6">{{ __('No tracked deadlines need attention') }}</h3>
             <p class="mb-0">{{ __('No tracked obligations are overdue or due within 14 days.') }}</p>
         @endif
         @if ($untrackedCount > 0)

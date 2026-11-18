@@ -93,7 +93,7 @@
 
             <div class="card filter-panel mb-3">
                 <div class="card-body">
-                    <form method="GET" action="{{ route('reports.index') }}">
+                    <form data-submit-feedback method="GET" action="{{ route('reports.index') }}">
                         <div class="filter-fields">
                             <div class="filter-field">
                                 <label for="from" class="form-label">{{ __('Docketed from') }}</label>
@@ -158,10 +158,12 @@
                             <div class="filter-actions">
                                 @if ($filters !== [])
                                     <a href="{{ route('reports.index') }}" class="btn btn-outline-secondary">
-                                        {{ __('Clear') }}
+                                        {{ __('Clear filters') }}
                                     </a>
                                 @endif
-                                <button type="submit" class="btn btn-primary">{{ __('Apply') }}</button>
+                                <button type="submit" class="btn btn-primary">
+                                    @include('partials.submit-label', ['label' => __('Apply'), 'pending' => __('Applying…')])
+                                </button>
                             </div>
                         </div>
                     </form>
@@ -191,7 +193,21 @@
 
                 <div class="card-body">
                     @if ($rows->isEmpty())
-                        <p class="mb-0">{{ __('No cases match this filter.') }}</p>
+                        @if ($rows->total() > 0)
+                            <h3 class="h6">{{ __('No results on this page') }}</h3>
+                            <p>{{ __('Results are available on another page.') }}</p>
+                            <a href="{{ route('reports.index', $filters) }}">{{ __('Return to first page') }}</a>
+                        @else
+                            @if ($filters)
+                                <h3 class="h6">{{ __('No cases match these filters') }}</h3>
+                                <p>{{ __('Change the selected filters or clear them to view your available cases.') }}</p>
+                                <a href="{{ route('reports.index') }}">{{ __('Clear filters') }}</a>
+                            @else
+                                <h3 class="h6">{{ __('No cases available for reporting') }}</h3>
+                                <p>{{ __('No cases are available in your authorized caseload.') }}</p>
+                                <a href="{{ route('cases.index') }}">{{ __('View cases') }}</a>
+                            @endif
+                        @endif
                     @else
                         @include('reports.partials.worksheet')
                         {{ $rows->links() }}

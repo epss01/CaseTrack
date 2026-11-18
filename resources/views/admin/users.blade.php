@@ -38,7 +38,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach ($users as $user)
+                                @forelse ($users as $user)
                                     @php
                                         $isSelf = $user->is(Auth::user());
                                         $isAdminRow = $user->isAdmin();
@@ -58,20 +58,26 @@
                                             @if ($isAdminRow || $isSelf)
                                                 {{ $user->role->role_name }}
                                             @else
-                                                <form method="POST" action="{{ route('admin.users.role', $user) }}" class="account-role-form d-flex gap-2 flex-nowrap">
+                                                <form data-submit-feedback data-submit-context="{{ $user->full_name }}" method="POST" action="{{ route('admin.users.role', $user) }}" class="account-role-form d-flex gap-2 flex-nowrap">
                                                     @csrf
                                                     @method('PUT')
+                                                    <input type="hidden" name="_feedback_form" value="role-{{ $user->id }}">
 
                                                     <label for="role_id_{{ $user->id }}" class="visually-hidden">
                                                         {{ __('Role for :name', ['name' => $user->full_name]) }}
                                                     </label>
-                                                    <select id="role_id_{{ $user->id }}" name="role_id" class="form-select form-select-sm">
+                                                    <select id="role_id_{{ $user->id }}" name="role_id" class="form-select form-select-sm" @if (old('_feedback_form') === 'role-'.$user->id && $errors->has('role_id')) aria-invalid="true" aria-describedby="role-error-{{ $user->id }}" @endif>
                                                         @foreach ($roles as $role)
-                                                            <option value="{{ $role->id }}" @selected($user->role_id === $role->id)>{{ $role->role_name }}</option>
+                                                            <option value="{{ $role->id }}" @selected((string) (old('_feedback_form') === 'role-'.$user->id && is_scalar(old('role_id')) ? old('role_id') : $user->role_id) === (string) $role->id)>{{ $role->role_name }}</option>
                                                         @endforeach
                                                     </select>
+                                                    @if (old('_feedback_form') === 'role-'.$user->id)
+                                                        @error('role_id')<span id="role-error-{{ $user->id }}" class="text-danger" role="alert">{{ $message }}</span>@enderror
+                                                    @endif
 
-                                                    <button type="submit" class="btn btn-sm btn-outline-primary">{{ __('Save') }}</button>
+                                                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                                                        @include('partials.submit-label', ['label' => __('Save'), 'pending' => __('Saving…')])<span class="visually-hidden"> {{ __('role for') }} {{ $user->full_name }}</span>
+                                                    </button>
                                                 </form>
                                             @endif
                                         </td>
@@ -81,7 +87,7 @@
                                                     {{ $user->is_active ? __('Active') : __('Inactive') }}
                                                 </span>
                                             @else
-                                                <form method="POST" action="{{ route('admin.users.active', $user) }}" class="d-flex align-items-center gap-2">
+                                                <form data-submit-feedback data-submit-context="{{ $user->full_name }}" method="POST" action="{{ route('admin.users.active', $user) }}" class="d-flex align-items-center gap-2">
                                                     @csrf
                                                     @method('PUT')
                                                     <input type="hidden" name="is_active" value="{{ $user->is_active ? '0' : '1' }}">
@@ -91,14 +97,14 @@
                                                     </span>
 
                                                     <button type="submit" class="btn btn-sm btn-outline-secondary">
-                                                        {{ $user->is_active ? __('Deactivate') : __('Activate') }}<span class="visually-hidden"> {{ $user->full_name }}</span>
+                                                        @include('partials.submit-label', ['label' => $user->is_active ? __('Deactivate') : __('Activate'), 'pending' => $user->is_active ? __('Deactivating…') : __('Activating…')])<span class="visually-hidden"> {{ $user->full_name }}</span>
                                                     </button>
                                                 </form>
                                             @endif
                                         </td>
                                         <td>
                                             @unless ($isSelf)
-                                                <form method="POST" action="{{ route('admin.users.password', $user) }}" class="d-flex flex-wrap gap-2 align-items-center">
+                                                <form data-submit-feedback data-submit-context="{{ $user->full_name }}" method="POST" action="{{ route('admin.users.password', $user) }}" class="d-flex flex-wrap gap-2 align-items-center">
                                                     @csrf
                                                     @method('PUT')
 
@@ -116,14 +122,20 @@
                                                            class="form-control form-control-sm" style="width: 9rem;"
                                                            placeholder="{{ __('Confirm') }}" minlength="8" required autocomplete="new-password">
 
-                                                    <button type="submit" class="btn btn-sm btn-outline-warning">
-                                                        {{ __('Reset') }}<span class="visually-hidden"> {{ __('password for') }} {{ $user->full_name }}</span>
+                                                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                                                        @include('partials.submit-label', ['label' => __('Reset'), 'pending' => __('Resetting…')])<span class="visually-hidden"> {{ __('password for') }} {{ $user->full_name }}</span>
                                                     </button>
                                                 </form>
                                             @endunless
                                         </td>
                                     </tr>
-                                @endforeach
+                                @empty
+                                    <tr><td colspan="5">
+                                        <h2 class="h6">{{ __('No approved accounts to display') }}</h2>
+                                        <p>{{ __('This list shows approved accounts. Pending requests appear under Registrations.') }}</p>
+                                        <a href="{{ route('admin.registrations.index') }}">{{ __('Registrations') }}</a>
+                                    </td></tr>
+                                @endforelse
                             </tbody>
                         </table>
                     </div>

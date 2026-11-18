@@ -39,7 +39,7 @@ class AdminDashboardTest extends TestCase
     public function test_empty_queue_is_explained(): void
     {
         $this->actingAs(User::factory()->admin()->create())->get(route('home'))
-            ->assertOk()->assertSee('No registrations awaiting review.');
+            ->assertOk()->assertSee('No registrations awaiting review');
     }
 
     public function test_other_roles_keep_their_own_dashboards(): void

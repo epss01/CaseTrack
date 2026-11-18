@@ -37,10 +37,14 @@
                     <p class="text-muted small">{{ __('Cases without a status start as Docketed. Torture classification remains unknown and needs review after import. Extension request and report submission dates do not change deadlines or mark the FIR submitted.') }}</p>
                     <p class="text-muted small">{{ __('Nothing has been written yet. Confirm below to create the ready cases; rejected rows are not imported and must be fixed in the file and re-uploaded.') }}</p>
 
-                    <form method="POST" action="{{ route('cases.import.store') }}" class="d-inline">
+                    @if ($readyCount === 0)
+                        <h2 class="h6">{{ $errorCount > 0 ? __('No cases are ready to import') : __('No importable rows found') }}</h2>
+                        <p>{{ $errorCount > 0 ? __('Review the rejected rows below, correct the source file, and upload it again.') : __('Check the file contents and, for XLSX files, the active worksheet.') }}</p>
+                    @endif
+                    <form data-submit-feedback method="POST" action="{{ route('cases.import.store') }}" class="d-inline">
                         @csrf
                         <button type="submit" class="btn btn-primary" @if ($readyCount === 0) disabled @endif>
-                            {{ __('Confirm Import') }} ({{ $readyCount }})
+                            @include('partials.submit-label', ['label' => __('Confirm Import').' ('.$readyCount.')', 'pending' => __('Importing…')])
                         </button>
                     </form>
                     <a href="{{ route('cases.import.create') }}" class="btn btn-link">{{ __('Upload a different file') }}</a>
