@@ -1,7 +1,13 @@
 let pendingForm = null;
 let guardedButtons = [];
+let recoveryTimer = null;
+let navigationSignal = null;
 
 function resetSubmission() {
+    clearTimeout(recoveryTimer);
+    recoveryTimer = null;
+    navigationSignal?.removeEventListener('abort', resetSubmission);
+    navigationSignal = null;
     if (pendingForm) {
         pendingForm.removeAttribute('aria-busy');
         pendingForm = null;
@@ -35,6 +41,8 @@ window.addEventListener('submit', (event) => {
     if (!form.checkValidity()) return;
 
     pendingForm = form;
+    // shortcut: slow requests may outlive recovery; add server idempotency if retries must be exactly-once.
+    recoveryTimer = setTimeout(resetSubmission, 15000);
     form.setAttribute('aria-busy', 'true');
     document.querySelectorAll('[data-submit-feedback]').forEach((candidate) => {
         Array.from(candidate.elements).filter((control) => control.type === 'submit' && !control.disabled).forEach((button) => {
@@ -51,6 +59,13 @@ window.addEventListener('submit', (event) => {
     }
     const status = document.querySelector('[data-submission-status]');
     if (status) status.textContent = [label?.textContent.trim(), form.dataset.submitContext].filter(Boolean).join(' ');
+});
+
+window.navigation?.addEventListener('navigate', (event) => {
+    if (!pendingForm) return;
+    navigationSignal?.removeEventListener('abort', resetSubmission);
+    navigationSignal = event.signal;
+    navigationSignal.addEventListener('abort', resetSubmission, { once: true });
 });
 
 window.addEventListener('pageshow', resetSubmission);
