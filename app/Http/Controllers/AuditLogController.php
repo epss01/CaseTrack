@@ -18,7 +18,9 @@ class AuditLogController extends Controller
         $filters = $request->filters();
 
         $logs = AuditLog::query()
-            ->with(['user', 'targetUser', 'case'])
+            // Admins may read audit metadata, never case identifiers or free-text notes.
+            ->select(['id', 'user_id', 'target_user_id', 'action_performed', 'timestamp'])
+            ->with(['user:id,first_name,last_name', 'targetUser:id,first_name,last_name'])
             ->filteredBy($filters)
             ->latest('timestamp')
             ->latest('id')

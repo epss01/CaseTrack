@@ -229,6 +229,8 @@ class AuthenticationTest extends TestCase
      */
     public function test_repeated_failed_logins_are_locked_out(): void
     {
+        $this->freezeTime();
+
         User::factory()->create(['username' => 'jdelacruz', 'password' => 'password']);
 
         for ($i = 0; $i < 5; $i++) {
@@ -241,6 +243,20 @@ class AuthenticationTest extends TestCase
             ->assertSessionHasErrors('username');
 
         $this->assertGuest();
+
+        $this->travel(179)->seconds();
+
+        $this->post('/login', ['username' => 'jdelacruz', 'password' => 'password'])
+            ->assertSessionHasErrors('username');
+
+        $this->assertGuest();
+
+        $this->travel(2)->seconds();
+
+        $this->post('/login', ['username' => 'jdelacruz', 'password' => 'password'])
+            ->assertRedirect('/home');
+
+        $this->assertAuthenticated();
     }
 
     /**
