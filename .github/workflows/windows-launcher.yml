@@ -1,0 +1,37 @@
+name: Windows launcher
+
+on:
+  push:
+    branches: [develop, main]
+    paths: &launcher-paths
+      - 'Open CaseTrack.cmd'
+      - 'scripts/open-casetrack.ps1'
+      - 'scripts/check-local-database.php'
+      - 'tests/Launcher/**'
+      - '.github/workflows/windows-launcher.yml'
+  pull_request:
+    branches: [develop, main]
+    paths: *launcher-paths
+
+permissions:
+  contents: read
+
+jobs:
+  launcher:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
+        with:
+          php-version: '8.4'
+          coverage: none
+      - name: Make PHP available at the launcher's XAMPP path
+        shell: pwsh
+        run: |
+          $phpDir = Split-Path (Get-Command php.exe).Source
+          New-Item -ItemType Directory -Path C:\xampp -Force | Out-Null
+          if (-not (Test-Path C:\xampp\php)) {
+            New-Item -ItemType Junction -Path C:\xampp\php -Target $phpDir | Out-Null
+          }
+      - name: Run mocked launcher scenarios with Windows PowerShell
+        run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests/Launcher/launcher-check.ps1

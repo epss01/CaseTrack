@@ -20,21 +20,30 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - name: Set up PHP
-        uses: shivammathur/setup-php@v2
+      - &setup-php
+        name: Set up PHP
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
         with:
           php-version: "8.4"
-          extensions: mbstring, dom, fileinfo, sqlite, pdo_sqlite
+          extensions: mbstring, dom, fileinfo, sqlite, pdo_sqlite, pdo_mysql, gd, zip
           coverage: none
           tools: composer:v2
+
+      - &check-php
+        name: Require patched PHP 8.4
+        run: |
+          php -r 'exit(PHP_VERSION_ID >= 80427 && PHP_VERSION_ID < 80500 ? 0 : 1);'
+
+      - name: Validate Composer manifest and lockfile
+        run: composer validate --no-check-publish
 
       - name: Install PHP dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
 
       - name: Set up Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: "22"
           cache: npm
@@ -58,3 +67,35 @@ jobs:
 
       - name: Check PHP formatting
         run: vendor/bin/pint --test
+
+  mariadb:
+    name: MariaDB concurrency
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      mariadb:
+        image: mariadb:10.4.34
+        env:
+          MARIADB_ROOT_PASSWORD: disposable-ci-only
+        ports:
+          - "127.0.0.1:3307:3306"
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1"
+          --health-interval=5s --health-timeout=5s --health-retries=15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - *setup-php
+      - *check-php
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Run concurrent saves on the disposable service
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: "3307"
+          DB_USERNAME: root
+          DB_PASSWORD: disposable-ci-only
+        run: |
+          cp .env.example .env
+          # Laravel's console error handler can print an exception and exit zero.
+          php tests/Acceptance/MariaDbConcurrentSaves.php | tee "$RUNNER_TEMP/mariadb-acceptance.log"
+          grep -Fq '"disposable_database_dropped": true' "$RUNNER_TEMP/mariadb-acceptance.log"

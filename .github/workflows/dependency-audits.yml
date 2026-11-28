@@ -1,0 +1,50 @@
+name: Dependency audits
+
+on:
+  schedule:
+    - cron: '23 2 * * 1'
+  workflow_dispatch:
+  push:
+    branches: [develop, main]
+    paths: &dependency-paths
+      - 'composer.json'
+      - 'composer.lock'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/dependency-audits.yml'
+  pull_request:
+    branches: [develop, main]
+    paths: *dependency-paths
+
+permissions:
+  contents: read
+
+jobs:
+  composer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
+        with:
+          php-version: '8.4'
+          tools: composer:v2
+          coverage: none
+      - name: Audit the lockfile with the two accepted Laravel exceptions
+        run: |
+          php -r 'exit(PHP_VERSION_ID >= 80427 && PHP_VERSION_ID < 80500 ? 0 : 1);'
+          # Apply exceptions only to this disposable audit job's checkout.
+          composer config --json policy.advisories.ignore-id '{
+            "PKSA-3r5d-mb8f-1qw9": "GHSA-5vg9-5847-vvmq. Revisit before adding email validation or mail flows.",
+            "PKSA-mdq4-51ck-6kdq": "Second Packagist record for GHSA-5vg9-5847-vvmq.",
+            "PKSA-m5cs-t1y6-qpcs": "GHSA-crmm-hgp2-wgrp. Revisit before introducing signed or temporary URLs."
+          }'
+          composer audit --locked
+
+  npm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '22'
+      - run: npm audit --package-lock-only
