@@ -42,7 +42,9 @@
                 <a href="{{ route('admin.registrations.index') }}" class="btn btn-primary">{{ __('Review registrations') }}</a>
             </div>
             @if ($pending->isEmpty())
-                <p class="mb-0">{{ __('No registrations awaiting review.') }}</p>
+                <h3 class="h6">{{ __('No registrations awaiting review') }}</h3>
+                <p>{{ __('There are no pending registration requests to review.') }}</p>
+                <a href="{{ route('admin.users.index') }}">{{ __('Accounts') }}</a>
             @else
                 <div class="table-responsive" tabindex="0" role="region" aria-label="{{ __('Pending registrations') }}">
                     <table class="table table-data align-middle mb-0">

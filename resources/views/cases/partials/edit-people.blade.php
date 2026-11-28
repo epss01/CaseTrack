@@ -1,6 +1,6 @@
 <fieldset class="mt-4">
     <legend class="h6">{{ __('People') }}</legend>
-    <p class="text-muted">{{ __('Correct existing records or add people. Removal takes effect only when you save. Uncheck a removal to undo it. Each group may be empty.') }}</p>
+    <p class="text-muted form-guidance">{{ __('Correct existing records or add people. Removal takes effect only when you save. Uncheck a removal to undo it. Each group may be empty.') }}</p>
     @foreach (['complainants' => __('Complainants'), 'victims' => __('Victims'), 'respondents' => __('Respondents')] as $group => $label)
         @php
             $stored = $case->{$group}->sortBy('id')->map(fn ($person) => $person->only($group === 'complainants' ? ['id', 'name'] : ['id', 'name', 'age', 'status', 'sector']))->values()->all();

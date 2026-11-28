@@ -8,6 +8,7 @@
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
 </head>
 <body class="guest-page">
+    <div class="visually-hidden" role="status" aria-atomic="true" data-submission-status></div>
     <a class="skip-link" href="#content">{{ __('Skip to main content') }}</a>
     <div class="auth-layout">
         <aside class="auth-identity" aria-label="{{ __('About CaseTrack') }}">

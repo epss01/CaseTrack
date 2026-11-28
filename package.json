@@ -2,6 +2,7 @@
     "private": true,
     "type": "module",
     "scripts": {
+        "test:js": "node --test tests/JavaScript/*.test.js",
         "build": "vite build",
         "dev": "vite"
     },

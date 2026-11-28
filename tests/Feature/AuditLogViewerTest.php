@@ -17,6 +17,17 @@ class AuditLogViewerTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_filtered_empty_and_out_of_range_audit_pages_are_distinct(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $this->actingAs($admin)->get(route('admin.audit-logs.index', ['action' => AuditLog::ACTION_LOGIN]))
+            ->assertOk()->assertSee('No audit entries match these filters')->assertSee('Clear filters');
+        AuditLog::record($admin, null, AuditLog::ACTION_LOGIN);
+        $this->get(route('admin.audit-logs.index', ['action' => AuditLog::ACTION_LOGIN, 'page' => 99]))
+            ->assertOk()->assertSee('No results on this page')->assertDontSee('No audit entries match these filters')
+            ->assertSee(route('admin.audit-logs.index', ['action' => AuditLog::ACTION_LOGIN]));
+    }
+
     public function test_an_admin_can_view_the_audit_log(): void
     {
         $admin = User::factory()->admin()->create();
@@ -74,7 +85,7 @@ class AuditLogViewerTest extends TestCase
         $this->actingAs(User::factory()->admin()->create())
             ->get(route('admin.audit-logs.index'))
             ->assertOk()
-            ->assertSee('No matching entries.')
+            ->assertSee('No audit entries recorded')
             ->assertSee('colspan="4"', false);
     }
 

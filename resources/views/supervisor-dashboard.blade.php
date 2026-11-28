@@ -111,6 +111,12 @@
                         ])
                     </div>
                 </div>
+            @else
+                <section class="card"><div class="card-body">
+                    <h2 class="h6">{{ __('No active office cases') }}</h2>
+                    <p>{{ __('There are no active cases in the office caseload.') }}</p>
+                    <a href="{{ route('cases.index') }}">{{ __('All cases') }}</a>
+                </div></section>
             @endif
         </div>
     </div>

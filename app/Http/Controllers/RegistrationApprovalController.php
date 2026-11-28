@@ -14,6 +14,11 @@ use Illuminate\Support\Facades\DB;
  */
 class RegistrationApprovalController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('submission:account')->only(['approve', 'reject']);
+    }
+
     public function index()
     {
         $pending = User::query()

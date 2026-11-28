@@ -82,7 +82,7 @@ class InvestigatorDashboardTest extends TestCase
             ->get('/home')
             ->assertOk()
             ->assertSeeInOrder(['Active cases', '0'])
-            ->assertSee('No active cases are assigned to you.')
+            ->assertSee('No active cases assigned to you')
             // The way through to the closed case is still offered.
             ->assertSee('View all my cases');
     }
@@ -137,7 +137,7 @@ class InvestigatorDashboardTest extends TestCase
         $this->actingAs($supervisor)
             ->get('/home')
             ->assertOk()
-            ->assertDontSee('No active cases are assigned to you.')
+            ->assertDontSee('No active cases assigned to you')
             ->assertDontSee('View all my cases');
     }
 

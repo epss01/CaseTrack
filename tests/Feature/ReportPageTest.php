@@ -23,6 +23,17 @@ class ReportPageTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_empty_results_and_out_of_range_pages_are_distinct(): void
+    {
+        $actor = User::factory()->investigator()->create();
+        $this->actingAs($actor)->get(route('reports.index'))->assertOk()
+            ->assertSee('No cases available for reporting');
+        CaseModel::factory()->assignedTo($actor)->create(['status' => CaseModel::STATUS_DOCKETED]);
+        $this->get(route('reports.index', ['status' => CaseModel::STATUS_DOCKETED, 'page' => 99]))
+            ->assertOk()->assertSee('No results on this page')->assertDontSee('No cases match these filters')
+            ->assertSee(route('reports.index', ['status' => CaseModel::STATUS_DOCKETED]));
+    }
+
     public function test_invalid_date_filters_preserve_values_for_correction(): void
     {
         $actor = User::factory()->supervisor()->create();
@@ -178,7 +189,7 @@ class ReportPageTest extends TestCase
         $this->actingAs($investigator)
             ->get(route('reports.index', ['status' => 'Nothing has this status']))
             ->assertOk()
-            ->assertSee(__('No cases match this filter.'));
+            ->assertSee(__('No cases match these filters'));
     }
 
     // -------------------------------------------------------- pagination

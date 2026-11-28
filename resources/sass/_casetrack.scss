@@ -59,6 +59,11 @@ h1, .h1 {
     font-weight: 600;
 }
 
+.form-guidance, .import-help p, .import-help .form-text {
+    max-width: 70ch;
+    text-wrap: pretty;
+}
+
 .filter-panel > .card-body {
     padding: 0.75rem;
 }
@@ -781,6 +786,23 @@ a {
 
 .btn, .page-link, .dropdown-item {
     min-height: 44px;
+}
+
+.submit-label {
+    display: inline-grid;
+
+    > span { grid-area: 1 / 1; }
+    [data-label-pending] { visibility: hidden; }
+}
+
+[data-submitting] .submit-label {
+    [data-label-normal] { visibility: hidden; }
+    [data-label-pending] { visibility: visible; }
+}
+
+[data-submit-feedback] [aria-disabled="true"] {
+    opacity: $btn-disabled-opacity;
+    cursor: wait;
 }
 
 .btn-sm {

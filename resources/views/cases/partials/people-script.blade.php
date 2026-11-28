@@ -7,6 +7,7 @@ document.addEventListener('click', function (event) {
         const index = Number(container.dataset.nextIndex || container.children.length);
         container.dataset.nextIndex = index + 1;
         container.insertAdjacentHTML('beforeend', document.getElementById(`${group}-template`).innerHTML.replaceAll('__INDEX__', index));
+        container.closest('form').dispatchEvent(new Event('input', { bubbles: true }));
         container.lastElementChild.querySelector('input[type="text"]')?.focus();
         const empty = document.querySelector(`[data-empty-group="${group}"]`);
         if (empty) empty.hidden = true;
@@ -26,6 +27,7 @@ document.addEventListener('click', function (event) {
         }
         const empty = document.querySelector(`[data-empty-group="${group}"]`);
         if (empty) empty.hidden = container.children.length !== 0;
+        container.closest('form').dispatchEvent(new Event('input', { bubbles: true }));
         document.querySelector(`.add-row[data-group="${group}"]`)?.focus();
         const feedback = document.querySelector('[data-people-feedback]');
         if (feedback) feedback.textContent = @json(__('Unsaved person row removed.'));

@@ -163,6 +163,6 @@ class CaseSearchTest extends TestCase
             ->get(route('cases.index', ['search' => '']))
             ->assertOk()
             ->assertSee($case->docket_no)
-            ->assertDontSee(__('No cases match this search.'));
+            ->assertDontSee(__('No cases match these filters'));
     }
 }

@@ -11,6 +11,7 @@ use App\Services\CaseImportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 /**
  * Bulk case intake from a CSV/XLSX file — Option B (case + timeline +
@@ -28,6 +29,7 @@ class CaseImportController extends Controller
     {
         $this->middleware('auth');
         $this->middleware('can:create,App\Models\CaseModel');
+        $this->middleware('submission:create')->only('store');
     }
 
     public function create(Request $request)
@@ -42,31 +44,35 @@ class CaseImportController extends Controller
 
     /**
      * Parse and validate the uploaded file, but write nothing. The file is
-     * stashed on the private disk under a name fixed to the acting user so a
-     * second preview overwrites rather than accumulates.
+     * stashed on the private disk under an immutable preview identifier.
      *
      * shortcut: no scheduled sweep for a preview a user uploads and
-     * never commits. The fixed-per-user filename caps the mess at one stale
-     * file per user rather than one per attempt — add a sweep if that
-     * proves not to be enough.
+     * never commits. A new preview removes that session's previous upload;
+     * add a sweep if abandoned browser sessions accumulate files.
      */
     public function preview(UploadCaseImportRequest $request, CaseImportService $importer)
     {
         $upload = $request->file('file');
+        if ($this->ownsStagedFile($request)) {
+            Storage::delete(session('case_import.path'));
+        }
         session()->forget('case_import');
         $fallback = $request->filled('investigator_id') ? $request->integer('investigator_id') : null;
-        $path = $upload->storeAs('imports', "user-{$request->user()->id}.".strtolower($upload->getClientOriginalExtension()));
+        $previewId = (string) Str::uuid();
+        $path = $upload->storeAs('imports', "user-{$request->user()->id}-{$previewId}.".strtolower($upload->getClientOriginalExtension()));
 
         try {
             $result = $importer->validate($importer->parse(Storage::path($path)), $request->user(), $fallback);
         } catch (\RuntimeException $e) {
             Storage::delete($path);
 
-            return back()->withErrors(['file' => $e->getMessage()]);
+            return back()->withErrors(['file' => $e->getMessage()])
+                ->withInput($request->only('investigator_id'));
         }
 
         session([
             'case_import.path' => $path,
+            'case_import.id' => $previewId,
             'case_import.original_name' => $upload->getClientOriginalName(),
             'case_import.user_id' => $request->user()->id,
             'case_import.investigator_id' => $fallback,
@@ -98,20 +104,16 @@ class CaseImportController extends Controller
         $path = session('case_import.path');
 
         if ($path) {
-            abort_unless(
-                session('case_import.user_id') === $request->user()->id
-                && in_array($path, array_map(
-                    fn ($extension) => "imports/user-{$request->user()->id}.{$extension}",
-                    ['csv', 'txt', 'xlsx']
-                ), true),
-                403
-            );
+            abort_unless($this->ownsStagedFile($request), 403);
         }
 
         if (! $path || ! Storage::exists($path)) {
             return redirect()->route('cases.import.create')
                 ->withErrors(['file' => __('Nothing to import — upload a file first.')]);
         }
+
+        abort_unless($request->input('_import_id') === session('case_import.id'), 409,
+            __('This import preview has been replaced. Upload and review the file again.'));
 
         $fallback = session('case_import.investigator_id');
         abort_if($fallback !== null && ! $request->user()->isSupervisor(), 403);
@@ -123,6 +125,12 @@ class CaseImportController extends Controller
             session()->forget('case_import');
 
             return redirect()->route('cases.import.create')->withErrors(['file' => $e->getMessage()]);
+        }
+
+        if ($result['ready'] === []) {
+            return redirect()->route('cases.import.create')->withErrors([
+                'file' => __('No cases are ready to import. Review the file and assignee eligibility before retrying.'),
+            ]);
         }
 
         $created = DB::transaction(function () use ($result, $request) {
@@ -168,8 +176,10 @@ class CaseImportController extends Controller
             return $cases;
         });
 
-        Storage::delete($path);
-        session()->forget('case_import');
+        DB::afterCommit(function () use ($path) {
+            Storage::delete($path);
+            session()->forget('case_import');
+        });
 
         $status = trans_choice(':count case imported.|:count cases imported.', count($created), ['count' => count($created)]);
 
@@ -182,5 +192,17 @@ class CaseImportController extends Controller
         }
 
         return redirect()->route('cases.index')->with('status', $status);
+    }
+
+    private function ownsStagedFile(Request $request): bool
+    {
+        $id = session('case_import.id');
+
+        return is_string($id) && Str::isUuid($id)
+            && session('case_import.user_id') === $request->user()->id
+            && in_array(session('case_import.path'), array_map(
+                fn ($extension) => "imports/user-{$request->user()->id}-{$id}.{$extension}",
+                ['csv', 'txt', 'xlsx']
+            ), true);
     }
 }

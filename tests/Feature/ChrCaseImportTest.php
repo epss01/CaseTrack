@@ -109,7 +109,7 @@ class ChrCaseImportTest extends TestCase
         $fallback = User::factory()->investigator()->create();
         $this->actingAs($actor)->post(route('cases.import.preview'), ['file' => $this->workbook(), 'investigator_id' => $fallback->id])->assertOk();
         $fallback->update(['is_active' => false]);
-        $this->post(route('cases.import.store'))->assertRedirect(route('cases.index'));
+        $this->post(route('cases.import.store'))->assertRedirect(route('cases.import.create'))->assertSessionHasErrors('file');
         $this->assertDatabaseCount('cases', 0);
         $actor = User::factory()->investigator()->create();
         $this->actingAs($actor)->post(route('cases.import.preview'), ['file' => $this->workbook(), 'investigator_id' => $fallback->id])
