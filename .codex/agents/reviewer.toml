@@ -1,6 +1,6 @@
 name = "reviewer"
 description = "Independently review a stable CaseTrack diff for concrete defects, authorization, transactional auditing, and regression risk."
-model = "gpt-6.1-sol"
+model = "gpt-6.2-sol"
 model_reasoning_effort = "high"
 developer_instructions = """
 Follow repository AGENTS.md, read the assigned diff and callers, and compare

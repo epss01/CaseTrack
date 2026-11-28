@@ -15,6 +15,39 @@ class WorkloadPageTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_array_rating_validation_error_can_be_corrected(): void
+    {
+        $supervisor = User::factory()->supervisor()->create();
+        $target = User::factory()->investigator()->create(['performance_rating' => 0.5]);
+        $this->actingAs($supervisor)->from(route('workload.index'))
+            ->put(route('workload.update', $target), ['_feedback_form' => 'rating-'.$target->id, 'performance_rating' => ['invalid']])
+            ->assertRedirect(route('workload.index'))->assertSessionHasErrors('performance_rating');
+        $this->get(route('workload.index'))->assertOk()->assertSee('aria-invalid="true"', false);
+        $this->assertEquals(0.5, $target->fresh()->performance_rating);
+    }
+
+    public function test_empty_and_out_of_range_workload_pages_offer_supervisor_destinations(): void
+    {
+        $supervisor = User::factory()->supervisor()->create();
+        $this->actingAs($supervisor)->get(route('workload.index'))->assertOk()
+            ->assertSee('No approved investigators available')->assertDontSee(route('admin.users.index'));
+        User::factory()->investigator()->create();
+        $this->get(route('workload.index', ['page' => 99]))->assertOk()
+            ->assertSee('No results on this page')->assertDontSee('No approved investigators available');
+    }
+
+    public function test_old_rating_input_is_restored_only_in_the_submitted_row(): void
+    {
+        $supervisor = User::factory()->supervisor()->create();
+        $target = User::factory()->investigator()->create(['performance_rating' => 0.5]);
+        $other = User::factory()->investigator()->create(['performance_rating' => 0.7]);
+        $response = $this->actingAs($supervisor)->withSession(['_old_input' => [
+            '_feedback_form' => 'rating-'.$target->id, 'performance_rating' => '1.4',
+        ]])->get(route('workload.index'))->assertOk();
+        $this->assertMatchesRegularExpression('/id="performance_rating_'.$target->id.'"[^>]*value="1.4"/s', $response->getContent());
+        $this->assertMatchesRegularExpression('/id="performance_rating_'.$other->id.'"[^>]*value="0.7"/s', $response->getContent());
+    }
+
     public function test_a_supervisor_sees_every_investigator_with_their_score(): void
     {
         $supervisor = User::factory()->supervisor()->create();

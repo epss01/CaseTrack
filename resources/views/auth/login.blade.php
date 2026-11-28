@@ -12,7 +12,7 @@
     <div class="alert alert-success" role="status">{{ session('status') }}</div>
 @endif
 
-<form class="auth-panel" method="POST" action="{{ route('login') }}">
+<form data-submit-feedback class="auth-panel" method="POST" action="{{ route('login') }}">
     @csrf
     <div class="mb-4">
         <label for="username" class="form-label">{{ __('Username') }}</label>
@@ -44,7 +44,9 @@
         <input class="form-check-input" type="checkbox" name="remember" id="remember" @checked(old('remember'))>
         <label class="form-check-label" for="remember">{{ __('Keep me signed in on this workstation') }}</label>
     </div>
-    <button type="submit" class="btn btn-primary w-100">{{ __('Sign in') }}</button>
+    <button type="submit" class="btn btn-primary w-100">
+        @include('partials.submit-label', ['label' => __('Sign in'), 'pending' => __('Signing in…')])
+    </button>
 </form>
 <p class="auth-help">{{ __('On a shared workstation, leave “Keep me signed in” unchecked.') }}</p>
 <p class="auth-help">{{ __('Forgot your password? Contact your administrator to reset it.') }}</p>

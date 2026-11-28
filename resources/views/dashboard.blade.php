@@ -114,7 +114,9 @@
 
                 <div class="card-body">
                     @if ($cases->isEmpty())
-                        <p>{{ __('No active cases are assigned to you.') }}</p>
+                        <h3 class="h6">{{ __('No active cases assigned to you') }}</h3>
+                        <p>{{ __('Your active case list is empty. Closed cases remain available in My cases.') }}</p>
+                        <a href="{{ route('cases.index') }}">{{ __('My cases') }}</a>
                     @else
                         <div class="table-responsive">
                             <table class="table table-striped align-middle">

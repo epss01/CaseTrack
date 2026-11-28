@@ -34,6 +34,11 @@ class CaseController extends Controller
     {
         $this->middleware('auth');
         $this->authorizeResource(CaseModel::class, 'case');
+        $this->middleware('submission:create')->only('store');
+        $this->middleware('submission:update')->only('update');
+        $this->middleware('submission:delete')->only('destroy');
+        $this->middleware('submission:changeClosure')->only('changeClosure');
+        $this->middleware('submission:reassign')->only('reassign');
     }
 
     /**

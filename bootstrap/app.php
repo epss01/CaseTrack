@@ -3,6 +3,7 @@
 use App\Console\Commands\MakeAdminCommand;
 use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\EnsureUserHasRole;
+use App\Http\Middleware\PreventDuplicateSubmissions;
 use App\Http\Middleware\PreventResponseCaching;
 use App\Models\AuditLog;
 use App\Models\CaseModel;
@@ -36,6 +37,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'role' => EnsureUserHasRole::class,
+            'submission' => PreventDuplicateSubmissions::class,
         ]);
 
         // Catches a session that outlives its account's standing: a login

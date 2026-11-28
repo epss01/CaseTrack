@@ -14,6 +14,7 @@
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
 </head>
 <body>
+    <div class="visually-hidden" role="status" aria-atomic="true" data-submission-status></div>
     <div id="app">
         <a class="skip-link" href="#content">{{ __('Skip to main content') }}</a>
 
@@ -147,10 +148,12 @@
                                     {{-- A real submit button, not an anchor pointing at a
                                          POST-only route: if the script failed to attach, the
                                          scaffold's version navigated to /logout and 405'd. --}}
-                                    <form action="{{ route('logout') }}" method="POST">
+                                    <form data-submit-feedback action="{{ route('logout') }}" method="POST">
                                         @csrf
 
-                                        <button type="submit" class="dropdown-item">{{ __('Logout') }}</button>
+                                        <button type="submit" class="dropdown-item">
+                                            @include('partials.submit-label', ['label' => __('Logout'), 'pending' => __('Signing out…')])
+                                        </button>
                                     </form>
                                 </div>
                             </li>

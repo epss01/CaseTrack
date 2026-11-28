@@ -6,9 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Role;
 use App\Models\User;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -49,6 +49,7 @@ class RegisterController extends Controller
         // for free from laravel/ui's ThrottlesLogins; registration needed
         // its own line since RegistersUsers carries no such trait.
         $this->middleware('throttle:5,1')->only('register');
+        $this->middleware('submission:register')->only('register');
     }
 
     /**
@@ -113,19 +114,13 @@ class RegisterController extends Controller
         });
     }
 
-    /**
-     * RegistersUsers::register() logs the new user in before this hook
-     * fires, but a pending account isn't supposed to have a session yet — so
-     * undo that immediately and send them to the login screen with an
-     * explanation instead of the dashboard.
-     */
-    protected function registered(Request $request, $user)
+    public function register(Request $request)
     {
-        Auth::guard()->logout();
+        $this->validator($request->all())->validate();
+        $user = $this->create($request->all());
+        event(new Registered($user));
 
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-
+        // Pending registrants never sign in; keep the guest session usable for a retry.
         return redirect()->route('login')
             ->with('status', __('Your account has been submitted and is awaiting administrator approval.'));
     }

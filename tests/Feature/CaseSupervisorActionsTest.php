@@ -77,7 +77,7 @@ class CaseSupervisorActionsTest extends TestCase
         $this->actingAs($supervisor)
             ->get(route('cases.index'))
             ->assertOk()
-            ->assertSee('No cases to show.');
+            ->assertSee('No cases available');
 
         $this->actingAs($supervisor)
             ->get(route('cases.index'))

@@ -17,6 +17,11 @@ use Illuminate\Support\Facades\DB;
  */
 class WorkloadController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('submission:rating')->only('update');
+    }
+
     public function index()
     {
         $investigators = User::query()

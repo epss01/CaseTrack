@@ -25,6 +25,15 @@ class DeadlineAlertsPageTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_an_empty_alert_page_does_not_claim_no_action_is_needed(): void
+    {
+        $actor = User::factory()->investigator()->create();
+        $case = CaseModel::factory()->assignedTo($actor)->create(['status' => CaseModel::STATUS_DOCKETED]);
+        $case->timeline()->create(['date_of_docket' => '2020-01-01']);
+        $this->actingAs($actor)->get(route('alerts.index', ['page' => 99]))->assertOk()
+            ->assertSee('No results on this page')->assertDontSee('No tracked deadlines need attention');
+    }
+
     // ------------------------------------------------------------ access
 
     public function test_a_guest_is_sent_to_the_login_page(): void
@@ -121,7 +130,7 @@ class DeadlineAlertsPageTest extends TestCase
             ->get('/alerts')
             ->assertOk()
             ->assertSeeInOrder([__('On track'), '1'])
-            ->assertSee(__('No deadline needs attention.'))
+            ->assertSee(__('No tracked deadlines need attention'))
             ->assertDontSee($onTrack->docket_no);
     }
 

@@ -19,7 +19,9 @@
                     @endif
 
                     @if ($pending->isEmpty())
-                        <p class="mb-0">{{ __('No registrations awaiting approval.') }}</p>
+                        <h2 class="h6">{{ __('No registrations awaiting review') }}</h2>
+                        <p>{{ __('There are no pending registration requests to review.') }}</p>
+                        <a href="{{ route('admin.users.index') }}">{{ __('Accounts') }}</a>
                     @else
                         <div class="table-responsive">
                             <table class="table align-middle table-data">
@@ -42,18 +44,20 @@
                                             <td class="text-nowrap">{{ $user->created_at->format('d M Y') }}</td>
                                             <td class="text-end">
                                                 <div class="d-flex gap-2 justify-content-end">
-                                                    <form method="POST" action="{{ route('admin.registrations.approve', $user) }}">
+                                                    <form data-submit-feedback data-submit-context="{{ $user->full_name }}" method="POST" action="{{ route('admin.registrations.approve', $user) }}">
                                                         @csrf
+                                                        @include('partials.submission-id')
                                                         @method('PUT')
                                                         <button type="submit" class="btn btn-sm btn-outline-success">
-                                                            {{ __('Approve') }}<span class="visually-hidden"> {{ $user->full_name }}</span>
+                                                            @include('partials.submit-label', ['label' => __('Approve'), 'pending' => __('Approving…')])<span class="visually-hidden"> {{ $user->full_name }}</span>
                                                         </button>
                                                     </form>
-                                                    <form method="POST" action="{{ route('admin.registrations.reject', $user) }}">
+                                                    <form data-submit-feedback data-submit-context="{{ $user->full_name }}" method="POST" action="{{ route('admin.registrations.reject', $user) }}">
                                                         @csrf
+                                                        @include('partials.submission-id')
                                                         @method('PUT')
                                                         <button type="submit" class="btn btn-sm btn-outline-danger">
-                                                            {{ __('Reject') }}<span class="visually-hidden"> {{ $user->full_name }}</span>
+                                                            @include('partials.submit-label', ['label' => __('Reject'), 'pending' => __('Rejecting…')])<span class="visually-hidden"> {{ $user->full_name }}</span>
                                                         </button>
                                                     </form>
                                                 </div>

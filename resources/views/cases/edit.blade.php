@@ -14,8 +14,9 @@
                         <p><a href="{{ route('cases.index', ['classification' => 'unknown']) }}">{{ __('Return to classification review without saving') }}</a></p>
                     @endif
                     <p><a href="{{ route('cases.timeline.edit', $case) }}">{{ __('Edit timeline dates separately') }}</a></p>
-                    <form method="POST" action="{{ route('cases.update', request()->query('classification') === 'unknown' ? [$case, 'classification' => 'unknown'] : $case) }}">
+                    <form data-submit-feedback method="POST" action="{{ route('cases.update', request()->query('classification') === 'unknown' ? [$case, 'classification' => 'unknown'] : $case) }}">
                         @csrf
+                        @include('partials.submission-id')
                         @method('PUT')
                         <input type="hidden" name="lock_version" value="{{ old('lock_version', $case->lock_version) }}">
 
@@ -118,7 +119,7 @@
                                 <option value="1" @selected((string) old('is_torture_case', $case->is_torture_case) === '1')>{{ __('Yes') }}</option>
                                 <option value="0" @selected(in_array(old('is_torture_case', $case->is_torture_case), [false, 0, '0'], true))>{{ __('No') }}</option>
                             </select>
-                            <p id="classification-help" class="form-text">{{ __('Keep Unknown until the classification is confirmed. The 60-day deadline is evaluated only for confirmed torture cases. Clear any recorded external extension in the timeline editor before changing to No or Unknown.') }}</p>
+                            <p id="classification-help" class="form-guidance form-text">{{ __('Keep Unknown until the classification is confirmed. The 60-day deadline is evaluated only for confirmed torture cases. Clear any recorded external extension in the timeline editor before changing to No or Unknown.') }}</p>
                             @error('is_torture_case')<p class="text-danger" role="alert">{{ $message }}</p>@enderror
                         </fieldset>
                         @include('cases.partials.edit-people')
@@ -145,7 +146,7 @@
 
                         <div class="form-actions">
                                 <button type="submit" class="btn btn-primary">
-                                    {{ request()->query('classification') === 'unknown' ? __('Save and return to review') : __('Save Changes') }}
+                                    @include('partials.submit-label', ['label' => request()->query('classification') === 'unknown' ? __('Save and return to review') : __('Save Changes'), 'pending' => __('Saving…')])
                                 </button>
 
                                 <a href="{{ route('cases.show', $case) }}" class="btn btn-link">

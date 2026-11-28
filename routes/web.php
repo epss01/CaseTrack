@@ -42,7 +42,8 @@ Route::middleware(['auth', 'role:Investigator,Supervisor'])->group(function () {
     Route::put('cases/{case}/closure', [CaseController::class, 'changeClosure'])
         ->name('cases.closure.update');
     Route::resource('cases', CaseController::class)
-        ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
+        ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy'])
+        ->withTrashed(['destroy']);
 
     // Supervisor-only, enforced by CaseModelPolicy::delete()/reassign().
     // Deletion goes through a confirmation page rather than a JS dialog so the

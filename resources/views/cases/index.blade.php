@@ -27,7 +27,7 @@
             <p class="small text-muted">{{ __('Preflight checks stored dates; it does not certify that every case has been classified.') }}</p>
             <div class="card filter-panel mb-3">
                 <div class="card-body">
-                    <form method="GET" action="{{ route('cases.index') }}">
+                    <form data-submit-feedback method="GET" action="{{ route('cases.index') }}">
                         <input type="hidden" name="view" value="{{ $view }}">
                         <div class="filter-fields">
                             <div class="filter-field">
@@ -50,12 +50,14 @@
                             </div>
 
                             <div class="filter-actions">
-                                @if (filled($search))
-                                    <a href="{{ route('cases.index', ['view' => $view, 'classification' => $classification]) }}" class="btn btn-outline-secondary">
-                                        {{ __('Clear') }}
+                                @if (filled($search) || $classification === 'unknown')
+                                    <a href="{{ route('cases.index', ['view' => $view]) }}" class="btn btn-outline-secondary">
+                                        {{ __('Clear filters') }}
                                     </a>
                                 @endif
-                                <button type="submit" class="btn btn-primary">{{ __('Apply') }}</button>
+                                <button type="submit" class="btn btn-primary">
+                                    @include('partials.submit-label', ['label' => __('Apply'), 'pending' => __('Applying…')])
+                                </button>
                             </div>
                         </div>
                     </form>
@@ -86,9 +88,20 @@
 
                     @if ($cases->isEmpty())
                         @if ($cases->total() > 0)
-                            <p>{{ __('No cases on this page.') }} <a href="{{ route('cases.index', array_merge(request()->only('search', 'classification', 'view'), ['page' => 1])) }}">{{ __('Return to the first page') }}</a></p>
+                            <h2 class="h6">{{ __('No cases on this page') }}</h2>
+                            <p>{{ __('Matching cases are available on another page.') }}</p>
+                            <a href="{{ route('cases.index', array_merge(request()->only('search', 'classification', 'view'), ['page' => 1])) }}">{{ __('Return to the first page') }}</a>
+                        @elseif ($classification === 'unknown' && blank($search))
+                            <h2 class="h6">{{ __('No unknown classifications to review') }}</h2>
+                            <p>{{ __('No cases in your authorized caseload currently have an Unknown classification.') }}</p>
+                            <a href="{{ route('cases.index', ['view' => $view]) }}">{{ __('View all cases') }}</a>
+                        @elseif (filled($search) || $classification === 'unknown')
+                            <h2 class="h6">{{ __('No cases match these filters') }}</h2>
+                            <p>{{ __('Try a different search or clear the filters.') }}</p>
+                            <a href="{{ route('cases.index', ['view' => $view]) }}">{{ __('Clear filters') }}</a>
                         @else
-                            <p class="mb-0">{{ $classification === 'unknown' ? (filled($search) ? __('No Unknown cases match this search.') : __('No Unknown cases to review.')) : (filled($search) ? __('No cases match this search.') : __('No cases to show.')) }}</p>
+                            <h2 class="h6">{{ __('No cases available') }}</h2>
+                            <p class="mb-0">{{ __('No cases are available in your current caseload.') }}</p>
                         @endif
                     @else
                         @if ($view === 'folders')
