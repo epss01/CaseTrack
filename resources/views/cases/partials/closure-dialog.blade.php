@@ -7,6 +7,7 @@
         <div class="modal-content">
             <form data-submit-feedback data-submit-context="{{ $case->docket_no }}" method="POST" action="{{ route('cases.closure.update', $case) }}">
                 @csrf
+                @include('partials.submission-id')
                 @method('PUT')
                 <input type="hidden" name="lock_version" value="{{ $case->lock_version }}">
                 <div class="modal-header">

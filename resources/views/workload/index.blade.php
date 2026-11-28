@@ -66,6 +66,7 @@
                                             <td>
                                                 <form data-submit-feedback data-submit-context="{{ $investigator->full_name }}" method="POST" action="{{ route('workload.update', $investigator) }}" class="d-flex gap-2 flex-nowrap">
                                                     @csrf
+                                                    @include('partials.submission-id')
                                                     @method('PUT')
                                                     <input type="hidden" name="_feedback_form" value="rating-{{ $investigator->id }}">
 

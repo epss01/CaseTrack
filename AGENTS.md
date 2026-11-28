@@ -180,7 +180,7 @@ request delegation where indicated; do not spawn agents just to fill roles.
   request independent review. An ad-hoc `gpt-6-astra` agent is appropriate only
   for difficult architecture or unresolved substantive findings.
 - Default models: main `gpt-6.1-sol`/medium; `researcher` `gpt-6-luna`/high;
-  `reviewer` `gpt-6.1-sol`/high; `manuscript_writer` `gpt-6.1-sol`/medium.
+  `reviewer` `gpt-6.2-sol`/high; `manuscript_writer` `gpt-6.1-sol`/medium.
   These are explicit model-selection instructions for delegated work. Leave
   the user's chosen main model alone during an active chat.
 - Use at most two subagents concurrently, with no recursive delegation. Give

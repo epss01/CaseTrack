@@ -9,7 +9,7 @@
 </header>
 <form data-submit-feedback class="auth-panel" method="POST" action="{{ route('register') }}">
     @csrf
-
+    @include('partials.submission-id')
     <div class="row mb-3">
         <label for="first_name" class="form-label">{{ __('First Name') }}</label>
 

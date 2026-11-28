@@ -89,13 +89,14 @@ class CaseImportTest extends TestCase
         $this->actingAs($actor)->post(route('cases.import.preview'), ['file' => $this->csv($this->ownCaseRows())])
             ->assertOk()->assertViewHas('result', fn ($result) => count($result['ready']) === 1 && $result['errors'] === []);
         $this->assertDatabaseCount('cases', 0);
+        $staged = session('case_import.path');
         $this->post(route('cases.import.store'), ['investigator_id' => 999])->assertRedirect(route('cases.index'));
         $case = CaseModel::sole();
         $this->assertSame($actor->id, $case->investigator_id);
         $this->assertNotNull($case->timeline);
         $this->assertDatabaseHas('audit_logs', ['user_id' => $actor->id, 'case_id' => $case->id, 'action_performed' => AuditLog::ACTION_CREATE]);
         $this->assertDatabaseHas('audit_logs', ['user_id' => $actor->id, 'action_performed' => AuditLog::ACTION_IMPORTED]);
-        Storage::assertMissing("imports/user-{$actor->id}.csv");
+        Storage::assertMissing($staged);
     }
 
     public function test_investigator_xlsx_accepts_their_username(): void
@@ -130,7 +131,7 @@ class CaseImportTest extends TestCase
         foreach ([$other->username, 'No such account', $actor->full_name] as $assignee) {
             $this->actingAs($actor)->post(route('cases.import.preview'), ['file' => $this->csv($this->ownCaseRows($assignee))])
                 ->assertOk()->assertViewHas('result', fn ($result) => $result['ready'] === [] && count($result['errors']) === 1);
-            $this->post(route('cases.import.store'))->assertRedirect(route('cases.index'));
+            $this->post(route('cases.import.store'))->assertRedirect(route('cases.import.create'))->assertSessionHasErrors('file');
             $this->assertDatabaseCount('cases', 0);
         }
         $this->assertFalse(AuditLog::where('action_performed', AuditLog::ACTION_IMPORTED)->exists());
@@ -144,7 +145,7 @@ class CaseImportTest extends TestCase
         $this->actingAs($other)->post(route('cases.import.store'))->assertForbidden();
         $this->withSession(['case_import.user_id' => $other->id])->post(route('cases.import.store'))->assertForbidden();
         $this->assertDatabaseCount('cases', 0);
-        Storage::assertExists("imports/user-{$owner->id}.csv");
+        Storage::assertExists(session('case_import.path'));
     }
 
     public function test_confirmation_revalidates_assignment_after_a_supervisor_becomes_an_investigator(): void
@@ -153,7 +154,7 @@ class CaseImportTest extends TestCase
         $other = User::factory()->investigator()->create();
         $this->actingAs($actor)->post(route('cases.import.preview'), ['file' => $this->csv($this->ownCaseRows($other->username))])->assertOk();
         $actor->update(['role_id' => $other->role_id]);
-        $this->actingAs($actor->fresh())->post(route('cases.import.store'))->assertRedirect(route('cases.index'));
+        $this->actingAs($actor->fresh())->post(route('cases.import.store'))->assertRedirect(route('cases.import.create'))->assertSessionHasErrors('file');
         $this->assertDatabaseCount('cases', 0);
     }
 

@@ -60,6 +60,7 @@
                                             @else
                                                 <form data-submit-feedback data-submit-context="{{ $user->full_name }}" method="POST" action="{{ route('admin.users.role', $user) }}" class="account-role-form d-flex gap-2 flex-nowrap">
                                                     @csrf
+                                                    @include('partials.submission-id')
                                                     @method('PUT')
                                                     <input type="hidden" name="_feedback_form" value="role-{{ $user->id }}">
 
@@ -89,6 +90,7 @@
                                             @else
                                                 <form data-submit-feedback data-submit-context="{{ $user->full_name }}" method="POST" action="{{ route('admin.users.active', $user) }}" class="d-flex align-items-center gap-2">
                                                     @csrf
+                                                    @include('partials.submission-id')
                                                     @method('PUT')
                                                     <input type="hidden" name="is_active" value="{{ $user->is_active ? '0' : '1' }}">
 
@@ -106,6 +108,7 @@
                                             @unless ($isSelf)
                                                 <form data-submit-feedback data-submit-context="{{ $user->full_name }}" method="POST" action="{{ route('admin.users.password', $user) }}" class="d-flex flex-wrap gap-2 align-items-center">
                                                     @csrf
+                                                    @include('partials.submission-id')
                                                     @method('PUT')
 
                                                     <label for="password_{{ $user->id }}" class="visually-hidden">

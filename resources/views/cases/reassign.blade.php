@@ -12,6 +12,7 @@
                 <div class="card-body">
                     <form data-submit-feedback method="POST" action="{{ route('cases.reassign.update', $case) }}">
                         @csrf
+                        @include('partials.submission-id')
                         @method('PUT')
 
                         <fieldset>

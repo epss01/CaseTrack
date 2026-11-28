@@ -11,7 +11,7 @@
     $isTemplate = $index === '__INDEX__';
 @endphp
 
-<div class="party-row border rounded p-3 mb-3">
+<div class="party-row border-bottom py-3 mb-3">
     <div class="row g-3">
         <div class="col-md-4">
             <label class="form-label" for="{{ $group }}_{{ $index }}_name">{{ __('Name') }} <span class="text-muted small">({{ __('required') }})</span></label>

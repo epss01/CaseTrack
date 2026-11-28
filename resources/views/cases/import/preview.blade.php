@@ -43,6 +43,8 @@
                     @endif
                     <form data-submit-feedback method="POST" action="{{ route('cases.import.store') }}" class="d-inline">
                         @csrf
+                        @include('partials.submission-id')
+                        <input type="hidden" name="_import_id" value="{{ session('case_import.id') }}">
                         <button type="submit" class="btn btn-primary" @if ($readyCount === 0) disabled @endif>
                             @include('partials.submit-label', ['label' => __('Confirm Import').' ('.$readyCount.')', 'pending' => __('Importing…')])
                         </button>

@@ -35,6 +35,7 @@
                     @include('cases.partials.torture-deadline')
                     <form data-submit-feedback method="POST" action="{{ route('cases.timeline.update', $case) }}">
                         @csrf
+                        @include('partials.submission-id')
                         @method('PUT')
                         <input type="hidden" name="lock_version" value="{{ old('lock_version', $case->lock_version) }}">
                         @error('lock_version')<div class="alert alert-warning" role="alert">{{ $message }}</div>@enderror

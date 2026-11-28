@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { runInNewContext } from 'node:vm';
+import { webcrypto } from 'node:crypto';
 
 const source = readFileSync(new URL('../../resources/js/submission-feedback.js', import.meta.url), 'utf8');
 
@@ -17,6 +18,7 @@ function element(attributes = {}, textContent = '') {
 
 function fixture({ navigation = true } = {}) {
     const window = new EventTarget();
+    window.crypto = webcrypto;
     const document = new EventTarget();
     if (navigation) window.navigation = new EventTarget();
     const status = element();
@@ -33,6 +35,10 @@ function fixture({ navigation = true } = {}) {
             dataset: { submitContext: 'Synthetic record' }, elements: [button], valid: true, guarded: true,
             matches: () => form.guarded,
             checkValidity: () => form.valid,
+            identifier: label === 'Save' ? { value: '11111111-1111-4111-8111-111111111111' } : null,
+            querySelector: () => form.identifier,
+            closest: () => form.guarded ? form : null,
+            value: 'initial',
         });
         button.form = form;
         return form;
@@ -44,6 +50,10 @@ function fixture({ navigation = true } = {}) {
     const timers = new Map();
     runInNewContext(source, {
         window, document,
+        FormData: class {
+            constructor(form) { this.form = form; }
+            *[Symbol.iterator]() { yield ['value', this.form.value]; }
+        },
         setTimeout(callback, delay) {
             const id = ++nextTimer;
             timers.set(id, { callback, due: now + delay });
@@ -68,6 +78,10 @@ function fixture({ navigation = true } = {}) {
             return controller;
         },
         pageshow: () => dispatch(window, 'pageshow'),
+        change(type = 'input', form = forms[0], changed = true) {
+            if (changed) form.value += ' edited';
+            return dispatch(document, type, { target: form });
+        },
         advance(milliseconds) {
             now += milliseconds;
             for (const [id, timer] of timers) {
@@ -177,4 +191,50 @@ test('invalid, prevented and unguarded submissions do not start recovery timers'
     assertReset(f);
     f.forms[0].guarded = true;
     assert.equal(f.submit().defaultPrevented, false);
+});
+
+test('unchanged retries retain their identifier across cancellation and timeout', () => {
+    const f = fixture();
+    const id = f.forms[0].identifier.value;
+    f.submit();
+    f.navigate().abort();
+    assert.equal(f.forms[0].identifier.value, id);
+    f.submit();
+    f.advance(15000);
+    assert.equal(f.forms[0].identifier.value, id);
+    f.pageshow();
+    assert.equal(f.forms[0].identifier.value, id);
+});
+
+test('editing a form starts a new UUID while session-only forms need none', () => {
+    const f = fixture();
+    const initial = f.forms[0].identifier.value;
+    f.change();
+    const edited = f.forms[0].identifier.value;
+    assert.match(edited, /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/);
+    assert.notEqual(edited, initial);
+    f.change('change');
+    assert.notEqual(f.forms[0].identifier.value, edited);
+    f.change('input', f.forms[1]);
+    assert.equal(f.forms[1].identifier, null);
+});
+
+test('an input event without changed values keeps the intended submission identifier', () => {
+    const f = fixture();
+    const id = f.forms[0].identifier.value;
+    f.change('input', f.forms[0], false);
+    f.submit();
+    f.navigate().abort();
+    f.change('change', f.forms[0], false);
+    assert.equal(f.forms[0].identifier.value, id);
+});
+
+test('submit detects changed values even when no input event was dispatched', () => {
+    const f = fixture();
+    f.submit();
+    f.navigate().abort();
+    const previous = f.forms[0].identifier.value;
+    f.forms[0].value = 'programmatic correction';
+    f.submit();
+    assert.notEqual(f.forms[0].identifier.value, previous);
 });

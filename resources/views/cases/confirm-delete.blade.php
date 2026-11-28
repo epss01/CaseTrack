@@ -29,6 +29,7 @@
 
                     <form data-submit-feedback method="POST" action="{{ route('cases.destroy', $case) }}">
                         @csrf
+                        @include('partials.submission-id')
                         @method('DELETE')
 
                         <button type="submit" class="btn btn-danger">

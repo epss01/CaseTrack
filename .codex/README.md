@@ -39,7 +39,7 @@ definition. See the fallback and validation sections below.
 | --- | --- | --- |
 | Main agent | `gpt-6.1-sol` / `medium` | Understand, plan, implement, integrate, verify, report; write requested session notes |
 | `researcher` | `gpt-6-luna` / `high` | Bounded code/vault investigation and factual documentation drafts |
-| `reviewer` | `gpt-6.1-sol` / `high` | Independent findings on a stable diff; no code edits |
+| `reviewer` | `gpt-6.2-sol` / `high` | Independent findings on a stable diff; no code edits |
 | `manuscript_writer` | `gpt-6.1-sol` / `medium` | Academic draft prose, evidence references, unresolved claims |
 
 These are starting defaults, not benchmarked rankings. Astra (`gpt-6-astra`) is
@@ -122,6 +122,20 @@ serially, and preserve the task boundaries. Do not retry indefinitely. If review
 cannot be independent, disclose that limitation; self-review is not independent
 verification. Stop for input only where an unresolved decision or required access
 actually blocks progress.
+
+## Reviewer runtime compatibility
+
+On November 28, 2026, the standalone CLI rejected `gpt-6.1-sol` and
+`gpt-6.2-sol` with `model_not_in_accessible_catalog`, despite their presence
+in the local cached catalog. A cached model list does not prove inference access.
+Native collaboration dispatched as `gpt-6.2-sol` with high reasoning completed
+inference and a local read. Use this verified native path for the reviewer;
+keep the main chat model and global configuration unchanged. Pass the reviewer
+instructions explicitly with a fresh context when the named role cannot select
+that model. Report the selected model and actual available tools. The native
+harness exposes write tools under inherited workspace permissions: read-only
+review is a behavioral boundary, not an isolated filesystem sandbox. Do not
+claim the failed CLI invocation performed a review.
 
 ## Manuscript walkthrough
 

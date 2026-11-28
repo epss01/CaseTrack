@@ -17,7 +17,7 @@
             <div class="page-heading"><h1>{{ __('Docket a case') }}</h1></div>
             <form data-submit-feedback method="POST" action="{{ route('cases.store') }}">
                 @csrf
-
+                @include('partials.submission-id')
                 @if ($errors->any())
                     <div class="alert alert-danger" role="alert">
                         {{ __('Please correct the highlighted fields before docketing this case.') }}
@@ -131,7 +131,7 @@
                 </div>
 
                 <div class="card mb-4">
-                    <div class="card-header d-flex justify-content-between align-items-center">
+                    <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
                         <h2 class="h5 mb-0">
                             {{ __('Complainants') }}
                             <span class="text-muted small">({{ __('optional') }})</span>
@@ -158,7 +158,7 @@
                 </div>
 
                 <div class="card mb-4">
-                    <div class="card-header d-flex justify-content-between align-items-center">
+                    <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
                         <h2 class="h5 mb-0">{{ __('Victims') }} <span class="text-muted small">({{ __('required') }})</span></h2>
                         <button type="button" class="btn btn-sm btn-outline-primary add-row" data-group="victims">
                             {{ __('Add Victim') }}
@@ -184,7 +184,7 @@
                 </div>
 
                 <div class="card mb-4">
-                    <div class="card-header d-flex justify-content-between align-items-center">
+                    <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
                         <h2 class="h5 mb-0">{{ __('Respondents') }} <span class="text-muted small">({{ __('required') }})</span></h2>
                         <button type="button" class="btn btn-sm btn-outline-primary add-row" data-group="respondents">
                             {{ __('Add Respondent') }}

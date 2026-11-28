@@ -46,6 +46,7 @@
                                                 <div class="d-flex gap-2 justify-content-end">
                                                     <form data-submit-feedback data-submit-context="{{ $user->full_name }}" method="POST" action="{{ route('admin.registrations.approve', $user) }}">
                                                         @csrf
+                                                        @include('partials.submission-id')
                                                         @method('PUT')
                                                         <button type="submit" class="btn btn-sm btn-outline-success">
                                                             @include('partials.submit-label', ['label' => __('Approve'), 'pending' => __('Approving…')])<span class="visually-hidden"> {{ $user->full_name }}</span>
@@ -53,6 +54,7 @@
                                                     </form>
                                                     <form data-submit-feedback data-submit-context="{{ $user->full_name }}" method="POST" action="{{ route('admin.registrations.reject', $user) }}">
                                                         @csrf
+                                                        @include('partials.submission-id')
                                                         @method('PUT')
                                                         <button type="submit" class="btn btn-sm btn-outline-danger">
                                                             @include('partials.submit-label', ['label' => __('Reject'), 'pending' => __('Rejecting…')])<span class="visually-hidden"> {{ $user->full_name }}</span>

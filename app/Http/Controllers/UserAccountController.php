@@ -23,6 +23,12 @@ use Illuminate\Support\Facades\DB;
  */
 class UserAccountController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('submission:account')->only(['updateActive', 'updatePassword']);
+        $this->middleware('submission:role')->only('updateRole');
+    }
+
     public function index()
     {
         $users = User::query()

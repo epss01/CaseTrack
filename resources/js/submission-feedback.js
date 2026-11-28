@@ -2,6 +2,38 @@ let pendingForm = null;
 let guardedButtons = [];
 let recoveryTimer = null;
 let navigationSignal = null;
+const submissionValues = new WeakMap();
+
+function inputSignature(form) {
+    return JSON.stringify(Array.from(new FormData(form)).filter(([name]) => !['_token', '_submission_id'].includes(name)));
+}
+
+document.querySelectorAll('form[data-submit-feedback]').forEach(form => {
+    if (form.querySelector('input[name="_submission_id"]')) submissionValues.set(form, inputSignature(form));
+});
+
+function newSubmissionId() {
+    const bytes = window.crypto.getRandomValues(new Uint8Array(16));
+    bytes[6] = (bytes[6] & 15) | 64;
+    bytes[8] = (bytes[8] & 63) | 128;
+    const hex = Array.from(bytes, value => value.toString(16).padStart(2, '0')).join('');
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
+function changedSubmission(event) {
+    const form = event.target.closest('form[data-submit-feedback]');
+    const identifier = form?.querySelector('input[name="_submission_id"]');
+    if (identifier) {
+        const values = inputSignature(form);
+        if (submissionValues.get(form) !== values) {
+            identifier.value = newSubmissionId();
+            submissionValues.set(form, values);
+        }
+    }
+}
+
+document.addEventListener('input', changedSubmission);
+document.addEventListener('change', changedSubmission);
 
 function resetSubmission() {
     clearTimeout(recoveryTimer);
@@ -39,9 +71,10 @@ window.addEventListener('submit', (event) => {
         return;
     }
     if (!form.checkValidity()) return;
+    changedSubmission({ target: form });
 
     pendingForm = form;
-    // shortcut: slow requests may outlive recovery; add server idempotency if retries must be exactly-once.
+    // Recovery keeps the same identifier so the server can recognize an unchanged retry.
     recoveryTimer = setTimeout(resetSubmission, 15000);
     form.setAttribute('aria-busy', 'true');
     document.querySelectorAll('[data-submit-feedback]').forEach((candidate) => {
